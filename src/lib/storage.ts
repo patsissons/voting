@@ -1,6 +1,10 @@
-// localStorage with the keys cubby.fyi used, so a visitor's compass answers,
-// riding, swaps, ballot marks and division survive the move. Every access is
-// guarded: private mode or blocked storage just means nothing persists.
+// localStorage with the keys cubby.fyi used. The two origins cannot read each
+// other's storage, so the answers and ballot marks move in the permalink and
+// the riding, swaps and division in an import link (consumeImport). Every
+// access is guarded: private mode or blocked storage just means nothing
+// persists.
+import { parseImport } from '../../shared/permalink.ts'
+import type { Election } from '../../shared/schema/election.ts'
 
 export const keys = {
   compass: (slug: string) => `voting:${slug}:compass`,
@@ -52,4 +56,21 @@ export function remove(key: string): void {
   } catch {
     // nothing to remove
   }
+}
+
+/**
+ * Follow an import link (#/compass/import/...): store what it carries, then
+ * swap the address for the plain permalink so a reload or a share never
+ * imports again. Returns whether the hash was an import link.
+ */
+export function consumeImport(election: Election): boolean {
+  if (typeof window === 'undefined') return false
+  const found = parseImport(election, window.location.hash)
+  if (!found) return false
+  const slug = election.slug
+  if (found.district) writeString(keys.district(slug), found.district)
+  if (found.omit) writeJson(keys.omit(slug), found.omit)
+  if (found.division) writeString(keys.division(slug), found.division)
+  window.history.replaceState(null, '', found.hash)
+  return true
 }

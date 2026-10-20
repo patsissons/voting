@@ -10,11 +10,25 @@
 //   #/compass/<code>/q<i>       question i mid-quiz (code may be "-")
 //   #/compass/<code>/r<i>       question i while reviewing finished answers
 //   #/results                   the results tab
-import type { CompassElection, ReferendumElection } from './schema/election.ts'
+//
+// plus one form that is never shared, only followed once: the move from
+// cubby.fyi, whose localStorage this origin cannot read.
+//
+//   #/compass/import/<rest>?d=<riding>&o=<n,n>&e=<division>
+//                               <rest> is what follows #/compass/ above; the
+//                               query carries the state cubby kept only in
+//                               localStorage (riding, swapped-out ballot
+//                               numbers, referendum division), all optional
+import type {
+  CompassElection,
+  Election,
+  ReferendumElection,
+} from './schema/election.ts'
 import { blankState } from './stats/compass.ts'
 import type { CompassState } from './stats/compass.ts'
 
 export const TAB = '#/compass'
+export const IMPORT = `${TAB}/import/`
 export type Tab = 'compass' | 'results'
 
 /** The tab a hash names, or '' when it names none. */
@@ -112,4 +126,69 @@ export function parseBallot(
     if (c !== '-') answers[i] = +c as 0 | 1
   }
   return Object.keys(answers).length ? answers : null
+}
+
+export type Imported = {
+  /** The permalink to land on once the state is stored. */
+  hash: string
+  district?: string
+  omit?: number[]
+  division?: string
+}
+
+/** What an import hash carries, or null when the hash is not one. Parts the election does not have are dropped, so a stale link still moves what it can. */
+export function parseImport(election: Election, hash: string): Imported | null {
+  const raw = String(hash || '')
+  if (!raw.startsWith(IMPORT)) return null
+  const [rest, query = ''] = raw.slice(IMPORT.length).split('?')
+  const target = `${TAB}/${rest}`
+  const valid =
+    election.ballot === 'referendum'
+      ? parseBallot(election, target)
+      : parseCompass(election, target)
+  const out: Imported = { hash: valid ? target : TAB }
+  // By hand: the hooks runtime this file also builds for has no URLSearchParams.
+  const params: Record<string, string> = {}
+  for (const pair of query.split('&')) {
+    const at = pair.indexOf('=')
+    if (at < 1) continue
+    try {
+      params[pair.slice(0, at)] = decodeURIComponent(
+        pair.slice(at + 1).replace(/\+/g, ' '),
+      )
+    } catch {
+      // a malformed escape drops just that part
+    }
+  }
+  const d = params.d
+  if (d && election.ballot === 'district') {
+    if (election.districts.some((x) => x.code === d)) out.district = d
+  }
+  const o = params.o
+  if (o && election.ballot === 'at-large') {
+    const numbers = new Set(
+      election.parties.flatMap((p) =>
+        [p.mayor, ...p.council, ...p.park, ...p.school].flatMap((r) =>
+          r ? [r[0]] : [],
+        ),
+      ),
+    )
+    const omit = o
+      .split(',')
+      .map(Number)
+      .filter((n, i, a) => numbers.has(n) && a.indexOf(n) === i)
+    if (omit.length) out.omit = omit
+  }
+  const e = params.e
+  if (e && election.ballot === 'referendum') {
+    const divisions =
+      election.results.format === 'eab-dash'
+        ? election.results.divisions
+        : undefined
+    const known = divisions
+      ? e in divisions || Object.values(divisions).includes(e)
+      : e.length <= 64
+    if (known) out.division = e
+  }
+  return out
 }

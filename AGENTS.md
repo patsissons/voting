@@ -83,7 +83,11 @@ After making changes from a prompt and BEFORE committing:
   colours come from each election document (`src/lib/party.ts` emits
   `--party-<key>` tokens, light and dark, scoped to the page).
 - **localStorage keys** are cubby's and must stay: `voting:<slug>:compass`,
-  `:district`, `:omit`, `:ballot`, `:ed`.
+  `:district`, `:omit`, `:ballot`, `:ed`. The origins differ, so cubby's
+  values move in the hash: answers and ballot marks in the permalink, the
+  rest in an import link, `#/compass/import/<rest>?d=<riding>&o=<n,n>&e=<division>`
+  (`parseImport` in `shared/permalink.ts`, `consumeImport` in
+  `src/lib/storage.ts`), which stores them and becomes the plain permalink.
 - **OG tags**: `index.html` carries absolute `og:*` tags for the site;
   `pnpm og` regenerates `public/og.png` and `public/apple-touch-icon.png` from
   `scripts/og/render.ts` (never edit the PNGs by hand). `server/pages.ts`
