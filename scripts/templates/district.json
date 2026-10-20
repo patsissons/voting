@@ -9,11 +9,22 @@
   "eyebrow": "TODO",
   "pollsClose": "2026-01-01T20:00:00-08:00",
   "timeZone": "America/Vancouver",
-  "dates": { "advance": [], "final": "2026-01-01", "hours": "8 am to 8 pm", "mailBy": "TODO or remove", "url": "https://example.com/TODO-where-to-vote" },
+  "dates": {
+    "advance": [],
+    "final": "2026-01-01",
+    "hours": "8 am to 8 pm",
+    "mailBy": "TODO or remove",
+    "url": "https://example.com/TODO-where-to-vote"
+  },
   "lede": "TODO: the one-paragraph pitch shown above the compass.",
   "intro": "TODO: one vote for one member in your riding; nothing leaves the page.",
   "sources": [{ "label": "TODO source", "url": "https://example.com/TODO" }],
-  "resources": [{ "label": "TODO: where to vote, which riding you are in", "url": "https://example.com/TODO" }],
+  "resources": [
+    {
+      "label": "TODO: where to vote, which riding you are in",
+      "url": "https://example.com/TODO"
+    }
+  ],
   "seats": 2,
   "majority": 2,
   "facts": [
@@ -21,16 +32,74 @@
     { "n": 2, "label": "ridings" },
     { "n": 2, "label": "seats for a majority" }
   ],
-  "offices": [{ "key": "mla", "label": "MLA", "voteFor": 1, "fact": "vote, for one MLA in your riding" }],
+  "offices": [
+    {
+      "key": "mla",
+      "label": "MLA",
+      "voteFor": 1,
+      "fact": "vote, for one MLA in your riding"
+    }
+  ],
   "parties": [
-    { "key": "alpha", "name": "TODO Alpha Party", "short": "Alpha", "url": "https://example.com/alpha", "lean": "TODO: one line on where the party stands.", "axis": { "e": -0.5, "s": 0.5 }, "color": "#e4601a", "leader": "TODO Alpha Leader", "leaderDistrict": "AAA", "candidates": 2 },
-    { "key": "beta", "name": "TODO Beta Party", "short": "Beta", "url": "https://example.com/beta", "lean": "TODO: one line on where the party stands.", "axis": { "e": 0.5, "s": -0.5 }, "color": "#1d55c4", "leader": "TODO Beta Leader", "leaderDistrict": "BBB", "candidates": 2 }
+    {
+      "key": "alpha",
+      "name": "TODO Alpha Party",
+      "short": "Alpha",
+      "url": "https://example.com/alpha",
+      "lean": "TODO: one line on where the party stands.",
+      "axis": { "e": -0.5, "s": 0.5 },
+      "color": "#e4601a",
+      "leader": "TODO Alpha Leader",
+      "leaderDistrict": "AAA",
+      "candidates": 2
+    },
+    {
+      "key": "beta",
+      "name": "TODO Beta Party",
+      "short": "Beta",
+      "url": "https://example.com/beta",
+      "lean": "TODO: one line on where the party stands.",
+      "axis": { "e": 0.5, "s": -0.5 },
+      "color": "#1d55c4",
+      "leader": "TODO Beta Leader",
+      "leaderDistrict": "BBB",
+      "candidates": 2
+    }
   ],
   "affiliations": { "TODO Alpha Party": "alpha", "TODO Beta Party": "beta" },
   "regions": [{ "key": "north", "label": "TODO North" }],
   "districts": [
-    { "code": "AAA", "name": "TODO Riding A", "region": "north", "last": { "party": "alpha", "name": "TODO Alpha Leader", "pct": 50.1, "margin": 10.2 }, "candidates": [["TODO Alpha Leader", "alpha", 1], ["TODO Beta Challenger", "beta"]] },
-    { "code": "BBB", "name": "TODO Riding B", "region": "north", "last": { "party": "beta", "name": "TODO Beta Leader", "pct": 45.3, "margin": 2.1 }, "candidates": [["TODO Alpha Challenger", "alpha"], ["TODO Beta Leader", "beta", 1], ["TODO Independent", null, 0, "Independent"]] }
+    {
+      "code": "AAA",
+      "name": "TODO Riding A",
+      "region": "north",
+      "last": {
+        "party": "alpha",
+        "name": "TODO Alpha Leader",
+        "pct": 50.1,
+        "margin": 10.2
+      },
+      "candidates": [
+        ["TODO Alpha Leader", "alpha", 1],
+        ["TODO Beta Challenger", "beta"]
+      ]
+    },
+    {
+      "code": "BBB",
+      "name": "TODO Riding B",
+      "region": "north",
+      "last": {
+        "party": "beta",
+        "name": "TODO Beta Leader",
+        "pct": 45.3,
+        "margin": 2.1
+      },
+      "candidates": [
+        ["TODO Alpha Challenger", "alpha"],
+        ["TODO Beta Leader", "beta", 1],
+        ["TODO Independent", null, 0, "Independent"]
+      ]
+    }
   ],
   "questions": [
     {
@@ -38,13 +107,33 @@
       "q": "TODO: the question as the voter reads it?",
       "context": "TODO: a sentence of context.",
       "opts": [
-        { "t": "TODO option one", "s": "TODO: who holds this position.", "pts": { "alpha": 3 }, "axis": { "e": -0.5, "s": 0.5 } },
-        { "t": "TODO option two", "s": "TODO: who holds this position.", "pts": { "beta": 3 }, "axis": { "e": 0.5, "s": -0.5 } },
-        { "t": "Not a deciding issue for me", "s": "No points either way.", "pts": {} }
+        {
+          "t": "TODO option one",
+          "s": "TODO: who holds this position.",
+          "pts": { "alpha": 3 },
+          "axis": { "e": -0.5, "s": 0.5 }
+        },
+        {
+          "t": "TODO option two",
+          "s": "TODO: who holds this position.",
+          "pts": { "beta": 3 },
+          "axis": { "e": 0.5, "s": -0.5 }
+        },
+        {
+          "t": "Not a deciding issue for me",
+          "s": "No points either way.",
+          "pts": {}
+        }
       ]
     }
   ],
-  "note": { "text": "TODO or remove: what else is on the ballot and who is not scored here.", "link": { "label": "TODO full candidate list", "url": "https://example.com/TODO" } },
+  "note": {
+    "text": "TODO or remove: what else is on the ballot and who is not scored here.",
+    "link": {
+      "label": "TODO full candidate list",
+      "url": "https://example.com/TODO"
+    }
+  },
   "results": {
     "format": "ebc-enr",
     "source": null,

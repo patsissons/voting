@@ -9,18 +9,69 @@
   "eyebrow": "TODO",
   "pollsClose": "2026-01-01T20:00:00-08:00",
   "timeZone": "America/Vancouver",
-  "dates": { "advance": [], "final": "2026-01-01", "hours": "8 am to 8 pm", "mailBy": "TODO or remove", "url": "https://example.com/TODO-where-to-vote" },
+  "dates": {
+    "advance": [],
+    "final": "2026-01-01",
+    "hours": "8 am to 8 pm",
+    "mailBy": "TODO or remove",
+    "url": "https://example.com/TODO-where-to-vote"
+  },
   "lede": "TODO: the one-paragraph pitch shown above the compass.",
   "intro": "TODO: how the ballot works and that nothing leaves the page.",
   "sources": [{ "label": "TODO source", "url": "https://example.com/TODO" }],
-  "resources": [{ "label": "TODO: where to vote, who can vote", "url": "https://example.com/TODO" }],
+  "resources": [
+    {
+      "label": "TODO: where to vote, who can vote",
+      "url": "https://example.com/TODO"
+    }
+  ],
   "offices": [
-    { "key": "mayor", "label": "Mayor", "voteFor": 1, "fact": "vote for mayor" },
-    { "key": "council", "label": "Council", "voteFor": 2, "fact": "votes for council" }
+    {
+      "key": "mayor",
+      "label": "Mayor",
+      "voteFor": 1,
+      "fact": "vote for mayor"
+    },
+    {
+      "key": "council",
+      "label": "Council",
+      "voteFor": 2,
+      "fact": "votes for council"
+    }
   ],
   "parties": [
-    { "key": "alpha", "name": "TODO Alpha Party", "short": "Alpha", "url": "https://example.com/alpha", "lean": "TODO: one line on where the party stands.", "axis": { "e": -0.5, "s": 0.5 }, "color": "#2a78d6", "mayor": [1, "TODO Alpha Mayor"], "council": [[10, "TODO Alpha One"], [11, "TODO Alpha Two"]], "park": [], "school": [] },
-    { "key": "beta", "name": "TODO Beta Party", "short": "Beta", "url": "https://example.com/beta", "lean": "TODO: one line on where the party stands.", "axis": { "e": 0.5, "s": -0.5 }, "color": "#e4601a", "mayor": [2, "TODO Beta Mayor", 1], "council": [[20, "TODO Beta One", 1], [21, "TODO Beta Two"]], "park": [], "school": [] }
+    {
+      "key": "alpha",
+      "name": "TODO Alpha Party",
+      "short": "Alpha",
+      "url": "https://example.com/alpha",
+      "lean": "TODO: one line on where the party stands.",
+      "axis": { "e": -0.5, "s": 0.5 },
+      "color": "#2a78d6",
+      "mayor": [1, "TODO Alpha Mayor"],
+      "council": [
+        [10, "TODO Alpha One"],
+        [11, "TODO Alpha Two"]
+      ],
+      "park": [],
+      "school": []
+    },
+    {
+      "key": "beta",
+      "name": "TODO Beta Party",
+      "short": "Beta",
+      "url": "https://example.com/beta",
+      "lean": "TODO: one line on where the party stands.",
+      "axis": { "e": 0.5, "s": -0.5 },
+      "color": "#e4601a",
+      "mayor": [2, "TODO Beta Mayor", 1],
+      "council": [
+        [20, "TODO Beta One", 1],
+        [21, "TODO Beta Two"]
+      ],
+      "park": [],
+      "school": []
+    }
   ],
   "questions": [
     {
@@ -28,13 +79,33 @@
       "q": "TODO: the question as the voter reads it?",
       "context": "TODO: a sentence of context.",
       "opts": [
-        { "t": "TODO option one", "s": "TODO: who holds this position.", "pts": { "alpha": 3 }, "axis": { "e": -0.5, "s": 0.5 } },
-        { "t": "TODO option two", "s": "TODO: who holds this position.", "pts": { "beta": 3 }, "axis": { "e": 0.5, "s": -0.5 } },
-        { "t": "Not a deciding issue for me", "s": "No points either way.", "pts": {} }
+        {
+          "t": "TODO option one",
+          "s": "TODO: who holds this position.",
+          "pts": { "alpha": 3 },
+          "axis": { "e": -0.5, "s": 0.5 }
+        },
+        {
+          "t": "TODO option two",
+          "s": "TODO: who holds this position.",
+          "pts": { "beta": 3 },
+          "axis": { "e": 0.5, "s": -0.5 }
+        },
+        {
+          "t": "Not a deciding issue for me",
+          "s": "No points either way.",
+          "pts": {}
+        }
       ]
     }
   ],
-  "note": { "text": "TODO or remove: what else is on the ballot and who is not scored here.", "link": { "label": "TODO full candidate list", "url": "https://example.com/TODO" } },
+  "note": {
+    "text": "TODO or remove: what else is on the ballot and who is not scored here.",
+    "link": {
+      "label": "TODO full candidate list",
+      "url": "https://example.com/TODO"
+    }
+  },
   "results": {
     "format": "vancouver",
     "source": "https://example.com/TODO/arearesults.json",
