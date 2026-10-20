@@ -1,8 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// E2e runs against `vite dev` on port 5198 (not 5173), so a normally-running
-// dev server is never reused. Later rounds move this to the built app served
-// by a local PocketBase, so the hooks, OG rewrite and MCP are exercised too.
+// E2e runs against the built app served by a local PocketBase
+// (scripts/pb.ts --e2e: a throwaway data dir seeded with the election
+// documents and the fixture nights), not against Vite, so the hooks bundle,
+// the OG rewrite, the markdown pages and the MCP endpoint are exercised too.
+// Port 8090 is the same one `pnpm dev` uses: stop the dev server first.
 export default defineConfig({
   testDir: 'e2e',
   fullyParallel: true,
@@ -12,7 +14,7 @@ export default defineConfig({
   reporter: 'list',
   timeout: 30_000,
   use: {
-    baseURL: 'http://127.0.0.1:5198',
+    baseURL: 'http://127.0.0.1:8090',
     trace: 'on-first-retry',
     reducedMotion: 'reduce',
   },
@@ -21,8 +23,9 @@ export default defineConfig({
     { name: 'mobile-safari', use: { ...devices['iPhone 14'] } },
   ],
   webServer: {
-    command: 'pnpm dev --port 5198 --strictPort --host 127.0.0.1',
-    url: 'http://127.0.0.1:5198/',
+    command: 'pnpm build && node scripts/pb.ts --e2e',
+    url: 'http://127.0.0.1:8090/api/health',
     reuseExistingServer: false,
+    timeout: 180_000,
   },
 })

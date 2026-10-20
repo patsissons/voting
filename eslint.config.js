@@ -12,6 +12,8 @@ export default tseslint.config(
       'pb_data/',
       'pb_migrations/',
       'pb_hooks/',
+      '.pb/',
+      'data/',
       'playwright-report/',
       'test-results/',
       'coverage/',

@@ -47,11 +47,17 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps webkit chromium
 
-      # Format check + typecheck + lint + unit tests + e2e.
-      - run: pnpm validate
+      # The e2e suite runs the built app under a local PocketBase
+      # (scripts/pb.ts downloads the binary into .pb/ on first use).
+      - name: Cache PocketBase
+        uses: actions/cache@v4
+        with:
+          path: .pb/pocketbase-*
+          key: pocketbase-${{ runner.os }}-${{ hashFiles('scripts/pb.ts') }}
 
-      # validate doesn't build; catch build-only regressions here.
-      - run: pnpm build
+      # Format check + typecheck + lint + election documents + unit tests +
+      # e2e (which builds the app and the hooks bundle first).
+      - run: pnpm validate
 
       - name: Upload Playwright report
         if: failure()
