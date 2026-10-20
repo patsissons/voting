@@ -1,4 +1,5 @@
 import js from '@eslint/js'
+import prettier from 'eslint-config-prettier'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import globals from 'globals'
@@ -14,6 +15,7 @@ export default tseslint.config(
       'playwright-report/',
       'test-results/',
       'coverage/',
+      'public/',
     ],
   },
   {
@@ -25,7 +27,13 @@ export default tseslint.config(
       reactRefresh.configs.vite,
     ],
     languageOptions: {
-      globals: globals.browser,
+      globals: { ...globals.browser, ...globals.node },
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
   },
   {
@@ -36,4 +44,5 @@ export default tseslint.config(
       'react-refresh/only-export-components': 'off',
     },
   },
+  prettier,
 )

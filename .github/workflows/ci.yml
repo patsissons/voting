@@ -1,23 +1,98 @@
 name: CI
 
 on:
+  pull_request:
   push:
     branches: [main]
-  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Never cancel an in-flight main run (it may be deploying).
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+
+      # pnpm version resolves from the packageManager field in package.json
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Resolve Playwright version
+        id: playwright
+        run: |
+          echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps webkit chromium
+
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps webkit chromium
+
+      # Format check + typecheck + lint + unit tests + e2e.
+      - run: pnpm validate
+
+      # validate doesn't build; catch build-only regressions here.
+      - run: pnpm build
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm validate
-# A deploy job can be added once an instance is linked (phio link <name>):
-# see the README's Deployment section — it needs PHIO_USERNAME/PHIO_PASSWORD
-# repository secrets and runs `pnpm build && phio deploy`.
+      - run: pnpm build
+      - run: npm install -g phio tsx
+      - name: Restore phio deploy key
+        # phio authenticates deploys with a persistent ed25519 keypair that
+        # must match the account key at pockethost.io/account/keys; fresh
+        # runners would otherwise generate a new, mismatched key every run.
+        run: |
+          mkdir -p ~/.config/phio-nodejs
+          printf '%s' "$PHIO_DEPLOY_KEY" | base64 -d > ~/.config/phio-nodejs/phio_deploy_ed25519
+          printf '%s' "$PHIO_DEPLOY_KEY_PUB" | base64 -d > ~/.config/phio-nodejs/phio_deploy_ed25519.pub
+          chmod 600 ~/.config/phio-nodejs/phio_deploy_ed25519
+        env:
+          PHIO_DEPLOY_KEY: ${{ secrets.PHIO_DEPLOY_KEY }}
+          PHIO_DEPLOY_KEY_PUB: ${{ secrets.PHIO_DEPLOY_KEY_PUB }}
+      # The instance comes from the committed .phioconfig. phio uploads pb_*
+      # only and never deletes remote files; hook and migration changes need
+      # a dashboard power cycle afterwards (see AGENTS.md).
+      - run: phio deploy -v
+        env:
+          PHIO_USERNAME: ${{ secrets.PHIO_USERNAME }}
+          PHIO_PASSWORD: ${{ secrets.PHIO_PASSWORD }}
+          PHIO_PROJECT_DIR: ${{ github.workspace }}

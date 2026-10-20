@@ -1,8 +1,22 @@
 import { expect, test } from '@playwright/test'
 
-test('home page renders the app shell', async ({ page }) => {
+test('the shell renders and the theme toggle persists', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'voting' })).toBeVisible()
-  // The shell must render even when the PocketBase backend is unreachable.
-  await expect(page.getByText('Powered by PocketHost')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Elections' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Voting' })).toBeVisible()
+
+  const html = page.locator('html')
+  const wasDark = await html.evaluate((el) => el.classList.contains('dark'))
+  await page
+    .getByRole('button', {
+      name: `Switch to ${wasDark ? 'light' : 'dark'} mode`,
+    })
+    .click()
+  await expect(html).toHaveClass(wasDark ? /^(?!.*dark)/ : /dark/)
+
+  // theme-init.js replays the stored choice before first paint.
+  await page.reload()
+  expect(await html.evaluate((el) => el.classList.contains('dark'))).toBe(
+    !wasDark,
+  )
 })
