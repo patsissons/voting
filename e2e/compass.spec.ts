@@ -69,6 +69,32 @@ test('a district compass offers a searchable riding picker', async ({
   )
 })
 
+test('a cubby.fyi import link stores the riding and lands on the permalink', async ({
+  page,
+}) => {
+  await page.goto('/bc-2026#/compass/import/410310311141132?d=SUS')
+  await expect(page).toHaveURL(/#\/compass\/410310311141132$/)
+  await expect(page.getByRole('heading', { name: /Closest to/ })).toBeVisible()
+  await expect(page.getByRole('combobox', { name: 'Your riding' })).toHaveText(
+    'Surrey South',
+  )
+  expect(
+    await page.evaluate(() => localStorage.getItem('voting:bc-2026:district')),
+  ).toBe('SUS')
+  await page.reload()
+  await expect(page.getByRole('combobox', { name: 'Your riding' })).toHaveText(
+    'Surrey South',
+  )
+})
+
+test('a cubby.fyi import link carries ballot swaps', async ({ page }) => {
+  await page.goto('/vancouver-2026#/compass/import/2--A--------1?o=54')
+  await expect(page).toHaveURL(/#\/compass\/2--A--------1$/)
+  await expect(
+    page.getByRole('button', { name: 'Swap Ken Sim back in' }),
+  ).toBeVisible()
+})
+
 test('the referendum ballot marks questions into the hash', async ({
   page,
 }) => {

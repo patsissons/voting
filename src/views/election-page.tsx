@@ -6,7 +6,7 @@ import { Shell } from '@/components/shell'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { partyCss } from '@/lib/party'
-import { keys, readJson } from '@/lib/storage'
+import { consumeImport, keys, readJson } from '@/lib/storage'
 import { useElection } from '@/lib/use-election'
 import { useHash } from '@/lib/use-hash'
 import { useResults } from '@/lib/use-results'
@@ -85,6 +85,9 @@ function initialMatch(election: Election): string | null {
 }
 
 function ElectionView({ id, election }: { id: string; election: Election }) {
+  // First, before anything reads the hash or storage: an import link from
+  // cubby.fyi stores its state and becomes the plain permalink.
+  useState(() => consumeImport(election))
   const hash = useHash()
   const results = useResults(id)
   const referendum = election.ballot === 'referendum'
@@ -107,6 +110,16 @@ function ElectionView({ id, election }: { id: string; election: Election }) {
   useEffect(() => {
     document.title = `${election.title} · Voting`
   }, [election.title])
+
+  // An import link pasted into an open page: every card read its storage on
+  // mount, so reload to let them read the imported state.
+  useEffect(() => {
+    const onHash = () => {
+      if (consumeImport(election)) window.location.reload()
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [election])
 
   const onCompassChange = useCallback(
     (state: CompassState, next: string) => {

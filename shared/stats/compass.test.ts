@@ -5,6 +5,7 @@ import {
   encodeCompass,
   parseBallot,
   parseCompass,
+  parseImport,
   tabOf,
 } from '../permalink.ts'
 import { ballotCard, position, ridingCard, score } from './compass.ts'
@@ -309,5 +310,51 @@ describe('riding card', () => {
     expect(card.picks[0].inc).toBe(true)
     expect(ridingCard(bcDoc, rows, 'nope')).toBeNull()
     expect(ridingCard(bcDoc, rows, '')!.district).toBeNull()
+  })
+})
+
+describe('import links from cubby.fyi', () => {
+  it('ignores every other hash', () => {
+    expect(parseImport(bcDoc, '#/compass/410310311141132')).toBeNull()
+    expect(parseImport(bcDoc, '#/results')).toBeNull()
+    expect(parseImport(bcDoc, '')).toBeNull()
+  })
+
+  it('lands on the permalink with the riding it carries', () => {
+    expect(
+      parseImport(bcDoc, '#/compass/import/410310311141132?d=SUS'),
+    ).toEqual({ hash: '#/compass/410310311141132', district: 'SUS' })
+    expect(parseImport(bcDoc, '#/compass/import/4103/q3?d=nope')).toEqual({
+      hash: '#/compass/4103/q3',
+    })
+    expect(parseImport(bcDoc, '#/compass/import/-?d=SUS')).toEqual({
+      hash: '#/compass',
+      district: 'SUS',
+    })
+    expect(parseImport(bcDoc, '#/compass/import/<script>')).toEqual({
+      hash: '#/compass',
+    })
+  })
+
+  it('keeps only swaps the at-large slates have', () => {
+    expect(
+      parseImport(election, '#/compass/import/2--A?o=54,103,9999,54,x'),
+    ).toEqual({ hash: '#/compass/2--A', omit: [54, 103] })
+    expect(parseImport(election, '#/compass/import/2--A?d=SUS&e=10')).toEqual({
+      hash: '#/compass/2--A',
+    })
+  })
+
+  it('carries a referendum ballot and a known division', () => {
+    expect(parseImport(ab, '#/compass/import/01-1?e=10')).toEqual({
+      hash: '#/compass/01-1',
+      division: '10',
+    })
+    expect(
+      parseImport(ab, '#/compass/import/01?e=Calgary-Falconridge'),
+    ).toEqual({ hash: '#/compass/01', division: 'Calgary-Falconridge' })
+    expect(parseImport(ab, '#/compass/import/0123?e=nowhere')).toEqual({
+      hash: '#/compass',
+    })
   })
 })
