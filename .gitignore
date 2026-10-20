@@ -26,3 +26,12 @@ test-results/
 
 # phio deploy sync state
 .ftp-deploy-sync-state.json
+
+# local pocketbase binary + data (scripts/pb.ts)
+.pb/
+
+# bundled hooks library (built by scripts/build-hooks.ts)
+pb_hooks/lib/
+
+# cubby.fyi exports (scripts/data/export.ts)
+data/export/
