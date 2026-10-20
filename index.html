@@ -2,8 +2,45 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>voting</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <!-- Sets the theme before first paint; kept external so a CSP can stay
+         free of inline scripts. -->
+    <script src="/theme-init.js"></script>
+    <title>Voting</title>
+    <meta
+      name="description"
+      content="Vote compasses and live election results for Vancouver, British Columbia and Alberta."
+    />
+    <!-- Link previews need absolute URLs, so these point at the production
+         host. Election pages get these tags rewritten per election by the
+         pages hook. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="voting.lgtm.page" />
+    <meta property="og:title" content="Voting" />
+    <meta
+      property="og:description"
+      content="Vote compasses and live election results for Vancouver, British Columbia and Alberta."
+    />
+    <meta property="og:url" content="https://voting.lgtm.page/" />
+    <meta property="og:image" content="https://voting.lgtm.page/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Voting, with a ballot dropping into a ballot box."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Voting" />
+    <meta
+      name="twitter:description"
+      content="Vote compasses and live election results."
+    />
+    <meta name="twitter:image" content="https://voting.lgtm.page/og.png" />
   </head>
   <body>
     <div id="root"></div>
