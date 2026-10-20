@@ -100,8 +100,10 @@ After making changes from a prompt and BEFORE committing:
   `pnpm build && phio deploy`.
 - **phio never deletes remote files.** Removing a file needs a manual delete
   over SFTP (`ftp.pockethost.io:2222`); verify by content, not status code.
-- **Hook and migration changes need a dashboard power cycle** after the
-  deploy; static `pb_public` changes do not, but the CDN caches them for about
+- **Hook and migration changes need a power cycle** after the deploy. CI does
+  it after every deploy (mothership `PUT /api/instance/{id}`, then a health
+  poll); a manual `phio deploy` needs one from the dashboard. Static
+  `pb_public` changes need none, but the CDN caches them for about
   4 hours (Vite's hashed asset names cover that; `index.html` itself can lag).
 - Secrets (`VOTING_INGEST_TOKEN`) live in the dashboard and reach hooks via
   `$os.getenv`. Never hardcode them.
