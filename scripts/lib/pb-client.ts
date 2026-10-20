@@ -14,6 +14,19 @@ export const LOCAL_INGEST_TOKEN = 'local-ingest-token'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+/** JSON with sorted keys: PocketBase returns json columns with their keys sorted. */
+export function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`
+  if (value && typeof value === 'object') {
+    const o = value as Record<string, unknown>
+    return `{${Object.keys(o)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${stableJson(o[k])}`)
+      .join(',')}}`
+  }
+  return JSON.stringify(value)
+}
+
 export type Credentials = { email: string; password: string }
 
 export class PbClient {
@@ -133,7 +146,7 @@ export class PbClient {
     const existing = found.status === 200 ? found.body.items[0] : undefined
     if (existing) {
       const same = (Object.keys(row) as (keyof typeof row)[]).every(
-        (k) => JSON.stringify(existing[k]) === JSON.stringify(row[k]),
+        (k) => stableJson(existing[k]) === stableJson(row[k]),
       )
       if (same) return { id: existing.id, action: 'unchanged' }
       const { status, body } = await this.request<{
