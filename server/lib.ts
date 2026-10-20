@@ -4,5 +4,7 @@
 // so the require happens inside the handler, and the module is cached until
 // the next restart.
 export { handleFetch, handleIngest, handleSource, cronFetch } from './routes.ts'
+export { handlePage, handleLlms } from './pages.ts'
+export { handleMcp, methodNotAllowed } from './mcp/serve.ts'
 export { storeSnapshot, fetchTick, setSource } from './store.ts'
 export { pocketbaseDb } from './db.ts'
