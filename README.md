@@ -69,8 +69,9 @@ pnpm build
 phio deploy
 ```
 
-Hook and migration changes need a power cycle in the PocketHost dashboard
-afterwards; `AGENTS.md` has the other PocketHost rules. Election documents
+CI power cycles the instance after each deploy so hook and migration changes
+load; after a manual deploy, power cycle it in the PocketHost dashboard.
+`AGENTS.md` has the other PocketHost rules. Election documents
 need no deploy: `pnpm elections:push --url https://voting.pockethost.io`
 with `PB_SUPERUSER_EMAIL` and `PB_SUPERUSER_PASSWORD` set.
 
