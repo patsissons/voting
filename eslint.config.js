@@ -41,7 +41,12 @@ export default tseslint.config(
   {
     // shadcn ui components export variant helpers and lib files export
     // hooks alongside providers — fast-refresh purity doesn't apply there.
-    files: ['src/components/ui/**', 'src/lib/**', 'src/views/**'],
+    files: [
+      'src/components/ui/**',
+      'src/components/charts/**',
+      'src/lib/**',
+      'src/views/**',
+    ],
     rules: {
       'react-refresh/only-export-components': 'off',
     },
