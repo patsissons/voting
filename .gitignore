@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# build output (deployed via phio, never committed)
+pb_public/
+
+# local pocketbase data
+pb_data/
+
+# environment
+.env
+.env.*
+!.env.example
+
+# test artifacts
+coverage/
+playwright-report/
+test-results/
+
+# misc
+*.log
+.DS_Store
+
+# typescript incremental build info
+*.tsbuildinfo
+
+# phio deploy sync state
+.ftp-deploy-sync-state.json
