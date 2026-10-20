@@ -1,0 +1,2579 @@
+{
+	"statistics": {
+		"projectName": "City of Vancouver 2022",
+		"official": "22",
+		"timeStamp": "2022-10-16 00:40:57",
+		"eligibleVoters": 0,
+		"globTurnout": "0%",
+		"globBallotCast": 171494,
+		"globTabulators": 205,
+		"globClosedTabulators": 205,
+		"globStartedPolls": 0,
+		"globPolls": 106,
+		"globClosedPolls": 106,
+		"countinggroups": [
+				{
+					"countingGroupId": "1",
+					"countingGroupName": "General",
+					"tabulators": 168,
+					"closedTabulators": 168
+				},
+				{
+					"countingGroupId": "2",
+					"countingGroupName": "Advance",
+					"tabulators": 27,
+					"closedTabulators": 27
+				},
+				{
+					"countingGroupId": "3",
+					"countingGroupName": "Special",
+					"tabulators": 10,
+					"closedTabulators": 10
+				}
+			]
+,
+		"partyStats": [
+				{
+					"id": "1",
+					"party": "NPA",
+					"abr": "NPA",
+					"candidates": 16,
+					"elected": 0,
+					"sort": 1
+				},
+				{
+					"id": "2",
+					"party": "TEAM",
+					"abr": "TEAM",
+					"candidates": 14,
+					"elected": 0,
+					"sort": 2
+				},
+				{
+					"id": "3",
+					"party": "Progress Vancouver",
+					"abr": "Progress Vancouver",
+					"candidates": 7,
+					"elected": 0,
+					"sort": 3
+				},
+				{
+					"id": "4",
+					"party": "ABC Vancouver",
+					"abr": "ABC Vancouver",
+					"candidates": 19,
+					"elected": 19,
+					"sort": 4
+				},
+				{
+					"id": "5",
+					"party": "Forward with Kennedy Stewart",
+					"abr": "Forward with Kennedy Stewart",
+					"candidates": 7,
+					"elected": 0,
+					"sort": 5
+				},
+				{
+					"id": "6",
+					"party": "Vision Vancouver",
+					"abr": "Vision Vancouver",
+					"candidates": 10,
+					"elected": 0,
+					"sort": 6
+				},
+				{
+					"id": "7",
+					"party": "OneCity",
+					"abr": "OneCity",
+					"candidates": 12,
+					"elected": 2,
+					"sort": 7
+				},
+				{
+					"id": "8",
+					"party": "GREEN",
+					"abr": "GREEN",
+					"candidates": 10,
+					"elected": 5,
+					"sort": 8
+				},
+				{
+					"id": "9",
+					"party": "VOTE Socialist",
+					"abr": "VOTE Socialist",
+					"candidates": 3,
+					"elected": 0,
+					"sort": 9
+				},
+				{
+					"id": "10",
+					"party": "COPE",
+					"abr": "COPE",
+					"candidates": 9,
+					"elected": 1,
+					"sort": 10
+				},
+				{
+					"id": "11",
+					"party": "Affordable Housing Coalition ",
+					"abr": "Affordable Housing Coalition ",
+					"candidates": 1,
+					"elected": 0,
+					"sort": 11
+				}
+			]
+	},
+	"areaResults": [
+		{
+			"1": {
+				"statistics": {
+					"eligibleVoters": 0,
+					"turnout": "0%",
+					"turnout2": "0%",
+					"ballotCast": 171494,
+					"ballotCast2": 171494,
+					"tabulators": 205,
+					"closedTabulators": 205,
+					"startedPolls": 0,
+					"polls": 106,
+					"closedPolls": 106,
+					"countinggroups": [
+							{
+								"countingGroupId": "1",
+								"countingGroupName": "General",
+								"tabulators": 168,
+								"closedTabulators": 168
+							},
+							{
+								"countingGroupId": "2",
+								"countingGroupName": "Advance",
+								"tabulators": 27,
+								"closedTabulators": 27
+							},
+							{
+								"countingGroupId": "3",
+								"countingGroupName": "Special",
+								"tabulators": 10,
+								"closedTabulators": 10
+							}
+						]
+				},
+				"contestResults": [
+					{
+						"id": "1",
+						"contestName": "MAYOR",
+						"voteFor": 1,
+						"isAcclaimed": false,
+						"eligibleVoters": 0,
+						"turnout": "0%",
+						"ballotCast": 170274,
+						"sort": 1,
+						"choiceResults": [
+							{
+								"id": "3",
+								"choiceName": "52 POPAT, Imtiaz",
+								"votes": 411,
+								"percentage": "0.24%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "15",
+								"choiceName": "64 MARISSEN, Mark",
+								"votes": 5830,
+								"percentage": "3.47%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "3",
+										"partyName": "Progress Vancouver",
+										"votes": 5830,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "5",
+								"choiceName": "54 BROWN, Leona",
+								"votes": 1519,
+								"percentage": "0.90%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "10",
+								"choiceName": "59 HANSEN, Mike",
+								"votes": 314,
+								"percentage": "0.19%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "12",
+								"choiceName": "61 BUDAY, Gölök Z",
+								"votes": 195,
+								"percentage": "0.12%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "14",
+								"choiceName": "63 SIM, Ken",
+								"votes": 85732,
+								"percentage": "50.96%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 85732,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "7",
+								"choiceName": "56 VILLEGAS, Lewis",
+								"votes": 363,
+								"percentage": "0.22%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "2",
+								"choiceName": "51 STEWART, Kennedy",
+								"votes": 49593,
+								"percentage": "29.48%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "5",
+										"partyName": "Forward with Kennedy Stewart",
+										"votes": 49593,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "9",
+								"choiceName": "58 HARDING, Fred",
+								"votes": 3905,
+								"percentage": "2.32%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 3905,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "11",
+								"choiceName": "60 CHARMLEY, Ryan",
+								"votes": 183,
+								"percentage": "0.11%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "4",
+								"choiceName": "53 HARDWICK, Colleen",
+								"votes": 16769,
+								"percentage": "9.97%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 16769,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "13",
+								"choiceName": "62 TETI, Dante",
+								"votes": 142,
+								"percentage": "0.08%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "6",
+								"choiceName": "55 RAUNET, Françoise",
+								"votes": 1116,
+								"percentage": "0.66%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "8",
+								"choiceName": "57 CHAN, Ping",
+								"votes": 1154,
+								"percentage": "0.69%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "1",
+								"choiceName": "50 SHOTTHA, Satwant",
+								"votes": 994,
+								"percentage": "0.59%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							}
+						]
+					},
+					{
+						"id": "3",
+						"contestName": "PARK COMMISSIONER",
+						"voteFor": 7,
+						"isAcclaimed": false,
+						"eligibleVoters": 0,
+						"turnout": "0%",
+						"ballotCast": 170274,
+						"sort": 2,
+						"choiceResults": [
+							{
+								"id": "19",
+								"choiceName": "203 DIGBY, Tom",
+								"votes": 39243,
+								"percentage": "4.32%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "8",
+										"partyName": "GREEN",
+										"votes": 39243,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "45",
+								"choiceName": "229 HAER, Angela Kate",
+								"votes": 63635,
+								"percentage": "7.00%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 63635,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "26",
+								"choiceName": "210 HOWARD, Marie-Claire",
+								"votes": 63407,
+								"percentage": "6.98%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 63407,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "38",
+								"choiceName": "222 LARSEN, Kathleen",
+								"votes": 21418,
+								"percentage": "2.36%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 21418,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "33",
+								"choiceName": "217 HASSAN, Maira",
+								"votes": 27708,
+								"percentage": "3.05%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "10",
+										"partyName": "COPE",
+										"votes": 27708,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "40",
+								"choiceName": "224 PASIN, Dave",
+								"votes": 12006,
+								"percentage": "1.32%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 12006,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "21",
+								"choiceName": "205 UPTON, Jason",
+								"votes": 13921,
+								"percentage": "1.53%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 13921,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "16",
+								"choiceName": "200 JENSEN, Scott",
+								"votes": 71174,
+								"percentage": "7.83%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 71174,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "42",
+								"choiceName": "226 RIVERS, Tiyaltelut Kristen",
+								"votes": 33713,
+								"percentage": "3.71%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "7",
+										"partyName": "OneCity",
+										"votes": 33713,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "28",
+								"choiceName": "212 IRWIN, John",
+								"votes": 27186,
+								"percentage": "2.99%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "6",
+										"partyName": "Vision Vancouver",
+										"votes": 27186,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "23",
+								"choiceName": "207 LIVINGSTONE, Chris",
+								"votes": 30539,
+								"percentage": "3.36%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "10",
+										"partyName": "COPE",
+										"votes": 30539,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "35",
+								"choiceName": "219 SEPTEMBER, Dehara",
+								"votes": 9669,
+								"percentage": "1.06%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 9669,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "47",
+								"choiceName": "231 CRAIG, Steven",
+								"votes": 7907,
+								"percentage": "0.87%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "37",
+								"choiceName": "221 KIMURA, Kumi",
+								"votes": 19394,
+								"percentage": "2.13%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 19394,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "18",
+								"choiceName": "202 CHARRETTE, Nick",
+								"votes": 5526,
+								"percentage": "0.61%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "30",
+								"choiceName": "214 CHRISTENSEN, Laura",
+								"votes": 63618,
+								"percentage": "7.00%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 63618,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "39",
+								"choiceName": "223 MOLLINEAUX, Michelle",
+								"votes": 15943,
+								"percentage": "1.75%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 15943,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "25",
+								"choiceName": "209 STOCKWELL, Caitlin",
+								"votes": 36856,
+								"percentage": "4.06%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "7",
+										"partyName": "OneCity",
+										"votes": 36856,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "20",
+								"choiceName": "204 FRENKEL, Carla",
+								"votes": 25415,
+								"percentage": "2.80%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "6",
+										"partyName": "Vision Vancouver",
+										"votes": 25415,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "32",
+								"choiceName": "216 VIRDI, Jas",
+								"votes": 58709,
+								"percentage": "6.46%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 58709,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "44",
+								"choiceName": "228 BASTYOVANSZKY, Brennan",
+								"votes": 58247,
+								"percentage": "6.41%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 58247,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "34",
+								"choiceName": "218 MENARD, Liam Murphy",
+								"votes": 8014,
+								"percentage": "0.88%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "46",
+								"choiceName": "230 SMITH, Tracy D",
+								"votes": 8932,
+								"percentage": "0.98%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "27",
+								"choiceName": "211 ROLLERGIRL",
+								"votes": 5453,
+								"percentage": "0.60%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "22",
+								"choiceName": "206 PINOCHET-ESCUDERO, Andrea",
+								"votes": 15526,
+								"percentage": "1.71%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "9",
+										"partyName": "VOTE Socialist",
+										"votes": 15526,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "29",
+								"choiceName": "213 JACKSON, Serena",
+								"votes": 33070,
+								"percentage": "3.64%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "7",
+										"partyName": "OneCity",
+										"votes": 33070,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "41",
+								"choiceName": "225 BUCKSHON, James",
+								"votes": 13222,
+								"percentage": "1.46%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 13222,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "36",
+								"choiceName": "220 ZARUDINA, Olga",
+								"votes": 8712,
+								"percentage": "0.96%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 8712,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "31",
+								"choiceName": "215 RILEY, Tricia",
+								"votes": 37733,
+								"percentage": "4.15%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "8",
+										"partyName": "GREEN",
+										"votes": 37733,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "17",
+								"choiceName": "201 GIESBRECHT, Gwen",
+								"votes": 32257,
+								"percentage": "3.55%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "10",
+										"partyName": "COPE",
+										"votes": 32257,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "43",
+								"choiceName": "227 AUDLEY, Patrick",
+								"votes": 14681,
+								"percentage": "1.62%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 14681,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "24",
+								"choiceName": "208 BARKER, Tricia",
+								"votes": 25615,
+								"percentage": "2.82%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 25615,
+										"percentage": "100.00%"
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "2",
+						"contestName": "COUNCILLOR",
+						"voteFor": 10,
+						"isAcclaimed": false,
+						"eligibleVoters": 0,
+						"turnout": "0%",
+						"ballotCast": 170274,
+						"sort": 3,
+						"choiceResults": [
+							{
+								"id": "80",
+								"choiceName": "132 KLASSEN, Mike",
+								"votes": 65586,
+								"percentage": "4.87%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 65586,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "106",
+								"choiceName": "158 LEE, Morning",
+								"votes": 14083,
+								"percentage": "1.05%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 14083,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "49",
+								"choiceName": "101 OUELLETTE, Breen",
+								"votes": 24881,
+								"percentage": "1.85%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "10",
+										"partyName": "COPE",
+										"votes": 24881,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "75",
+								"choiceName": "127 BROWN, Cleta",
+								"votes": 20854,
+								"percentage": "1.55%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 20854,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "61",
+								"choiceName": "113 KIRBY-YUNG, Sarah",
+								"votes": 72545,
+								"percentage": "5.39%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 72545,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "87",
+								"choiceName": "139 BOYLE, Christine",
+								"votes": 38465,
+								"percentage": "2.86%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "7",
+										"partyName": "OneCity",
+										"votes": 38465,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "56",
+								"choiceName": "108 ORR, Sean",
+								"votes": 13744,
+								"percentage": "1.02%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "9",
+										"partyName": "VOTE Socialist",
+										"votes": 13744,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "99",
+								"choiceName": "151 FRY, Pete",
+								"votes": 37270,
+								"percentage": "2.77%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "8",
+										"partyName": "GREEN",
+										"votes": 37270,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "68",
+								"choiceName": "120 PEACOCK, Amie",
+								"votes": 2745,
+								"percentage": "0.20%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "94",
+								"choiceName": "146 ASHE, Jeanette",
+								"votes": 22432,
+								"percentage": "1.67%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "5",
+										"partyName": "Forward with Kennedy Stewart",
+										"votes": 22432,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "63",
+								"choiceName": "115 FOX, Amy ''Evil Genius''",
+								"votes": 3711,
+								"percentage": "0.28%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "89",
+								"choiceName": "141 SMITH, Stephanie",
+								"votes": 20408,
+								"percentage": "1.52%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "8",
+										"partyName": "GREEN",
+										"votes": 20408,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "101",
+								"choiceName": "153 MACKENZIE, Jeremy",
+								"votes": 3446,
+								"percentage": "0.26%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "70",
+								"choiceName": "122 CARR, Adriane",
+								"votes": 41831,
+								"percentage": "3.11%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "8",
+										"partyName": "GREEN",
+										"votes": 41831,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "82",
+								"choiceName": "134 BHAYANI, Cinnamon",
+								"votes": 8586,
+								"percentage": "0.64%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 8586,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "51",
+								"choiceName": "103 MONTAGUE, Brian",
+								"votes": 68618,
+								"percentage": "5.10%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 68618,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "103",
+								"choiceName": "155 WVONG, Russil",
+								"votes": 22107,
+								"percentage": "1.64%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "5",
+										"partyName": "Forward with Kennedy Stewart",
+										"votes": 22107,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "72",
+								"choiceName": "124 ALM, K R",
+								"votes": 2301,
+								"percentage": "0.17%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "58",
+								"choiceName": "110 VARGAS, Lina",
+								"votes": 7714,
+								"percentage": "0.57%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "84",
+								"choiceName": "136 SWANSON, Jean",
+								"votes": 32833,
+								"percentage": "2.44%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "10",
+										"partyName": "COPE",
+										"votes": 32833,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "96",
+								"choiceName": "148 BLIGH, Rebecca",
+								"votes": 62765,
+								"percentage": "4.66%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 62765,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "65",
+								"choiceName": "117 HE, May",
+								"votes": 8593,
+								"percentage": "0.64%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "3",
+										"partyName": "Progress Vancouver",
+										"votes": 8593,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "91",
+								"choiceName": "143 QUAN, Grace",
+								"votes": 17955,
+								"percentage": "1.33%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 17955,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "77",
+								"choiceName": "129 BOLDT, Lesli",
+								"votes": 11070,
+								"percentage": "0.82%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "6",
+										"partyName": "Vision Vancouver",
+										"votes": 11070,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "60",
+								"choiceName": "112 BONAMIS, Iona",
+								"votes": 33745,
+								"percentage": "2.51%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "7",
+										"partyName": "OneCity",
+										"votes": 33745,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "86",
+								"choiceName": "138 CHARKO, Ken",
+								"votes": 12083,
+								"percentage": "0.90%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 12083,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "98",
+								"choiceName": "150 ZARRABIAN, Arezo",
+								"votes": 10361,
+								"percentage": "0.77%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 10361,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "67",
+								"choiceName": "119 ZHOU, Lenny",
+								"votes": 62393,
+								"percentage": "4.63%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 62393,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "53",
+								"choiceName": "105 TRUONG, Tesicca",
+								"votes": 32900,
+								"percentage": "2.44%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "5",
+										"partyName": "Forward with Kennedy Stewart",
+										"votes": 32900,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "79",
+								"choiceName": "131 DOMINATO, Lisa",
+								"votes": 70415,
+								"percentage": "5.23%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 70415,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "105",
+								"choiceName": "157 ROSA, Marie Noelle",
+								"votes": 10111,
+								"percentage": "0.75%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "3",
+										"partyName": "Progress Vancouver",
+										"votes": 10111,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "48",
+								"choiceName": "100 NARDI, Sean",
+								"votes": 18353,
+								"percentage": "1.36%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 18353,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "100",
+								"choiceName": "152 LÝ, Tim",
+								"votes": 3339,
+								"percentage": "0.25%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "55",
+								"choiceName": "107 TRIGUEROS, Nancy",
+								"votes": 19152,
+								"percentage": "1.42%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "10",
+										"partyName": "COPE",
+										"votes": 19152,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "81",
+								"choiceName": "133 BOWEN, Mark",
+								"votes": 5706,
+								"percentage": "0.42%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "93",
+								"choiceName": "145 ALLAN, Elaine",
+								"votes": 10917,
+								"percentage": "0.81%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 10917,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "62",
+								"choiceName": "114 WIEBE, Michael",
+								"votes": 30377,
+								"percentage": "2.26%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "8",
+										"partyName": "GREEN",
+										"votes": 30377,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "74",
+								"choiceName": "126 MEISZNER, Peter",
+								"votes": 63275,
+								"percentage": "4.70%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 63275,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "83",
+								"choiceName": "135 ROBERTS, Stephen P",
+								"votes": 16261,
+								"percentage": "1.21%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 16261,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "69",
+								"choiceName": "121 OGER, Morgane",
+								"votes": 10015,
+								"percentage": "0.74%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "3",
+										"partyName": "Progress Vancouver",
+										"votes": 10015,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "95",
+								"choiceName": "147 TIELEMAN, Bill",
+								"votes": 17240,
+								"percentage": "1.28%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 17240,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "64",
+								"choiceName": "116 DE GENOVA, Melissa",
+								"votes": 26578,
+								"percentage": "1.97%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 26578,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "50",
+								"choiceName": "102 HAYER, Asha",
+								"votes": 13107,
+								"percentage": "0.97%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "3",
+										"partyName": "Progress Vancouver",
+										"votes": 13107,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "76",
+								"choiceName": "128 SINGH, Devyani",
+								"votes": 21255,
+								"percentage": "1.58%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "8",
+										"partyName": "GREEN",
+										"votes": 21255,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "102",
+								"choiceName": "154 BARZEGARI, Honieh",
+								"votes": 6831,
+								"percentage": "0.51%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "6",
+										"partyName": "Vision Vancouver",
+										"votes": 6831,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "88",
+								"choiceName": "140 PHILBERT, Kyra",
+								"votes": 3382,
+								"percentage": "0.25%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "57",
+								"choiceName": "109 MACKINNON, Stuart",
+								"votes": 15865,
+								"percentage": "1.18%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "6",
+										"partyName": "Vision Vancouver",
+										"votes": 15865,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "52",
+								"choiceName": "104 ANDERSON, Dulcy",
+								"votes": 33985,
+								"percentage": "2.52%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "5",
+										"partyName": "Forward with Kennedy Stewart",
+										"votes": 33985,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "78",
+								"choiceName": "130 REDMOND, Eric",
+								"votes": 10617,
+								"percentage": "0.79%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "11",
+										"partyName": "Affordable Housing Coalition ",
+										"votes": 10617,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "90",
+								"choiceName": "142 FRANCIS, Mauro",
+								"votes": 6556,
+								"percentage": "0.49%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "3",
+										"partyName": "Progress Vancouver",
+										"votes": 6556,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "59",
+								"choiceName": "111 SINGH, Alvin",
+								"votes": 29049,
+								"percentage": "2.16%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "5",
+										"partyName": "Forward with Kennedy Stewart",
+										"votes": 29049,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "71",
+								"choiceName": "123 FRANSON, Marlo",
+								"votes": 2866,
+								"percentage": "0.21%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "97",
+								"choiceName": "149 BROWN, Hilary",
+								"votes": 19602,
+								"percentage": "1.46%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "5",
+										"partyName": "Forward with Kennedy Stewart",
+										"votes": 19602,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "66",
+								"choiceName": "118 WEBKING, Tanya",
+								"votes": 17675,
+								"percentage": "1.31%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "10",
+										"partyName": "COPE",
+										"votes": 17675,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "92",
+								"choiceName": "144 NIJJAR, Param",
+								"votes": 13950,
+								"percentage": "1.04%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 13950,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "104",
+								"choiceName": "156 CHIN, David",
+								"votes": 9354,
+								"percentage": "0.69%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "3",
+										"partyName": "Progress Vancouver",
+										"votes": 9354,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "73",
+								"choiceName": "125 NORRIS, Matthew",
+								"votes": 29663,
+								"percentage": "2.20%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "7",
+										"partyName": "OneCity",
+										"votes": 29663,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "85",
+								"choiceName": "137 CROMWELL, Ian",
+								"votes": 29835,
+								"percentage": "2.22%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "7",
+										"partyName": "OneCity",
+										"votes": 29835,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "54",
+								"choiceName": "106 DENOFRIO, Dominic",
+								"votes": 4927,
+								"percentage": "0.37%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							}
+						]
+					},
+					{
+						"id": "4",
+						"contestName": "SCHOOL TRUSTEE",
+						"voteFor": 9,
+						"isAcclaimed": false,
+						"eligibleVoters": 0,
+						"turnout": "0%",
+						"ballotCast": 171494,
+						"sort": 4,
+						"choiceResults": [
+							{
+								"id": "129",
+								"choiceName": "322 SOMERS, Gavin",
+								"votes": 33933,
+								"percentage": "3.36%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "7",
+										"partyName": "OneCity",
+										"votes": 33933,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "110",
+								"choiceName": "303 THOMSON, Hilary",
+								"votes": 28324,
+								"percentage": "2.80%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "6",
+										"partyName": "Vision Vancouver",
+										"votes": 28324,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "136",
+								"choiceName": "329 WONG, Allan",
+								"votes": 35761,
+								"percentage": "3.54%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "6",
+										"partyName": "Vision Vancouver",
+										"votes": 35761,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "122",
+								"choiceName": "315 FRASER, Janet",
+								"votes": 41179,
+								"percentage": "4.07%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "8",
+										"partyName": "GREEN",
+										"votes": 41179,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "117",
+								"choiceName": "310 TRIGUEROS, Rocco",
+								"votes": 29167,
+								"percentage": "2.89%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "10",
+										"partyName": "COPE",
+										"votes": 29167,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "112",
+								"choiceName": "305 TENGCO, Amanda",
+								"votes": 9668,
+								"percentage": "0.96%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "124",
+								"choiceName": "317 SIGURDSON, Krista",
+								"votes": 40792,
+								"percentage": "4.04%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "7",
+										"partyName": "OneCity",
+										"votes": 40792,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "131",
+								"choiceName": "324 LEVINE, Zelda",
+								"votes": 8875,
+								"percentage": "0.88%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "126",
+								"choiceName": "319 VAUGHAN, Ashley",
+								"votes": 17206,
+								"percentage": "1.70%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 17206,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "107",
+								"choiceName": "300 RICHARDSON, Christopher JK",
+								"votes": 64048,
+								"percentage": "6.34%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 64048,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "119",
+								"choiceName": "312 MCARTHUR, Kera",
+								"votes": 23902,
+								"percentage": "2.36%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "6",
+										"partyName": "Vision Vancouver",
+										"votes": 23902,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "109",
+								"choiceName": "302 CHAN-PEDLEY, Lois",
+								"votes": 41356,
+								"percentage": "4.09%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "8",
+										"partyName": "GREEN",
+										"votes": 41356,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "121",
+								"choiceName": "314 FARIDKOT, Preeti",
+								"votes": 63807,
+								"percentage": "6.31%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 63807,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "133",
+								"choiceName": "326 CARDWELL, Steve",
+								"votes": 31045,
+								"percentage": "3.07%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "6",
+										"partyName": "Vision Vancouver",
+										"votes": 31045,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "128",
+								"choiceName": "321 GOODINE, Nadine C",
+								"votes": 15051,
+								"percentage": "1.49%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 15051,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "114",
+								"choiceName": "307 ZEIDLER, Karina",
+								"votes": 17710,
+								"percentage": "1.75%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "9",
+										"partyName": "VOTE Socialist",
+										"votes": 17710,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "123",
+								"choiceName": "316 JUNG, Victoria",
+								"votes": 69027,
+								"percentage": "6.83%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 69027,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "135",
+								"choiceName": "328 ZHANG, Josh",
+								"votes": 64370,
+								"percentage": "6.37%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 64370,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "116",
+								"choiceName": "309 LITZCKE, Karin",
+								"votes": 8570,
+								"percentage": "0.85%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "118",
+								"choiceName": "311 AGGARWAL, Rahul",
+								"votes": 18448,
+								"percentage": "1.82%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 18448,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "130",
+								"choiceName": "323 BROWN, Rory",
+								"votes": 38381,
+								"percentage": "3.80%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "7",
+										"partyName": "OneCity",
+										"votes": 38381,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "125",
+								"choiceName": "318 EPSTEIN, Kyla",
+								"votes": 38890,
+								"percentage": "3.85%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "7",
+										"partyName": "OneCity",
+										"votes": 38890,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "111",
+								"choiceName": "304 MAH, Suzie",
+								"votes": 42379,
+								"percentage": "4.19%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "10",
+										"partyName": "COPE",
+										"votes": 42379,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "137",
+								"choiceName": "330 ALAM, Matiul",
+								"votes": 20772,
+								"percentage": "2.05%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 20772,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "120",
+								"choiceName": "313 CHIEN, Alfred",
+								"votes": 67326,
+								"percentage": "6.66%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 67326,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "132",
+								"choiceName": "325 KLJAJIC, Milan",
+								"votes": 13522,
+								"percentage": "1.34%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 13522,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "113",
+								"choiceName": "306 LEUNG, Aaron",
+								"votes": 30007,
+								"percentage": "2.97%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "6",
+										"partyName": "Vision Vancouver",
+										"votes": 30007,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "115",
+								"choiceName": "308 HOPKINS, Heming",
+								"votes": 7416,
+								"percentage": "0.73%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "127",
+								"choiceName": "320 REDDY, Jennifer",
+								"votes": 44534,
+								"percentage": "4.41%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "7",
+										"partyName": "OneCity",
+										"votes": 44534,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "108",
+								"choiceName": "301 FEDORA, Aaron",
+								"votes": 15733,
+								"percentage": "1.56%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "1",
+										"partyName": "NPA",
+										"votes": 15733,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "134",
+								"choiceName": "327 POPPELL, Nick",
+								"votes": 29729,
+								"percentage": "2.94%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "8",
+										"partyName": "GREEN",
+										"votes": 29729,
+										"percentage": "100.00%"
+									}
+								]
+							}
+						]
+					},
+					{
+						"id": "5",
+						"contestName": "1. CAPITAL BORROWING: TRANSPORTATION AND CORE OPERATING TECHNOLOGY",
+						"voteFor": 1,
+						"isAcclaimed": false,
+						"eligibleVoters": 0,
+						"turnout": "0%",
+						"ballotCast": 170274,
+						"sort": 6,
+						"choiceResults": [
+							{
+								"id": "139",
+								"choiceName": "No",
+								"votes": 32964,
+								"percentage": "22.04%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "138",
+								"choiceName": "Yes",
+								"votes": 116591,
+								"percentage": "77.96%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": []
+							}
+						]
+					},
+					{
+						"id": "6",
+						"contestName": "2. CAPITAL BORROWING: COMMUNITY FACILITIES",
+						"voteFor": 1,
+						"isAcclaimed": false,
+						"eligibleVoters": 0,
+						"turnout": "0%",
+						"ballotCast": 170274,
+						"sort": 7,
+						"choiceResults": [
+							{
+								"id": "140",
+								"choiceName": "Yes",
+								"votes": 101715,
+								"percentage": "68.32%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": []
+							},
+							{
+								"id": "141",
+								"choiceName": "No",
+								"votes": 47163,
+								"percentage": "31.68%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							}
+						]
+					},
+					{
+						"id": "7",
+						"contestName": "3. CAPITAL BORROWING: PARKS, PUBLIC SAFETY AND OTHER CIVIC FACILITIES, CLIMATE ADAPTATION, AND OTHER EMERGING PRIORITIES ",
+						"voteFor": 1,
+						"isAcclaimed": false,
+						"eligibleVoters": 0,
+						"turnout": "0%",
+						"ballotCast": 170274,
+						"sort": 8,
+						"choiceResults": [
+							{
+								"id": "143",
+								"choiceName": "No",
+								"votes": 35582,
+								"percentage": "23.75%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "142",
+								"choiceName": "Yes",
+								"votes": 114254,
+								"percentage": "76.25%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": []
+							}
+						]
+					}
+				]
+			}
+		}
+	]
+}

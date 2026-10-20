@@ -65,3 +65,24 @@ if (typeof ResizeObserver === 'undefined') {
     value: ResizeObserverStub,
   })
 }
+
+// jsdom scrolls nothing and watches nothing; the views call both.
+if (typeof window !== 'undefined') {
+  if (!Element.prototype.scrollIntoView)
+    Element.prototype.scrollIntoView = () => {}
+  if (typeof IntersectionObserver === 'undefined') {
+    class IntersectionObserverStub {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return []
+      }
+    }
+    Object.defineProperty(globalThis, 'IntersectionObserver', {
+      configurable: true,
+      writable: true,
+      value: IntersectionObserverStub,
+    })
+  }
+}

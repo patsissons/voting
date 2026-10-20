@@ -1,0 +1,382 @@
+{
+	"statistics": {
+		"projectName": "City of Vancouver 2025 ByElection",
+		"official": "25",
+		"timeStamp": "2025-04-06 01:02:39",
+		"eligibleVoters": 450503,
+		"globTurnout": "15.09%",
+		"globBallotCast": 67962,
+		"globTabulators": 57,
+		"globClosedTabulators": 57,
+		"globStartedPolls": 0,
+		"globPolls": 27,
+		"globClosedPolls": 27,
+		"countinggroups": [
+				{
+					"countingGroupId": "1",
+					"countingGroupName": "General",
+					"tabulators": 50,
+					"closedTabulators": 50
+				},
+				{
+					"countingGroupId": "2",
+					"countingGroupName": "Advance",
+					"tabulators": 2,
+					"closedTabulators": 2
+				},
+				{
+					"countingGroupId": "3",
+					"countingGroupName": "Mail",
+					"tabulators": 2,
+					"closedTabulators": 2
+				},
+				{
+					"countingGroupId": "4",
+					"countingGroupName": "Overflow",
+					"tabulators": 3,
+					"closedTabulators": 3
+				}
+			]
+,
+		"partyStats": [
+				{
+					"id": "1",
+					"party": "Party 1",
+					"abr": "Party 1",
+					"candidates": 0,
+					"elected": 0,
+					"sort": 1
+				},
+				{
+					"id": "2",
+					"party": "TEAM",
+					"abr": "TEAM",
+					"candidates": 2,
+					"elected": 0,
+					"sort": 2
+				},
+				{
+					"id": "3",
+					"party": "Party 3",
+					"abr": "Party 3",
+					"candidates": 0,
+					"elected": 0,
+					"sort": 3
+				},
+				{
+					"id": "4",
+					"party": "ABC Vancouver",
+					"abr": "ABC Vancouver",
+					"candidates": 2,
+					"elected": 0,
+					"sort": 4
+				},
+				{
+					"id": "5",
+					"party": "Party 5",
+					"abr": "Party 5",
+					"candidates": 0,
+					"elected": 0,
+					"sort": 5
+				},
+				{
+					"id": "6",
+					"party": "Party 6",
+					"abr": "Party 6",
+					"candidates": 0,
+					"elected": 0,
+					"sort": 6
+				},
+				{
+					"id": "7",
+					"party": "OneCity",
+					"abr": "OneCity",
+					"candidates": 1,
+					"elected": 1,
+					"sort": 7
+				},
+				{
+					"id": "8",
+					"party": "GREEN",
+					"abr": "GREEN",
+					"candidates": 1,
+					"elected": 0,
+					"sort": 8
+				},
+				{
+					"id": "9",
+					"party": "VOTE Socialist",
+					"abr": "VOTE Socialist",
+					"candidates": 0,
+					"elected": 0,
+					"sort": 9
+				},
+				{
+					"id": "10",
+					"party": "COPE",
+					"abr": "COPE",
+					"candidates": 1,
+					"elected": 1,
+					"sort": 10
+				},
+				{
+					"id": "11",
+					"party": "Party 11",
+					"abr": "Party 11",
+					"candidates": 0,
+					"elected": 0,
+					"sort": 11
+				}
+			]
+	},
+	"areaResults": [
+		{
+			"1": {
+				"statistics": {
+					"eligibleVoters": 450503,
+					"turnout": "15.09%",
+					"turnout2": "15.09%",
+					"ballotCast": 67962,
+					"ballotCast2": 67962,
+					"tabulators": 57,
+					"closedTabulators": 57,
+					"startedPolls": 0,
+					"polls": 27,
+					"closedPolls": 27,
+					"countinggroups": [
+							{
+								"countingGroupId": "1",
+								"countingGroupName": "General",
+								"tabulators": 50,
+								"closedTabulators": 50
+							},
+							{
+								"countingGroupId": "2",
+								"countingGroupName": "Advance",
+								"tabulators": 2,
+								"closedTabulators": 2
+							},
+							{
+								"countingGroupId": "3",
+								"countingGroupName": "Mail",
+								"tabulators": 2,
+								"closedTabulators": 2
+							},
+							{
+								"countingGroupId": "4",
+								"countingGroupName": "Overflow",
+								"tabulators": 3,
+								"closedTabulators": 3
+							}
+						]
+				},
+				"contestResults": [
+					{
+						"id": "1",
+						"contestName": "COUNCILLOR",
+						"voteFor": 2,
+						"isAcclaimed": false,
+						"eligibleVoters": 450503,
+						"turnout": "15.09%",
+						"ballotCast": 67962,
+						"sort": 1,
+						"choiceResults": [
+							{
+								"id": "1",
+								"choiceName": "100 DUBÉ, Guy",
+								"votes": 459,
+								"percentage": "0.35%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "2",
+								"choiceName": "101 LITZCKE, Karin",
+								"votes": 433,
+								"percentage": "0.33%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "3",
+								"choiceName": "102 ROLLERGIRL",
+								"votes": 404,
+								"percentage": "0.30%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "4",
+								"choiceName": "103 LING, Charles",
+								"votes": 352,
+								"percentage": "0.26%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "5",
+								"choiceName": "104 KAISERS, Ralph",
+								"votes": 8915,
+								"percentage": "6.71%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 8915,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "6",
+								"choiceName": "105 MALONEY, Lucy",
+								"votes": 33732,
+								"percentage": "25.38%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "7",
+										"partyName": "OneCity",
+										"votes": 33732,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "7",
+								"choiceName": "106 DECENA, Jeanifer",
+								"votes": 652,
+								"percentage": "0.49%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "8",
+								"choiceName": "107 STEIN, Jaime",
+								"votes": 9267,
+								"percentage": "6.97%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "4",
+										"partyName": "ABC Vancouver",
+										"votes": 9267,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "9",
+								"choiceName": "108 ORR, Sean",
+								"votes": 34448,
+								"percentage": "25.92%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 1,
+								"partyBreakdown": [
+									{
+										"id": "10",
+										"partyName": "COPE",
+										"votes": 34448,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "10",
+								"choiceName": "109 HARDWICK, Colleen",
+								"votes": 17352,
+								"percentage": "13.05%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 17352,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "11",
+								"choiceName": "110 ABBOTT, Theodore",
+								"votes": 11581,
+								"percentage": "8.71%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "2",
+										"partyName": "TEAM",
+										"votes": 11581,
+										"percentage": "100.00%"
+									}
+								]
+							},
+							{
+								"id": "12",
+								"choiceName": "111 MCGUIRE, Gerry",
+								"votes": 276,
+								"percentage": "0.21%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": []
+							},
+							{
+								"id": "13",
+								"choiceName": "112 REILLY, Annette",
+								"votes": 15045,
+								"percentage": "11.32%",
+								"isIncumbent": 0,
+								"isDisabled": 0,
+								"gender": "Unknown",
+								"isWinner": 0,
+								"partyBreakdown": [
+									{
+										"id": "8",
+										"partyName": "GREEN",
+										"votes": 15045,
+										"percentage": "100.00%"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	]
+}

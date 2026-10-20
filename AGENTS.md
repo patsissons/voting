@@ -10,11 +10,12 @@ https://voting.lgtm.page. The plan of record is in the user's
 After making changes from a prompt and BEFORE committing:
 
 1. Author new tests covering the changes being made.
-2. Update any documentation affected by the changes (README.md, this file).
+2. Update any documentation affected by the changes (README.md, this file,
+   `docs/new-vote.md`).
 3. Run `pnpm format-and-validate` and repair any regressions in-line. This
    includes the Playwright e2e suite — never skip it; web apps regress on e2e
    easily. If a browser is missing, `pnpm exec playwright install chromium webkit`
-   rather than skipping.
+   rather than skipping. The e2e run needs port 8090 free (stop `pnpm dev`).
 
 ## Git conventions
 
@@ -22,46 +23,72 @@ After making changes from a prompt and BEFORE committing:
   `main`, then branch) in the main working tree; no worktrees.
 - Small, modular commits: one logical unit per commit.
 - Never commit `.env`, `pb_data/`, `pb_public/` (Vite output), `pb_hooks/lib/`
-  (bundled hooks), `.pb/` (local PocketBase) or `data/export/`.
+  (bundled hooks), `.pb/` (local PocketBase) or `data/export/`, `data/import/`.
 - Commit messages are sentence-case summaries; conventional prefixes
   (`feat:`, `chore:`, `docs:`, `ci:`) are fine.
 
 ## Stack
 
 - pnpm (version pinned in `packageManager`), TypeScript, React 19, Vite,
-  Tailwind v4, shadcn/ui (add components with `pnpm dlx shadcn@latest add`),
-  Geist via `@fontsource-variable/geist`, lucide icons.
+  Tailwind v4, shadcn/ui (add components with `pnpm dlx shadcn@latest add`,
+  then point their `cn` import at `@/lib/utils`), Geist via
+  `@fontsource-variable/geist`, lucide icons, zod (Node and browser only).
+- Node runs the scripts unbundled (type stripping), so relative imports in
+  `shared/`, `server/` and `scripts/` carry `.ts` extensions (lint enforces).
 - Vitest with globals OFF: tests import from `vitest`. `vitest.setup.ts`
-  registers Testing Library `cleanup`, an in-memory `localStorage`, a
-  `matchMedia` stub and a `ResizeObserver` stub; keep them.
+  registers Testing Library `cleanup`, an in-memory `localStorage`, and
+  `matchMedia`, `ResizeObserver`, `IntersectionObserver` and `scrollIntoView`
+  stubs; keep them. Component tests give charts a width by redefining
+  `clientWidth`.
 - Playwright projects `desktop-chrome` and `mobile-safari` (iPhone 14) with
-  reduced motion, against `vite dev` on port 5198.
+  reduced motion, against the built app served by `scripts/pb.ts --e2e`
+  (a throwaway data dir seeded from `elections/*.json` and the fixture nights).
 - Prettier: no semicolons, single quotes. ESLint flat config with
-  `eslint-config-prettier` last.
+  `eslint-config-prettier` last; the React hooks rules forbid setState in
+  effect bodies and ref reads during render (key state by its input instead).
 
 ## Architecture
 
-- **Frontend** (`src/`): a single-page app. The path names the election
-  (`/<slug>`) and the hash names the view (`#/compass`, `#/compass/<code>`,
-  `#/results`); the hash grammar is frozen because shared cubby.fyi links are
-  301-redirected here and browsers carry the fragment. There is no router
-  library: `src/lib/use-hash.ts` plus `location.pathname`.
+- **Election documents** (`elections/<slug>.json`): the source of truth for
+  everything but results. `shared/schema/election.ts` is strict (zod) with
+  cross-checks in `electionProblems`; `pnpm elections:check` validates and
+  `--write` canonicalizes the compact layout (`scripts/lib/json.ts`; the
+  directory is in `.prettierignore`). The row columns (slug, title,
+  description, voting_day, published, ballot) split off in
+  `shared/election-row.ts`; everything else is the `config` column.
+  `pnpm elections:push` upserts by slug. New elections: `docs/new-vote.md`.
+- **Shared code** (`shared/`): parsers (one per feed format, deep-equal to
+  cubby's output: `scripts/fixtures/golden/payloads.json`), stats for the
+  three ballot modes, the compass scoring and ballot/riding cards, the
+  frozen hash grammar (`permalink.ts`), the fetch policy, hand-rolled
+  formatting. No DOM, no Node, no Intl: `tsconfig.server.json` typechecks it
+  without the DOM lib and eslint restricts the globals.
+- **Hooks** (`server/`): one `Db` interface (`db.ts`) with a PocketBase
+  implementation and an in-memory one for tests. `store.ts` is the only
+  writer of `results`. `routes.ts` (ingest, source, fetch), `pages.ts`
+  (`GET /{slug}`, markdown, `llms.txt`), `mcp/` (rpc core, tools, serve).
+  `scripts/build-hooks.ts` bundles `server/lib.ts` into
+  `pb_hooks/lib/voting.js`; the committed `pb_hooks/*.pb.js` are one-line
+  requires. Every public read in a hook filters `published = true` itself.
+- **Frontend** (`src/`): no router. `App.tsx` reads the slug from the path;
+  `src/lib/use-hash.ts` tracks the hash. `views/election-page.tsx` owns the
+  tabs and the compass/ballot state the results view needs; the compass
+  (`views/compass/`), the referendum ballot (`views/ballot/`) and the three
+  results views (`views/results/`) sit on the shared stats. Charts are
+  `components/charts/` (one tooltip context, `useMeasure` for width).
 - **Theme**: `src/lib/theme.ts` + `src/components/theme-toggle.tsx`; the
   visitor's choice is `localStorage` `voting:theme`, otherwise the system
   setting. `public/theme-init.js` applies it before first paint and mirrors the
-  key, media query and `theme-color` values: change both together.
-- **Backend**: PocketBase on PocketHost (instance `voting`, see `.phioconfig`).
-  Schema lives in `pb_migrations/` (schema only, no seed rows). Server logic is
-  TypeScript under `server/` and `shared/`, bundled by esbuild into
-  `pb_hooks/lib/voting.js`; the committed `pb_hooks/*.pb.js` files are thin and
-  `require` that bundle inside each handler. (Arrives in the backend round.)
-- **Election config** is authored as `elections/<slug>.json`, validated by a
-  zod schema in `shared/`, and pushed into the `elections.config` column with a
-  script; the runtime reads the DB only. (Arrives in the shared-core round.)
+  key, media query and `theme-color` values: change both together. Party
+  colours come from each election document (`src/lib/party.ts` emits
+  `--party-<key>` tokens, light and dark, scoped to the page).
+- **localStorage keys** are cubby's and must stay: `voting:<slug>:compass`,
+  `:district`, `:omit`, `:ballot`, `:ed`.
 - **OG tags**: `index.html` carries absolute `og:*` tags for the site;
   `pnpm og` regenerates `public/og.png` and `public/apple-touch-icon.png` from
-  `scripts/og/render.ts` (never edit the PNGs by hand). A hook later rewrites
-  the tags per election on `GET /<slug>`.
+  `scripts/og/render.ts` (never edit the PNGs by hand). `server/pages.ts`
+  rewrites the tags per election on `GET /<slug>`; `server/pages.test.ts`
+  pins the tags the rewrite targets.
 - The PocketBase client singleton is `src/lib/pocketbase.ts`
   (`VITE_POCKETBASE_URL` in dev, the page origin in production).
 
@@ -82,8 +109,20 @@ After making changes from a prompt and BEFORE committing:
   sleeps, so election-night fetching is also driven by a PocketHost webhook on
   `GET /_voting/fetch`, added for the night and deleted afterwards.
 - PocketHost rate-limits `/api`: 50 requests per 10 s per IP and 1,000 per
-  hour. Scripts that write many rows must pace themselves and honor
-  `Retry-After`.
+  hour. Scripts that write many rows pace themselves and honor `Retry-After`
+  (`scripts/lib/pb-client.ts`).
+
+## Election-night runbook
+
+1. Source known: `curl -X POST -H "Authorization: Bearer $VOTING_INGEST_TOKEN"
+"https://voting.lgtm.page/_voting/source/<slug>?url=<page>"` (the document's
+   `sourcePrefix` and `eventMatch` gate it). Vancouver has no server fetch:
+   run `pnpm relay --election vancouver-2026` (drives Chrome) instead.
+2. Add the PocketHost webhook on `GET /_voting/fetch` for the night; delete it
+   after.
+3. `phio logs`: every stored snapshot logs `[voting] <slug> snapshot ...`;
+   `GET /_voting/fetch` answers with per-election outcomes.
+4. Official count: `pnpm relay --election <slug> --source <url> --official --once`.
 
 ## JSVM constraints (hooks)
 
@@ -92,10 +131,14 @@ After making changes from a prompt and BEFORE committing:
   `require` inside the handler).
 - Code under `shared/` and `server/` must stay goja-clean: no `async`/`await`
   or generators, no `Intl`, `toLocaleString`, `URL`, `fetch`, `TextEncoder`,
-  `structuredClone` or `Array.prototype.at`. Target es2020 (optional chaining
-  and `??` are fine). Browser-only formatting belongs in `src/`.
+  `structuredClone`, `Array.prototype.at` or `replaceAll`. Target es2020
+  (optional chaining and `??` are fine). Browser-only formatting belongs in
+  `src/`. The esbuild plugin refuses npm imports in the bundle.
 - Brace one-line `if (...) for (...)` bodies (goja syntax error). PocketBase
   filters have no unary `!`. Never register a route PocketBase already owns
-  (`/api/health`): the instance panics at boot.
+  (`/api/health`): the instance panics at boot. Only `GET /{slug}` is
+  registered for pages, never `GET /` or `GET /{slug}/`.
 - Hooks bypass collection rules: every public read in a hook or MCP tool must
   filter `published = true` itself.
+- JSON columns read back through `getString` + `JSON.parse`, and the API
+  returns them with sorted keys (compare with `stableJson`).

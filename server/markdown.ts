@@ -1,0 +1,457 @@
+// The agent-readable pages: one election as markdown (/<slug>.md, or
+// /<slug> with Accept: text/markdown) and the llms.txt index. Port of
+// cubby.fyi's content.js over the shared stats, so the numbers match the
+// page. Pure: the hooks and the MCP summary tool call these with rows the
+// Db already filtered to published.
+import { fmt, pct1 } from '../shared/format.ts'
+import type { Payload, Snapshot } from '../shared/payload.ts'
+import type {
+  CompassElection,
+  Election,
+  Link,
+  ReferendumElection,
+} from '../shared/schema/election.ts'
+import { changingHands, complete, leaderOf } from '../shared/stats/results.ts'
+import { ballotWide, contestOf } from '../shared/stats/referendum.ts'
+
+export const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/
+
+// The stamps are wall-clock time in the election's zone.
+const ZONES: Record<string, string> = {
+  'America/Vancouver': 'Pacific time',
+  'America/Edmonton': 'Mountain time',
+  'America/Toronto': 'Eastern time',
+}
+const zoneName = (election: Election) =>
+  ZONES[election.timeZone] || election.timeZone || 'local time'
+
+const links = (rows: Link[]) =>
+  rows.map((s) => `- [${s.label}](${s.url})`).join('\n')
+
+export function datesMarkdown(election: Election): string {
+  const d = election.dates
+  const lines = ['## When to vote', '']
+  if (d.advance.length)
+    lines.push(`- Advance voting days: ${d.advance.join(', ')}`)
+  lines.push(
+    `- Final voting day: ${d.final}${d.hours ? ` (voting places open ${d.hours})` : ''}`,
+  )
+  if (d.mailBy) lines.push(`- ${d.mailBy}`)
+  if (d.url) lines.push(`- [Where to vote](${d.url})`)
+  if (election.resources.length)
+    lines.push('', '### Before you vote', '', links(election.resources))
+  return lines.join('\n')
+}
+
+export function compassMarkdown(
+  election: CompassElection,
+  origin: string,
+): string {
+  const parties: Record<string, CompassElection['parties'][number]> = {}
+  for (const p of election.parties) parties[p.key] = p
+  const slate = (rows: (readonly [number, string, ...unknown[]])[]) =>
+    rows
+      .map(([n, name, inc]) => `${n} ${name}${inc ? ' (sitting)' : ''}`)
+      .join('; ')
+  const axis = (a: { e: number; s: number } | undefined) =>
+    a
+      ? ` Position: economic ${a.e < 0 ? 'left' : a.e > 0 ? 'right' : 'centre'} ${Math.abs(a.e)}, social ${a.s < 0 ? 'conservative' : a.s > 0 ? 'progressive' : 'centre'} ${Math.abs(a.s)} (each axis -1 to 1).`
+      : ''
+  const district = election.ballot === 'district'
+  const lines = [district ? '## Parties' : '## Parties and slates', '']
+  for (const p of election.parties) {
+    lines.push(
+      `### ${p.url ? `[${p.name}](${p.url})` : p.name}`,
+      '',
+      `${p.lean}${axis(p.axis)}`,
+      '',
+    )
+    if (election.ballot === 'district') {
+      const dp = p as (typeof election.parties)[number]
+      if (dp.leader) lines.push(`- Leader: ${dp.leader}`)
+      if (dp.candidates != null)
+        lines.push(
+          `- Candidates: ${dp.candidates} of ${election.seats} ridings`,
+        )
+      lines.push('')
+      continue
+    }
+    const ap = p as Extract<
+      CompassElection,
+      { ballot: 'at-large' }
+    >['parties'][number]
+    for (const o of election.offices) {
+      if (o.key === 'mayor')
+        lines.push(
+          `- ${o.label}: ${ap.mayor ? slate([ap.mayor]) : ap.endorses || 'none'}`,
+        )
+      else
+        lines.push(
+          `- ${o.label}: ${slate((ap as unknown as Record<string, (readonly [number, string, ...unknown[]])[]>)[o.key] || [])}`,
+        )
+    }
+    lines.push('')
+  }
+  if (election.ballot === 'district') {
+    lines.push(
+      '## Ridings',
+      '',
+      `One vote, for one ${election.offices[0]?.label || 'member'}, in the voter's riding. Candidates are listed with their compass party key; (sitting) marks a current member; "last time" is who won the riding last time and by how many points.`,
+      '',
+    )
+    const regions = election.regions.length
+      ? election.regions
+      : [{ key: '', label: 'All ridings' }]
+    for (const reg of regions) {
+      const list = election.districts.filter(
+        (d) => !reg.key || d.region === reg.key,
+      )
+      if (!list.length) continue
+      lines.push(`### ${reg.label}`, '')
+      for (const d of list) {
+        const names = d.candidates
+          .map(
+            ([n, k, inc, label]) =>
+              `${n} (${k ? parties[k].short : (typeof label === 'string' && label) || 'Independent'}${inc ? ', sitting' : ''})`,
+          )
+          .join('; ')
+        const last =
+          d.last && d.last.party && parties[d.last.party]
+            ? `; last time: ${parties[d.last.party].short} by ${d.last.margin}`
+            : ''
+        lines.push(`- ${d.code} ${d.name}: ${names}${last}`)
+      }
+      lines.push('')
+    }
+  }
+  lines.push(
+    '## Compass questions',
+    '',
+    `Each answer awards parties 0 to 3 points; "matters a lot" doubles a question; a party's match is points earned over points possible across the answered questions. Answers also place the voter on a two-axis plane (economic left -1 to right +1, social conservative -1 to progressive +1) as the weighted mean of the chosen options' axis values, shown after each option as [e, s]. Results are permalinks: ${origin}/${election.slug}#/compass/<code>, one character per question in order ("-" skipped, "0"-"9" the option index, "A"-"J" the option counted double).`,
+    '',
+  )
+  election.questions.forEach((q, i) => {
+    lines.push(`### ${i + 1}. ${q.topic}: ${q.q}`, '', q.context, '')
+    for (const o of q.opts) {
+      const pts = Object.keys(o.pts)
+        .sort((a, b) => o.pts[b] - o.pts[a])
+        .map((k) => `${parties[k].short} +${o.pts[k]}`)
+        .join(', ')
+      lines.push(
+        `- ${o.t} (${pts || 'neutral'})${o.axis ? ` [${o.axis.e}, ${o.axis.s}]` : ''}`,
+      )
+    }
+    lines.push('')
+  })
+  if (election.note) lines.push(election.note.text, '')
+  if (election.sources.length)
+    lines.push(
+      'Sources: ' +
+        election.sources.map((s) => `[${s.label}](${s.url})`).join(', '),
+    )
+  return lines.join('\n')
+}
+
+export function resultsMarkdown(
+  election: CompassElection,
+  snapshot: Snapshot | null,
+): string {
+  const results = election.results
+  const follow = results.alternatives.length
+    ? `\n\nAlso follow:\n\n${links(results.alternatives)}`
+    : ''
+  const source = results.label
+    ? `${results.label}'s results page`
+    : "the City's results page"
+  if (!snapshot)
+    return `## Results\n\nNo results yet. They appear after polls close on voting day, from [${source}](${results.official}).${follow}`
+  const r = snapshot.payload
+  const parties: Record<string, CompassElection['parties'][number]> = {}
+  for (const p of election.parties) parties[p.key] = p
+  const party = (c: { party: string | null; partyName: string }) =>
+    c.party && parties[c.party]
+      ? parties[c.party].short
+      : c.partyName || 'Independent'
+  const short = (key: string) =>
+    key === 'other' || !parties[key] ? 'Others' : parties[key].short
+  const unit = results.unit || 'voting places'
+  const lines = [
+    `## Results (${r.official ? 'official' : 'unofficial'}, as of ${r.asOf} ${zoneName(election)}${r.status && r.status.initial ? `, initial count ${r.status.initial.toLowerCase()}` : ''}${
+      r.status && r.status.final && !r.official
+        ? `; final count ${r.status.final}`
+        : ''
+    })`,
+    '',
+    `${fmt(r.polls.closed)} of ${fmt(r.polls.total)} ${unit} reported; ${fmt(r.ballots)} ballots counted${r.turnout != null ? `; turnout ${pct1(r.turnout * 100)}` : ''}.`,
+    '',
+  ]
+  const ridings = r.contests.filter((c) => c.kind === 'district')
+  if ((r.groups || []).some((g) => g.total)) {
+    lines.push(
+      `Tabulators reported: ${r.groups
+        .filter((g) => g.total)
+        .map((g) => `${g.name} ${fmt(g.closed)} of ${fmt(g.total)}`)
+        .join(', ')}.`,
+      '',
+    )
+  }
+  if (!ridings.length) {
+    const offices = election.offices
+      .map((o) => r.contests.find((c) => c.kind === o.key))
+      .filter((c): c is NonNullable<typeof c> => !!c)
+    const counts: Record<string, number> = {}
+    let seats = 0
+    for (const c of offices) {
+      for (const ch of c.choices.slice(0, c.voteFor)) {
+        const key = ch.party || 'other'
+        counts[key] = (counts[key] || 0) + 1
+        seats++
+      }
+    }
+    const done = complete(r)
+    const order = [...election.parties.map((p) => p.key), 'other'].filter(
+      (k) => counts[k],
+    )
+    if (seats)
+      lines.push(
+        `Seats across City Hall (${done ? 'elected' : 'if the count stopped now'}, ${seats} in all): ${order.map((k) => `${short(k)} ${counts[k]}`).join(', ')}.`,
+        '',
+      )
+  }
+  if (ridings.length && election.ballot === 'district') {
+    const total = election.seats || ridings.length
+    const seats = ((r.summary && r.summary.parties) || [])
+      .filter((x) => x.leading > 0 || x.votes > 0)
+      .sort((a, b) => b.leading - a.leading || b.votes - a.votes)
+    lines.push(
+      `### Seats (${election.majority || Math.floor(total / 2) + 1} of ${total} for a majority)`,
+      '',
+    )
+    for (const x of seats)
+      lines.push(
+        `- ${x.key === 'other' ? 'Others' : parties[x.key] ? parties[x.key].name : x.key}: ${r.official ? 'won' : 'leading'} ${x.leading}, ${fmt(x.votes)} votes (${pct1(x.pct)})`,
+      )
+    lines.push('')
+    const hands = changingHands(r, election)
+    if (hands.flips.length) {
+      lines.push(
+        `${r.official ? 'Changed' : 'Changing'} hands since last time (${hands.flips.length}${r.official ? '' : ', if the count stopped now'}): ${hands.byPair.map((p) => `${short(p.from)} to ${short(p.to)} ${p.n} (${p.ridings.map((f) => f.label).join(', ')})`).join('; ')}.`,
+        '',
+      )
+    }
+    const regions = election.regions.length
+      ? election.regions
+      : [{ key: '', label: 'All ridings' }]
+    for (const reg of regions) {
+      const list = ridings.filter((c) => !reg.key || c.region === reg.key)
+      if (!list.length) continue
+      lines.push(`### ${reg.label}`, '')
+      for (const c of list) {
+        const lead = c.choices[0]
+        const second = c.choices[1]
+        const boxes =
+          c.boxes && c.boxes.final
+            ? `, ${(c.boxes.advance ? c.boxes.advance[0] : 0) + c.boxes.final[0]} of ${(c.boxes.advance ? c.boxes.advance[1] : 0) + c.boxes.final[1]} boxes`
+            : ''
+        lines.push(
+          lead && lead.votes > 0
+            ? `- ${c.label}: ${lead.name} (${party(lead)}) ${fmt(lead.votes)} (${pct1(lead.pct)})${second ? `, ${second.name} (${party(second)}) ${fmt(second.votes)} (${pct1(second.pct)})` : ''}${boxes}${leaderOf(c) ? '' : ' (tied)'}`
+            : `- ${c.label}: no votes yet${boxes}`,
+        )
+      }
+      lines.push('')
+    }
+  }
+  for (const c of r.contests) {
+    if (c.kind === 'district') continue
+    if (c.kind === 'question') {
+      lines.push(
+        `### ${c.label}`,
+        '',
+        c.choices
+          .map((ch) => `${ch.name} ${fmt(ch.votes)} (${pct1(ch.pct)})`)
+          .join(' · '),
+        '',
+      )
+      continue
+    }
+    lines.push(
+      `### ${c.label} (${c.voteFor === 1 ? 'vote for 1' : `top ${c.voteFor} elected`})`,
+      '',
+    )
+    c.choices.slice(0, c.voteFor + 3).forEach((ch, i) => {
+      if (c.voteFor > 1 && i === c.voteFor) lines.push('- *seat line*')
+      lines.push(
+        `- ${ch.ballot != null ? `${ch.ballot} ` : ''}${ch.name} (${party(ch)}): ${fmt(ch.votes)} (${pct1(ch.pct)})${ch.winner ? ', elected' : ''}`,
+      )
+    })
+    if (c.choices.length > c.voteFor + 3)
+      lines.push(`- …and ${c.choices.length - c.voteFor - 3} more`)
+    lines.push('')
+  }
+  return lines.join('\n').trimEnd() + follow
+}
+
+/** A referendum: the questions in ballot order, with wording, context and polls. */
+export function referendumMarkdown(
+  election: ReferendumElection,
+  origin: string,
+): string {
+  const lines = ['## The questions', '', election.intro, '']
+  for (const g of election.groups) {
+    const items = election.questions.filter((q) => q.group === g.key)
+    if (!items.length) continue
+    lines.push(`### ${g.label}`, '')
+    if (g.order || g.note)
+      lines.push([g.order, g.note].filter(Boolean).join('. '), '')
+    for (const q of items) {
+      lines.push(`#### Question ${q.n}: ${q.topic}`, '', q.q, '')
+      q.options.forEach((o, k) =>
+        lines.push(`- Option ${k + 1}: ${o.full || o.t}`),
+      )
+      lines.push('', q.context, '')
+      if (q.polls.length) {
+        lines.push(
+          `Polls: ${q.polls.map((p) => `${p.by} (${p.date}): ${q.options[0].t} ${p.pct[0]}%${p.pct[1] != null ? `, ${q.options[1].t} ${p.pct[1]}%` : ''}`).join('; ')}.`,
+          '',
+        )
+      }
+    }
+  }
+  lines.push(
+    `A marked ballot is a permalink: ${origin}/${election.slug}#/compass/<code>, one character per question in ballot order ("-" unmarked, "0" option 1, "1" option 2).`,
+    '',
+  )
+  if (election.pollNote) lines.push(election.pollNote, '')
+  if (election.sources.length)
+    lines.push('### Sources', '', links(election.sources))
+  return lines.join('\n').trimEnd()
+}
+
+export function referendumResultsMarkdown(
+  election: ReferendumElection,
+  snapshot: Snapshot | null,
+): string {
+  const results = election.results
+  const follow = results.alternatives.length
+    ? `\n\nAlso follow:\n\n${links(results.alternatives)}`
+    : ''
+  const source = results.label
+    ? `${results.label}'s results page`
+    : 'the official results page'
+  const r = snapshot && snapshot.payload
+  const first = election.questions[0]
+  if (
+    !r ||
+    !(r.contests || []).some((c) => c.choices.some((ch) => ch.votes > 0))
+  ) {
+    return `## Results\n\nNo results yet. Ballots are counted by hand after voting closes, Question ${first.n} first; counts come from [${source}](${results.official}).${follow}`
+  }
+  const unit = results.unit || 'voting locations'
+  const lines = [
+    `## Results (${r.official ? 'official' : 'unofficial'}, as of ${r.asOf} ${zoneName(election)})`,
+    '',
+  ]
+  if (!r.official && results.unofficialNote)
+    lines.push(results.unofficialNote, '')
+  const wide = ballotWide(election)
+  const head = contestOf(r, first)
+  const headSum = head ? head.choices.reduce((n, ch) => n + ch.votes, 0) : 0
+  for (const q of election.questions) {
+    const c = contestOf(r, q)
+    const votes = c ? c.choices.map((ch) => ch.votes) : [0, 0]
+    const sum = votes[0] + votes[1]
+    lines.push(`### Question ${q.n}: ${q.topic}`, '')
+    if (!sum || !c) {
+      lines.push('Count not started.', '')
+      continue
+    }
+    const winner = c.choices.find((ch) => ch.winner)
+    let where =
+      c.polls && c.polls.total
+        ? `; ${fmt(c.polls.closed)} of ${fmt(c.polls.total)} ${c.polls.unit || unit} reported${wide ? ' (whole ballot)' : ''}`
+        : ''
+    if (wide && head !== c && headSum)
+      where += `; ${pct1(Math.min(100, (100 * sum) / headSum))} of Question ${first.n}'s votes counted so far`
+    lines.push(
+      `${q.options.map((o, k) => `${o.t} ${fmt(votes[k])} (${pct1((100 * votes[k]) / sum)})`).join(' · ')}${c.rejected ? `; ${fmt(c.rejected)} rejected` : ''}${where}.${winner ? ` Majority: ${winner.name}.` : ''}`,
+      '',
+    )
+  }
+  return lines.join('\n').trimEnd() + follow
+}
+
+/** The whole page for one election. */
+export function electionMarkdown(
+  election: Election,
+  snapshot: Snapshot | null,
+  origin: string,
+): string {
+  const head = [
+    `# ${election.title}`,
+    '',
+    `> ${election.description}`,
+    '',
+    `- Page: ${origin}/${election.slug}`,
+    `- Live results: ${origin}/${election.slug}#/results`,
+    `- MCP: POST ${origin}/mcp (tools list_elections, get_election, latest_results, results_series, closest_districts, changing_hands, question_divisions, summary)`,
+    '',
+    election.eyebrow,
+    '',
+    election.lede,
+  ]
+  const body =
+    election.ballot === 'referendum'
+      ? [
+          datesMarkdown(election),
+          referendumResultsMarkdown(election, snapshot),
+          referendumMarkdown(election, origin),
+        ]
+      : [
+          datesMarkdown(election),
+          resultsMarkdown(election, snapshot),
+          compassMarkdown(election, origin),
+        ]
+  return `${[...head, ...body].filter(Boolean).join('\n\n').trimEnd()}\n`
+}
+
+export type IndexEntry = { election: Election; latest: Payload | null }
+
+/** llms.txt: what this site is, every published election, and how agents read it. */
+export function llmsText(entries: IndexEntry[], origin: string): string {
+  const lines = [
+    '# Voting',
+    '',
+    '> Vote compasses that match your answers to the parties and candidates on your ballot, and live election-night results.',
+    '',
+    `Pages render in the browser; every election is also a markdown page at ${origin}/<slug>.md (or GET ${origin}/<slug> with Accept: text/markdown). Compass results and marked ballots are permalinks in the page hash (#/compass/<code>); live results are at #/results.`,
+    '',
+    '## Elections',
+    '',
+  ]
+  if (!entries.length) lines.push('No elections yet.')
+  for (const { election, latest } of entries) {
+    const status = latest
+      ? latest.official
+        ? 'official results'
+        : complete(latest)
+          ? 'count complete'
+          : `counting, as of ${latest.asOf}`
+      : 'no results yet'
+    lines.push(
+      `- [${election.title}](${origin}/${election.slug}.md) (${election.ballot}, voting day ${election.votingDay}, ${status}): ${election.description}`,
+    )
+  }
+  lines.push(
+    '',
+    '## API',
+    '',
+    `- Elections: ${origin}/api/collections/elections/records (published rows; the election document is the config column)`,
+    `- Results: ${origin}/api/collections/results/records?filter=election="<id>"&sort=source_ts (one normalized snapshot per row, newest last; realtime at /api/realtime)`,
+    `- MCP (Model Context Protocol, streamable HTTP, JSON-RPC over POST, no auth): ${origin}/mcp`,
+    '  - list_elections, get_election(slug, section?), latest_results(slug, contest?|district?|question?), results_series(slug, metric, contest?, since?), closest_districts(slug, n?), changing_hands(slug), question_divisions(slug, question, n?, sort?), summary(slug)',
+    `- Source: https://github.com/patsissons/voting`,
+    '',
+  )
+  return lines.join('\n')
+}

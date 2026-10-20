@@ -14,9 +14,28 @@ export default defineConfig({
     outDir: 'pb_public',
     emptyOutDir: true,
   },
+  server: {
+    // Everything that is not the Vite app goes to the local PocketBase
+    // (scripts/pb.ts): the API and realtime stream, the admin UI, the hooks'
+    // routes, and the markdown pages. Vite's SPA fallback answers /<slug>
+    // itself, so the OG rewrite only runs on the built app.
+    proxy: Object.fromEntries(
+      [
+        '/api',
+        '/_/',
+        '/mcp',
+        '/_voting',
+        '/llms.txt',
+        '^/[a-z0-9-]+\\.md$',
+      ].map((prefix) => [
+        prefix,
+        { target: 'http://127.0.0.1:8090', changeOrigin: false },
+      ]),
+    ),
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['{src,shared,server,scripts}/**/*.test.{ts,tsx}'],
   },
 })

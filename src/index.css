@@ -22,6 +22,27 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+  /* The brand green: the OG image, live dots and the "you" marker. */
+  --brand: oklch(0.6 0.17 150);
+  /* Anyone outside the compass parties. */
+  --party-other: #b3aea5;
+  /* The two options of a referendum question: option 1 from the left, option 2 from the right. */
+  --ref-a: #2a78d6;
+  --ref-b: #e4601a;
+  --ref-a-foreground: #fff;
+  --ref-b-foreground: #1a1a1a;
+  /* One colour per series when questions are drawn together, in ballot order. */
+  --series-1: #2a78d6;
+  --series-2: #008300;
+  --series-3: #4a3aa7;
+  --series-4: #e34948;
+  --series-5: #c13fae;
+  --series-6: #eda100;
+  --series-7: #1baf7a;
+  --series-8: #e4601a;
+  --series-9: #0e8a8a;
+  --series-10: #8d1f5a;
+  --series-11: #1d55c4;
 }
 
 .dark {
@@ -43,6 +64,21 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
+  --brand: oklch(0.72 0.19 150);
+  --party-other: #6b655d;
+  --ref-a: #2f6fc0;
+  --ref-b: #f07a3a;
+  --series-1: #3a7bd0;
+  --series-2: #008300;
+  --series-3: #9b7bea;
+  --series-4: #e66767;
+  --series-5: #b84db0;
+  --series-6: #c98500;
+  --series-7: #14a3b8;
+  --series-8: #f07a3a;
+  --series-9: #2fb3b3;
+  --series-10: #d05a95;
+  --series-11: #5b8ded;
 }
 
 @theme inline {
@@ -70,6 +106,9 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-ref-a: var(--ref-a);
+  --color-ref-b: var(--ref-b);
 }
 
 @layer base {
@@ -78,5 +117,195 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  summary {
+    cursor: pointer;
+  }
+}
+
+@layer utilities {
+  /* --party is set inline per element; falls back to the "other" grey. */
+  .party {
+    --party-color: var(--party, var(--party-other));
+  }
+  .swatch {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 9999px;
+    background: var(--party, var(--party-other));
+    flex: none;
+  }
+  .nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Charts: inline SVG on the theme tokens. */
+.viz text {
+  font-size: 11px;
+  fill: var(--muted-foreground);
+}
+.viz .viz-grid line,
+.viz .viz-row-rule {
+  stroke: var(--border);
+}
+.viz .viz-base {
+  stroke: var(--muted-foreground);
+  stroke-opacity: 0.6;
+}
+.viz .viz-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.viz .viz-dot {
+  stroke: var(--background);
+  stroke-width: 1.5;
+}
+.viz .viz-hollow {
+  fill: var(--background);
+  stroke-width: 2;
+}
+.viz .viz-cross {
+  stroke: var(--foreground);
+  stroke-dasharray: 3 3;
+  pointer-events: none;
+}
+.viz .viz-hit,
+.viz .viz-hitdot {
+  fill: transparent;
+  outline: none;
+}
+.viz .viz-hit:focus-visible,
+.viz [tabindex]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.viz .viz-cutoff {
+  stroke: var(--muted-foreground);
+  stroke-dasharray: 4 3;
+}
+.viz .viz-mark {
+  stroke: var(--foreground);
+  stroke-width: 1.5;
+}
+.viz .viz-cutoff-label,
+.viz .viz-mark-label,
+.viz .viz-end,
+.viz .viz-row-label {
+  font-size: 11px;
+  fill: var(--foreground);
+}
+.viz .viz-row-sub {
+  font-size: 10px;
+}
+.viz .viz-plane-bg {
+  fill: var(--muted);
+  fill-opacity: 0.5;
+}
+.viz .viz-plane-label {
+  font-size: 12px;
+  fill: var(--foreground);
+  paint-order: stroke;
+  stroke: var(--background);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.viz .viz-you-ring {
+  fill: none;
+  stroke: var(--brand);
+  stroke-width: 2.5;
+}
+.viz .viz-you-dot {
+  fill: var(--brand);
+}
+.viz .viz-you-label {
+  fill: var(--brand);
+  font-weight: 600;
+}
+.viz .viz-bell {
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+/* The split-flap clock. */
+.flip {
+  display: inline-flex;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  vertical-align: middle;
+}
+.flip-card {
+  position: relative;
+  display: inline-block;
+  width: 1.05em;
+  height: 1.35em;
+  perspective: 120px;
+}
+.flip-card > span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  background: var(--secondary);
+  color: var(--foreground);
+  display: flex;
+  justify-content: center;
+  backface-visibility: hidden;
+}
+.flip-card > span > b {
+  display: block;
+  height: 1.35em;
+  line-height: 1.35em;
+  font-weight: 600;
+}
+.flip-card .fc-top,
+.flip-card .fc-down {
+  top: 0;
+  border-radius: 3px 3px 0 0;
+  align-items: flex-start;
+  transform-origin: bottom;
+}
+.flip-card .fc-bot,
+.flip-card .fc-up {
+  bottom: 0;
+  border-radius: 0 0 3px 3px;
+  align-items: flex-end;
+  transform-origin: top;
+}
+.flip-card .fc-bot > b,
+.flip-card .fc-up > b {
+  transform: translateY(-50%);
+}
+.flip-card .fc-down {
+  animation: fc-down 0.28s ease-in forwards;
+}
+.flip-card .fc-up {
+  transform: rotateX(90deg);
+  animation: fc-up 0.28s 0.28s ease-out forwards;
+}
+@keyframes fc-down {
+  to {
+    transform: rotateX(-90deg);
+  }
+}
+@keyframes fc-up {
+  to {
+    transform: rotateX(0);
+  }
+}
+.flip-colon {
+  align-self: center;
+  padding: 0 1px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .flip-card .fc-down,
+  .flip-card .fc-up {
+    animation: none;
+    display: none;
   }
 }

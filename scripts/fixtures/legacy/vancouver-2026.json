@@ -1,0 +1,289 @@
+{
+  "slug": "vancouver-2026",
+  "title": "Vancouver Votes 2026",
+  "place": "Vancouver",
+  "eyebrow": "Vancouver municipal election · final voting day Sat Oct 17, 2026",
+  "votingDay": "2026-10-17",
+  "pollsClose": "2026-10-17T20:00:00-07:00",
+  "timeZone": "America/Vancouver",
+  "dates": {
+    "advance": ["2026-10-03", "2026-10-07", "2026-10-10", "2026-10-13"],
+    "final": "2026-10-17",
+    "hours": "8 am to 8 pm",
+    "mailBy": "Completed mail ballots must reach the Election Office by 8 pm on Oct 17.",
+    "url": "https://vancouver.ca/election/2026/where-to-vote.aspx"
+  },
+  "lede": "Thirteen questions on the issues that actually divide the parties this year. Each answer is scored against what the seven main parties have said in their platforms and votes. You get a ranked list, plus the ballot numbers for the matching mayor and council, Park Board and school slates.",
+  "intro": "Council is elected city-wide, so every Vancouver voter sees the same ballot. Mark any question as mattering a lot to double its weight. Nothing you answer leaves this page.",
+  "offices": [
+    { "key": "mayor", "label": "Mayor", "voteFor": 1, "fact": "vote for mayor" },
+    { "key": "council", "label": "Council", "voteFor": 10, "fact": "votes for council, 56 names" },
+    { "key": "park", "label": "Park Board", "voteFor": 7, "fact": "Park Board, 35 names" },
+    { "key": "school", "label": "School Board", "voteFor": 9, "fact": "school trustees, 31 names" }
+  ],
+  "parties": [
+    {
+      "key": "abc",
+      "name": "ABC Vancouver",
+      "short": "ABC",
+      "url": "https://www.abcvancouver.ca/",
+      "lean": "Centre-right incumbents. Lower taxes, tougher on street disorder, keep the supportive housing pause.",
+      "axis": { "e": 0.55, "s": -0.45 },
+      "mayor": [54, "Ken Sim", 1],
+      "council": [[101, "Joyce Gillespie"], [103, "Mike Klassen", 1], [109, "Peter Meiszner", 1], [126, "Arezo Zarrabian"], [129, "Lorraine Lowe"], [135, "Sarah Kirby-Yung", 1], [137, "Lisa Dominato", 1], [138, "David Grewal"], [144, "Lenny Zhou", 1]],
+      "park": [[207, "Stephen Molnar"], [209, "Marie Rogers"], [218, "Christian Kyle"], [227, "Chris Qiu"], [228, "Jas Virdi"], [232, "Cheryl Grant"], [234, "Jay Bailey"]],
+      "school": [[305, "Alfred Chien"], [310, "Shirley Sio"], [311, "Maria Kritikos"], [312, "Matt Kroeker"], [316, "Rob Nijjar"], [320, "Preeti Faridkot"], [327, "Lina Vargas"]]
+    },
+    {
+      "key": "green",
+      "name": "Green Party of Vancouver",
+      "short": "Green",
+      "url": "https://www.vangreens.ca/",
+      "lean": "Centre-left. Non-police response teams, trees and street space, cautious on the pace of upzoning.",
+      "axis": { "e": -0.45, "s": 0.6 },
+      "mayor": [51, "Pete Fry"],
+      "council": [[102, "Annette Reilly"], [119, "Camil Dumont"], [141, "Bridget Burns"], [147, "Stephanie Smith"]],
+      "park": [[212, "Spencer Van Vloten"], [216, "Breanne Smart"], [222, "Tom Digby", 1]],
+      "school": [[303, "Alisha Masongsong"], [330, "Julie Strilesky"]]
+    },
+    {
+      "key": "onecity",
+      "name": "OneCity Vancouver",
+      "short": "OneCity",
+      "url": "https://www.onecityvancouver.ca/",
+      "lean": "Centre-left urbanist. More homes of every kind in every neighbourhood, progressive property tax. Council only; backs Fry for mayor.",
+      "axis": { "e": -0.55, "s": 0.75 },
+      "mayor": null,
+      "endorses": "No mayoral candidate; endorses Pete Fry (51, Green).",
+      "endorsesMayor": "green",
+      "council": [[100, "Jarrett Hagglund"], [113, "Iona Bonamis"], [131, "Lucy Maloney", 1], [146, "Frances Bula"], [149, "Caitlin Stockwell"]],
+      "park": [[214, "Tyler Petersen"], [217, "John Irwin"], [230, "Dominic Denofrio"]],
+      "school": [[301, "Krista Sigurdson"], [302, "Rory Brown"], [321, "Sherry Breshears"], [325, "Christopher Lee"], [328, "Steve Cardwell"]]
+    },
+    {
+      "key": "cope",
+      "name": "COPE",
+      "short": "COPE",
+      "url": "https://www.votecope.ca/",
+      "lean": "Left. Protect existing tenants and affordable stock, tax wealth and empty property, expand public services. Council only; backs Fry for mayor.",
+      "axis": { "e": -0.85, "s": 0.7 },
+      "mayor": null,
+      "endorses": "No mayoral candidate; endorses Pete Fry (51, Green).",
+      "endorsesMayor": "green",
+      "council": [[111, "Sean Orr", 1], [121, "Devyani Singh"], [124, "Chloe Leslie"], [155, "Solomon Yi-Kieran"]],
+      "park": [[203, "T'uy't'tanat Cease Wyss"], [205, "Jamie Han"], [206, "Tamiko Suzuki"], [215, "Sacia Burton"]],
+      "school": [[304, "Suzie Mah", 1], [314, "Melanie Cheng"], [323, "Derrick O'Keefe"], [324, "Gwen Giesbrecht"]]
+    },
+    {
+      "key": "team",
+      "name": "TEAM for a Livable Vancouver",
+      "short": "TEAM",
+      "url": "https://www.voteteam.ca/",
+      "lean": "Neighbourhood-first. Slow development, restore public hearings, tough on repeat offenders, taxes capped at inflation.",
+      "axis": { "e": 0.35, "s": -0.6 },
+      "mayor": [50, "Colleen Hardwick"],
+      "council": [[110, "Amanda Boggan"], [117, "Charles Kelly"], [123, "Kathleen Larsen"], [127, "Jonathan Weisman"], [130, "Raj Mundra"], [142, "Patrick Sauriol"], [150, "Josh Gordon"]],
+      "park": [[201, "Allan Fawley"], [204, "Jon Girard"], [219, "Mayeli Alvarez"], [225, "Alex Tkach"], [233, "Wah Gee"]],
+      "school": [[322, "Kat Nystedt"]]
+    },
+    {
+      "key": "lib",
+      "name": "Vancouver Liberals",
+      "short": "Liberals",
+      "url": "https://www.vancouverliberals.com/",
+      "lean": "Centrist ABC splinter. Frontline workers, organized crime, UBC SkyTrain, cleaner governance. No relation to the federal Liberals.",
+      "axis": { "e": 0.3, "s": -0.1 },
+      "mayor": [56, "Kareem Allam"],
+      "council": [[107, "Victoria Jung"], [118, "Jessica Walton"], [125, "Armor Valor"], [128, "Devin Clemens"], [134, "John Coupar"], [139, "Moira Stilwell"], [145, "Michael Wu"]],
+      "park": [[208, "Mark Halyk"], [211, "Shayla Bird"], [220, "Scott Jensen", 1], [221, "Amanda Bains"], [223, "Amir Bajehkian"], [229, "Tricia Barker"]],
+      "school": [[300, "Darren Boidman"], [308, "Isabel Ochoa Prieto"], [313, "Noosha Mehdian"], [326, "Ishi Dinim"], [329, "Joshua Cameron"]]
+    },
+    {
+      "key": "vv",
+      "name": "Vote Vancouver",
+      "short": "Vote Van",
+      "url": "https://www.votevancouver.ca/",
+      "lean": "Centrist ABC splinter led by Rebecca Bligh. Middle-income homes on public land, free youth transit, a more responsive City Hall.",
+      "axis": { "e": 0.05, "s": 0.25 },
+      "mayor": [52, "Rebecca Bligh"],
+      "council": [[105, "Geoff Teoli"], [106, "Keerit Jutla"], [112, "Steve Jedreicich"], [114, "Rebecca Hasdell"], [115, "Bhavna Solecki"], [132, "John Boychuk"]],
+      "park": [[200, "Stephen Menon"], [210, "Summit Wannamaker"]],
+      "school": [[306, "Tasha Doucas"], [315, "Mandy Potter"], [319, "Amarys Joseph"]]
+    }
+  ],
+  "questions": [
+    {
+      "topic": "Housing",
+      "q": "How should the city handle new housing?",
+      "context": "More homes are being completed than in 2022, but the city is unlikely to meet its provincial housing targets with current zoning and construction costs.",
+      "opts": [
+        { "t": "Permit more homes of every kind, in every neighbourhood, as fast as possible", "s": "OneCity's core pitch. The Liberals would also scrap the Vancouver Building Code and merge 12 approval departments into one.", "pts": { "onecity": 3, "lib": 2, "green": 1, "vv": 1, "abc": 1 } , "axis": { "e": 0.3, "s": 0.5 } },
+        { "t": "Build more, but protect existing tenants and affordable buildings first", "s": "COPE opposes development that displaces a current tenant. Greens pledge to preserve existing affordable homes.", "pts": { "cope": 3, "green": 2, "vv": 1, "onecity": 1 } , "axis": { "e": -0.6, "s": 0.5 } },
+        { "t": "Keep building, but at a measured pace with more neighbourhood consultation", "s": "Greens call the provincial targets impossible and propose pace-of-change limits. TEAM wants public hearings back.", "pts": { "green": 2, "team": 2, "abc": 1 } , "axis": { "e": 0.1, "s": -0.3 } },
+        { "t": "Slow down. Repeal recent upzoning and give neighbourhoods a say again", "s": "TEAM would repeal the official development plan, restore public hearings and reopen neighbourhood planning offices.", "pts": { "team": 3 } , "axis": { "e": 0.2, "s": -0.8 } }
+      ]
+    },
+    {
+      "topic": "Supportive housing",
+      "q": "Council paused new supportive housing units in 2025. What should happen next?",
+      "context": "The pause was a flashpoint: Rebecca Bligh was expelled from ABC partly for opposing it, and every challenger except TEAM has promised to reverse it.",
+      "opts": [
+        { "t": "Keep the pause and tighten oversight of the non-profits that run these buildings", "s": "ABC's position, with good neighbour agreements and overdose sites kept away from parks and schools.", "pts": { "abc": 3, "team": 1 } , "axis": { "e": 0.4, "s": -0.8 } },
+        { "t": "Reverse it on day one", "s": "Liberals, Vote Vancouver, Greens, OneCity and COPE all pledge to lift the freeze.", "pts": { "lib": 3, "vv": 3, "green": 2, "onecity": 2, "cope": 2 } , "axis": { "e": -0.2, "s": 0.7 } },
+        { "t": "Reverse it, and require every new project to add public washrooms and showers", "s": "The Liberals' specific twist on reversing the freeze.", "pts": { "lib": 3, "green": 2, "onecity": 2, "cope": 2, "vv": 2 } , "axis": { "e": -0.4, "s": 0.8 } }
+      ]
+    },
+    {
+      "topic": "Street disorder",
+      "q": "What is the best response to street disorder and open drug use?",
+      "context": "Violent crime was at a 23-year low last year according to one ABC councillor, yet safety is the top issue for many voters.",
+      "opts": [
+        { "t": "More enforcement: ban open-air hard drug use and push for involuntary care beds", "s": "ABC's two signature pledges, both on the ballot as plebiscites. TEAM also wants zero tolerance for open drug use.", "pts": { "abc": 3, "team": 2 } , "axis": { "e": 0.3, "s": -0.9 } },
+        { "t": "A 24/7 non-police civilian team for non-emergency calls, freeing police for emergencies", "s": "Greens' CROW team. OneCity and COPE back civilian responders too.", "pts": { "green": 3, "onecity": 2, "cope": 2 } , "axis": { "e": -0.4, "s": 0.9 } },
+        { "t": "Go after organized crime and money laundering at the top: Bitcoin ATMs, currency exchanges, cartel finance", "s": "The Liberals' 'Tony Soprano' plan, with more VPD funding and border cooperation.", "pts": { "lib": 3, "abc": 1 } , "axis": { "e": 0.2, "s": -0.3 } },
+        { "t": "Target repeat offenders with community-first policing and a residents' safety plan", "s": "TEAM's safety plan, which also includes a violence-against-women strategy.", "pts": { "team": 3, "abc": 1, "lib": 1 } , "axis": { "e": 0.1, "s": -0.5 } }
+      ]
+    },
+    {
+      "topic": "Policing",
+      "q": "The police budget grew by roughly $150M over the last three years. Where should it go from here?",
+      "context": "ABC hired the 100 officers it promised in 2022. Other parties question whether more spending has made people feel safer.",
+      "opts": [
+        { "t": "Keep funding police strongly; it is the city's core safety tool", "s": "ABC. The Liberals also say they would increase VPD funding, aimed at organized crime.", "pts": { "abc": 3, "lib": 2, "team": 1 } , "axis": { "e": 0.5, "s": -0.7 } },
+        { "t": "Audit the VPD and shift some money to civilian responders and services", "s": "Shared plank of Greens, OneCity and COPE.", "pts": { "cope": 3, "green": 2, "onecity": 2 } , "axis": { "e": -0.6, "s": 0.8 } },
+        { "t": "Hold it steady; spending more has not made people feel safer", "s": "Bligh's framing. Vote Vancouver did not publish a public safety platform.", "pts": { "vv": 2, "green": 1, "onecity": 1 } , "axis": { "e": 0, "s": 0.2 } }
+      ]
+    },
+    {
+      "topic": "Taxes",
+      "q": "What should happen to property taxes in 2027?",
+      "context": "ABC held 2026 at a 0% increase, partly through service cuts. Roughly 55% of Vancouverites are renters who do not pay property tax directly.",
+      "opts": [
+        { "t": "Freeze them again at 0%", "s": "ABC's headline affordability promise.", "pts": { "abc": 3 } , "axis": { "e": 0.9, "s": -0.2 } },
+        { "t": "Cap increases at inflation and review the budget line by line", "s": "TEAM's fiscal framework. The Liberals also pledge an inflation cap.", "pts": { "team": 3, "lib": 2 } , "axis": { "e": 0.6, "s": -0.2 } },
+        { "t": "Modest increases are fine if they restore services like library hours and the renters' office", "s": "Greens, OneCity and COPE all pledge to restore ABC-era cuts.", "pts": { "green": 2, "onecity": 2, "cope": 2, "vv": 1 } , "axis": { "e": -0.5, "s": 0.3 } },
+        { "t": "Shift the burden up: tax mansions, empty homes and wealthier landowners more", "s": "COPE's mansion tax, land value tax and 9% empty homes tax. OneCity backs progressive property taxation.", "pts": { "cope": 3, "onecity": 2 } , "axis": { "e": -0.9, "s": 0.4 } }
+      ]
+    },
+    {
+      "topic": "Renters",
+      "q": "The city closed its Renters' Office in the last term. Should it come back?",
+      "context": "Renter costs have kept climbing even as home prices cooled.",
+      "opts": [
+        { "t": "Yes, and strengthen tenant protections beyond what it was", "s": "COPE, Greens and OneCity all pledge to re-establish it and add protections.", "pts": { "cope": 3, "green": 2, "onecity": 2, "lib": 1 } , "axis": { "e": -0.7, "s": 0.5 } },
+        { "t": "Yes, as part of restoring frontline services generally", "s": "The Liberals cite its closure as a failure and would hire 400 frontline workers.", "pts": { "lib": 3, "green": 1, "onecity": 1, "cope": 1, "vv": 1 } , "axis": { "e": -0.3, "s": 0.2 } },
+        { "t": "No, the city should stay lean; the province handles tenancy law", "s": "Consistent with ABC's cuts to hit a 0% tax increase.", "pts": { "abc": 3, "team": 1 } , "axis": { "e": 0.8, "s": -0.3 } }
+      ]
+    },
+    {
+      "topic": "Buildings and climate",
+      "q": "Council re-allowed natural gas heating in new buildings. Do you agree?",
+      "context": "This vote was another reason Bligh split from ABC. Greens and OneCity opposed it.",
+      "opts": [
+        { "t": "Yes, let builders and owners choose the cheapest option", "s": "ABC's position. TEAM has not made climate mandates a priority.", "pts": { "abc": 3, "team": 1 } , "axis": { "e": 0.7, "s": -0.5 } },
+        { "t": "No, new buildings should be electric and the city should lead on climate", "s": "Greens, OneCity, COPE and Vote Vancouver.", "pts": { "green": 3, "onecity": 2, "cope": 2, "vv": 2 } , "axis": { "e": -0.4, "s": 0.8 } },
+        { "t": "Not a deciding issue for me", "s": "No points either way.", "pts": {} }
+      ]
+    },
+    {
+      "topic": "Park Board",
+      "q": "Should Vancouver keep its separately elected Park Board?",
+      "context": "ABC asked the province to abolish it. It still exists for this election, so you will vote for 7 commissioners.",
+      "opts": [
+        { "t": "Abolish it and fold parks under City Council", "s": "ABC's position.", "pts": { "abc": 3 } , "axis": { "e": 0.4, "s": -0.3 } },
+        { "t": "Keep it, and fund parks, pools and community centres properly", "s": "Liberals ($1.35B parks pledge), TEAM, Greens, COPE, OneCity and Vote Vancouver all keep it.", "pts": { "lib": 3, "team": 2, "green": 2, "cope": 2, "onecity": 2, "vv": 2 } , "axis": { "e": -0.3, "s": 0.2 } },
+        { "t": "Not a deciding issue for me", "s": "No points either way.", "pts": {} }
+      ]
+    },
+    {
+      "topic": "Getting around",
+      "q": "What transportation change would you most like to see?",
+      "context": "Traffic collisions kill more Vancouverites each year than stranger attacks do.",
+      "opts": [
+        { "t": "Make driving and parking easier: end residential permit fees, free parking at beaches and community centres", "s": "ABC. The Liberals would also remove meters at beaches and community centres.", "pts": { "abc": 3, "lib": 1 } , "axis": { "e": 0.5, "s": -0.6 } },
+        { "t": "More protected bike lanes, wider sidewalks, street space turned into plazas and parklets", "s": "Greens want 11% of street surface converted; OneCity is the most urbanist party; Liberals pledge 400 km of protected lanes.", "pts": { "green": 3, "onecity": 3, "lib": 1, "cope": 1 } , "axis": { "e": -0.3, "s": 0.9 } },
+        { "t": "Finish the SkyTrain to UBC above everything else", "s": "The Liberals' top transportation priority. Bright Future also backs it.", "pts": { "lib": 3, "onecity": 1, "green": 1 } , "axis": { "e": 0, "s": 0.3 } },
+        { "t": "Free transit for under-18s and an electric passenger ferry", "s": "Vote Vancouver's transit pledges.", "pts": { "vv": 3, "cope": 1 } , "axis": { "e": -0.5, "s": 0.4 } }
+      ]
+    },
+    {
+      "topic": "Plebiscite",
+      "q": "Should the city ask the province for 100-plus involuntary care beds at the old St. Paul's site?",
+      "context": "This is the second non-binding plebiscite on your ballot. It is provincial jurisdiction; the vote only signals what residents think.",
+      "opts": [
+        { "t": "Yes", "s": "ABC put it on the ballot. TEAM and the Liberals also favour treatment and recovery capacity.", "pts": { "abc": 3, "team": 1, "lib": 1 } , "axis": { "e": 0.2, "s": -0.9 } },
+        { "t": "No, prioritize voluntary treatment, harm reduction and housing", "s": "COPE, Greens and OneCity favour harm reduction over enforcement.", "pts": { "cope": 3, "green": 2, "onecity": 2 } , "axis": { "e": -0.4, "s": 0.9 } },
+        { "t": "It is a provincial decision; the plebiscite is a political exercise", "s": "A common critique from the challengers, who voted against adding the questions.", "pts": { "vv": 1, "lib": 1, "green": 1 } , "axis": { "e": 0, "s": 0.2 } }
+      ]
+    },
+    {
+      "topic": "Public land",
+      "q": "Who should new homes on city-owned land mainly be for?",
+      "context": "Every party wants to use public land; they differ on who lives there.",
+      "opts": [
+        { "t": "Middle-income earners who make too much for subsidy and too little for the market", "s": "Vote Vancouver's 'missing middle' pitch, with non-profit childcare in every project.", "pts": { "vv": 3, "lib": 1, "team": 1 } , "axis": { "e": 0.1, "s": 0.1 } },
+        { "t": "Non-market: co-ops, social and supportive housing", "s": "COPE, OneCity and Greens pledge thousands of affordable homes on public land.", "pts": { "cope": 3, "onecity": 2, "green": 2 } , "axis": { "e": -0.9, "s": 0.5 } },
+        { "t": "Market rental built with private partners, thousands of units quickly", "s": "ABC's housing plan pitches 4,200 rental homes on city land.", "pts": { "abc": 3, "lib": 1 } , "axis": { "e": 0.8, "s": -0.1 } },
+        { "t": "A mix of all of the above", "s": "OneCity and the Greens both support a wide range of tenures.", "pts": { "onecity": 2, "green": 2, "lib": 1, "vv": 1 } , "axis": { "e": -0.2, "s": 0.2 } }
+      ]
+    },
+    {
+      "topic": "City Hall",
+      "q": "What would most improve how City Hall works?",
+      "context": "The challengers have very different diagnoses of what is broken.",
+      "opts": [
+        { "t": "A lobbyist registry, cheaper FOI requests and a stronger Integrity Commissioner", "s": "The Liberals' governance package, plus a citizens' assembly on a ward system.", "pts": { "lib": 3 } , "axis": { "e": 0, "s": 0.1 } },
+        { "t": "Public hearings and neighbourhood planning offices brought back", "s": "TEAM.", "pts": { "team": 3 } , "axis": { "e": 0.1, "s": -0.6 } },
+        { "t": "Basic responsiveness: reach a real person, broken streetlights fixed within 72 hours", "s": "Vote Vancouver's 'love your community' pillar, plus City Hall hubs in community centres.", "pts": { "vv": 3 } },
+        { "t": "Electoral reform so council better reflects how people voted", "s": "Shared plank of Greens, OneCity and COPE.", "pts": { "green": 2, "onecity": 2, "cope": 2 } , "axis": { "e": -0.3, "s": 0.6 } },
+        { "t": "Keep it lean and fast: shorter permit times, fewer staff", "s": "ABC's record on permitting.", "pts": { "abc": 3 } , "axis": { "e": 0.8, "s": -0.3 } }
+      ]
+    },
+    {
+      "topic": "The incumbent",
+      "q": "How would you grade Ken Sim's four years?",
+      "context": "ABC delivered on police hiring and permit times, fell short on trees, nurses and childcare, and polls show Sim roughly tied with Fry.",
+      "opts": [
+        { "t": "He mostly did what he said; give him a second term", "s": "ABC.", "pts": { "abc": 3 } , "axis": { "e": 0.5, "s": -0.5 } },
+        { "t": "Time for a change from the centre", "s": "Liberals, Vote Vancouver and TEAM all position themselves as the non-ABC, non-left option.", "pts": { "lib": 2, "vv": 2, "team": 2 } , "axis": { "e": 0.2, "s": 0 } },
+        { "t": "Time for a change from the left", "s": "Greens, OneCity and COPE agreed to run a single mayoral candidate, Pete Fry, to avoid splitting this vote.", "pts": { "green": 2, "onecity": 2, "cope": 2 } , "axis": { "e": -0.7, "s": 0.7 } }
+      ]
+    }
+  ],
+  "note": {
+    "text": "Also on your ballot: three yes/no borrowing questions ($292M streets and bridges, $438M community and civic facilities, $60M parks) and two non-binding plebiscites on open-air drug use and involuntary care. Smaller parties not scored here: Bright Future Vancouver, TrueBlue Vancouver, the Independent Parks Party, and several independents.",
+    "link": { "label": "Full candidate lists at vancouver.ca", "url": "https://vancouver.ca/your-government/2026-candidate-information.aspx" }
+  },
+  "sources": [
+    { "label": "Allen Pike, Vancouver Election Guide 2026", "url": "https://allenpike.com/2026/2026-vancouver-election-guide/" },
+    { "label": "Daily Hive, major campaign promises by party", "url": "https://dailyhive.com/vancouver/vancouver-municipal-parties-campaign-promises" },
+    { "label": "Vancouver Liberals platform", "url": "https://www.vancouverliberals.com/issues" },
+    { "label": "The Tyee on Vote Vancouver and TEAM pledges", "url": "https://thetyee.ca/News/2026/09/10/Vancouver-Centrist-Parties-Remain-Mayoral-Race/" },
+    { "label": "City of Vancouver, ballot questions", "url": "https://vancouver.ca/your-government/2026-capital-plan-borrowing-questions-and-plebiscite-questions.aspx" }
+  ],
+  "resources": [
+    { "label": "City of Vancouver, 2026 election", "url": "https://vancouver.ca/your-government/2026-election.aspx" },
+    { "label": "Guide to voting: who can vote, what to bring", "url": "https://vancouver.ca/your-government/2026-voters-guide.aspx" },
+    { "label": "Voting place map and hours", "url": "https://vancouver.ca/election/2026/where-to-vote.aspx" },
+    { "label": "Full candidate lists and ballot numbers", "url": "https://vancouver.ca/your-government/2026-candidate-information.aspx" },
+    { "label": "Allen Pike, Vancouver Election Guide 2026", "url": "https://allenpike.com/2026/2026-vancouver-election-guide/" }
+  ],
+  "results": {
+    "source": "https://results.vancouver.ca/data/arearesults.json",
+    "official": "https://results.vancouver.ca/",
+    "alternatives": [
+      { "label": "CivicInfo BC, province-wide results", "url": "https://www.civicinfo.bc.ca/elections" },
+      { "label": "CBC British Columbia", "url": "https://www.cbc.ca/news/canada/british-columbia" },
+      { "label": "Global BC", "url": "https://globalnews.ca/bc/" },
+      { "label": "Vancouver Sun", "url": "https://vancouversun.com/" }
+    ],
+    "projectMatch": "2026",
+    "baseline": { "year": 2022, "ballots": 171494 },
+    "contests": [
+      { "match": "^MAYOR", "kind": "mayor", "label": "Mayor" },
+      { "match": "^COUNCILLOR", "kind": "council", "label": "Council" },
+      { "match": "^PARK", "kind": "park", "label": "Park Board" },
+      { "match": "^SCHOOL", "kind": "school", "label": "School Board" }
+    ]
+  }
+}

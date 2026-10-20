@@ -1,0 +1,64 @@
+{
+  "slug": "TODO",
+  "title": "TODO",
+  "description": "TODO: one or two sentences for the index card and link previews.",
+  "ballot": "referendum",
+  "votingDay": "2026-01-01",
+  "published": false,
+  "place": "TODO",
+  "eyebrow": "TODO",
+  "pollsClose": "2026-01-01T20:00:00-07:00",
+  "timeZone": "America/Edmonton",
+  "dates": {
+    "advance": [],
+    "final": "2026-01-01",
+    "hours": "9 am to 8 pm",
+    "mailBy": "TODO or remove",
+    "url": "https://example.com/TODO-where-to-vote"
+  },
+  "lede": "TODO: the one-paragraph pitch shown above the ballot.",
+  "intro": "TODO: how the ballots are handed out and that nothing leaves the page.",
+  "sources": [{ "label": "TODO source", "url": "https://example.com/TODO" }],
+  "resources": [
+    { "label": "TODO: where to vote", "url": "https://example.com/TODO" }
+  ],
+  "groups": [
+    {
+      "key": "questions",
+      "label": "TODO group",
+      "order": "TODO order in council",
+      "note": "Yes or no. Not binding."
+    }
+  ],
+  "questions": [
+    {
+      "n": 1,
+      "group": "questions",
+      "topic": "TODO topic",
+      "short": "TODO: the question in one line?",
+      "q": "TODO: the question in its official wording?",
+      "options": [
+        { "t": "Yes", "match": "^yes" },
+        { "t": "No", "match": "^no" }
+      ],
+      "context": "TODO: plain context on what a yes or no would do.",
+      "polls": []
+    }
+  ],
+  "pollNote": "TODO or remove: how the poll figures were compiled.",
+  "results": {
+    "format": "eab-dash",
+    "source": "https://example.com/TODO/data/0000?version=1.0.0&questions=1&wards=",
+    "official": "https://example.com/TODO-results",
+    "label": "TODO source name",
+    "unit": "polls",
+    "unofficialNote": "Unofficial until the official results are published.",
+    "alternatives": [],
+    "serverFetch": true,
+    "fetchHours": 48,
+    "throttleSeconds": 90,
+    "sourcePrefix": "https://example.com/TODO/data/0000",
+    "questionIds": { "1": 1 },
+    "divisions": { "01": "TODO Division" }
+  }
+}
