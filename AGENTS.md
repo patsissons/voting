@@ -129,6 +129,10 @@ After making changes from a prompt and BEFORE committing:
 3. `phio logs`: every stored snapshot logs `[voting] <slug> snapshot ...`;
    `GET /_voting/fetch` answers with per-election outcomes.
 4. Official count: `pnpm relay --election <slug> --source <url> --official --once`.
+5. Until cutover cubby.fyi is the system of record; mirror its results here
+   with `pnpm data:export` (no creds needed), `pnpm data:transform` (leaves
+   `elections/` unchanged), then `pnpm data:import --url <instance> --sync`
+   (overwrites to match; never `--hidden` before cutover).
 
 ## JSVM constraints (hooks)
 
