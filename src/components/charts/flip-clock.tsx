@@ -73,7 +73,7 @@ export function FlipClock({ seconds, format, spoken }: FlipClockProps) {
                 <b>{c.ch}</b>
               </span>
               <span className="fc-bot">
-                <b>{c.prev ?? c.ch}</b>
+                <b>{c.ch}</b>
               </span>
               {c.prev != null ? (
                 <FlapPair key={c.flipKey} from={c.prev} to={c.ch} />
@@ -87,12 +87,15 @@ export function FlipClock({ seconds, format, spoken }: FlipClockProps) {
   )
 }
 
-/** The two animated flaps for one change; the bottom face shows the new digit once the up flap lands. */
+/** The two animated flaps for one change, over a cover that keeps the old digit on the bottom face until the up flap lands. */
 function FlapPair({ from, to }: { from: string; to: string }) {
   const [done, setDone] = useState(false)
   if (done) return null
   return (
     <>
+      <span className="fc-bot fc-old">
+        <b>{from}</b>
+      </span>
       <span className="fc-flap fc-down">
         <b>{from}</b>
       </span>
