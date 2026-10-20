@@ -34,4 +34,6 @@ test-results/
 pb_hooks/lib/
 
 # cubby.fyi exports (scripts/data/export.ts)
-data/export/
+data/export/*
+!data/export/README.md
+data/import/

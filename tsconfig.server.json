@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": [],
+    "allowImportingTsExtensions": true
+  },
+  "include": ["shared", "server"],
+  "exclude": ["**/*.test.ts"]
+}
