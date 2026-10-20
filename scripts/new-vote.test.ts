@@ -12,22 +12,24 @@ describe('new-vote', () => {
   })
 
   it('builds a valid draft for each ballot mode with the header filled in', () => {
+    // A day before November 2026: newer tzdata keeps BC on daylight time
+    // year-round from then, so later dates differ between machines.
     for (const ballot of ['at-large', 'district', 'referendum'] as const) {
       const doc = buildDocument({
         slug: `test-${ballot}`,
         ballot,
         title: 'Test Vote',
-        day: '2027-03-06',
+        day: '2026-03-07',
         timeZone: 'America/Vancouver',
         place: 'Testville',
       })
       expect(doc.slug).toBe(`test-${ballot}`)
       expect(doc.published).toBe(false)
-      expect(doc.votingDay).toBe('2027-03-06')
-      expect(doc.dates.final).toBe('2027-03-06')
-      expect(doc.pollsClose).toBe('2027-03-06T20:00:00-08:00')
+      expect(doc.votingDay).toBe('2026-03-07')
+      expect(doc.dates.final).toBe('2026-03-07')
+      expect(doc.pollsClose).toBe('2026-03-07T20:00:00-08:00')
       expect(doc.eyebrow).toBe(
-        `Testville ${ballot === 'referendum' ? 'referendum' : 'election'} · voting day Saturday, March 6`,
+        `Testville ${ballot === 'referendum' ? 'referendum' : 'election'} · voting day Saturday, March 7`,
       )
       // The written file round-trips through the checker unchanged.
       expect(documentText(parseElection(JSON.parse(documentText(doc))))).toBe(
