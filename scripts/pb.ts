@@ -67,6 +67,8 @@ export type ServeOptions = {
   dataDir: string
   addr?: string
   env?: Record<string, string>
+  /** Restart the hooks when pb_hooks changes (off for e2e: a late file event mid-seed would drop the connection). */
+  watch?: boolean
 }
 
 export function serveArgs(dataDir: string): string[] {
@@ -101,6 +103,7 @@ export function startServer({
   dataDir,
   addr = '127.0.0.1:8090',
   env = {},
+  watch = true,
 }: ServeOptions) {
   return spawn(
     binary,
@@ -110,6 +113,7 @@ export function startServer({
       addr,
       '--publicDir',
       path.join(root, 'pb_public'),
+      `--hooksWatch=${watch}`,
       ...serveArgs(dataDir),
     ],
     {
@@ -142,8 +146,10 @@ export async function seed(
   token = process.env.VOTING_INGEST_TOKEN || LOCAL_INGEST_TOKEN,
 ): Promise<void> {
   const client = new PbClient(baseUrl)
+  await waitForHealth(client)
   await client.authenticate(LOCAL_SUPERUSER)
   for (const doc of loadElections()) {
+    await waitForHealth(client)
     const { action } = await client.upsertElection(doc)
     const posted = await client.ingestFixtures(doc, token)
     const stored = posted.filter((p) => p.status === 201).length
@@ -164,22 +170,29 @@ async function main() {
   mkdirSync(dataDir, { recursive: true })
   ensureSuperuser(dataDir)
   const addr = args.flag('addr') || '127.0.0.1:8090'
-  const server = startServer({ dataDir, addr })
+  if (e2e || args.has('seed')) {
+    // Seed on a side port first, so nothing waiting on the real port (the
+    // Playwright webServer health check) sees a half-seeded instance.
+    const side = '127.0.0.1:8099'
+    const seeder = startServer({ dataDir, addr: side, watch: false })
+    try {
+      await waitForHealth(new PbClient(`http://${side}`))
+      await seed(`http://${side}`)
+    } catch (err) {
+      console.error(err)
+      seeder.kill()
+      process.exit(1)
+    }
+    seeder.kill()
+    await new Promise((resolve) => seeder.on('exit', resolve))
+  }
+  const server = startServer({ dataDir, addr, watch: !e2e })
   const stop = () => server.kill()
   process.on('SIGINT', stop)
   process.on('SIGTERM', stop)
   server.on('exit', (code) => process.exit(code ?? 0))
   const baseUrl = `http://${addr}`
   await waitForHealth(new PbClient(baseUrl))
-  if (e2e || args.has('seed')) {
-    try {
-      await seed(baseUrl)
-    } catch (err) {
-      console.error(err)
-      stop()
-      process.exit(1)
-    }
-  }
   console.log(
     `[pb] ${baseUrl}/ (admin: ${baseUrl}/_/ as ${LOCAL_SUPERUSER.email})`,
   )
