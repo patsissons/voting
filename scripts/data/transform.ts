@@ -141,14 +141,13 @@ export function transformExport(data: Export): { elections: Election[]; results:
   return { elections: [...bySlug.values()], results, hidden }
 }
 
-/** The newest data/export/<date> directory. */
-export function latestExport(): string | null {
-  const dir = path.join(root, 'data', 'export')
+/** The newest data/export/<stamp> directory export.ts wrote (it leaves a manifest.json; a hand-made one like `<date>-legacy` has none). */
+export function latestExport(dir = path.join(root, 'data', 'export')): string | null {
   if (!existsSync(dir)) return null
-  const dates = readdirSync(dir)
-    .filter((d) => /^\d{4}-\d{2}-\d{2}/.test(d))
+  const stamps = readdirSync(dir)
+    .filter((d) => /^\d{4}-\d{2}-\d{2}/.test(d) && existsSync(path.join(dir, d, 'manifest.json')))
     .sort()
-  return dates.length ? path.join(dir, dates[dates.length - 1]) : null
+  return stamps.length ? path.join(dir, stamps[stamps.length - 1]) : null
 }
 
 export function readExport(dir: string): Export {

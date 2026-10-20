@@ -1,11 +1,12 @@
-import { readFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { legacyConfig } from '../fixtures/load.ts'
 import { electionsDir } from '../lib/elections.ts'
 import { documentText } from '../lib/json.ts'
 import { LEGACY_ROWS } from './legacy.ts'
-import { transformElection, transformExport, transformResult } from './transform.ts'
+import { latestExport, transformElection, transformExport, transformResult } from './transform.ts'
 
 describe('transform', () => {
   it('reproduces the committed election documents from the cubby files and rows', () => {
@@ -52,5 +53,23 @@ describe('transform', () => {
     ])
     expect(out.hidden['alberta-2026'].results_source).toBe('https://x')
     expect(() => transformExport({ elections, results: [{ ...results[0], election: 'nope' }], configs })).toThrow(/unknown election/)
+  })
+})
+
+describe('latestExport', () => {
+  it('picks the newest export with a manifest, never a hand-made directory', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'voting-export-'))
+    try {
+      expect(latestExport(path.join(dir, 'missing'))).toBeNull()
+      for (const name of ['2026-10-20-12-00-00', '2026-10-20-22-24-49', '2026-10-20-legacy', 'README.md']) {
+        if (name.endsWith('.md')) writeFileSync(path.join(dir, name), '')
+        else mkdirSync(path.join(dir, name))
+      }
+      expect(latestExport(dir)).toBeNull()
+      for (const name of ['2026-10-20-12-00-00', '2026-10-20-22-24-49']) writeFileSync(path.join(dir, name, 'manifest.json'), '{}')
+      expect(latestExport(dir)).toBe(path.join(dir, '2026-10-20-22-24-49'))
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 })
