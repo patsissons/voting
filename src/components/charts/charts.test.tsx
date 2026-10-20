@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { act, fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import { Meter, SegmentBar, TwoOptionBar } from './bars'
 import { Dumbbell } from './dumbbell'
 import { FlipClock } from './flip-clock'
@@ -187,5 +187,28 @@ describe('chart kit', () => {
     )
     expect(screen.getByRole('timer')).toBeInTheDocument()
     expect(screen.getByText('7 minutes ago')).toBeInTheDocument()
+  })
+
+  it('keeps both halves of a flipped digit on the new value', () => {
+    vi.useFakeTimers()
+    let now = 425
+    const { container } = render(
+      <FlipClock
+        seconds={() => now}
+        format={(s) =>
+          `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+        }
+        spoken={(s) => `${Math.floor(s / 60)} minutes ago`}
+      />,
+    )
+    act(() => vi.advanceTimersByTime(0))
+    now = 426
+    act(() => vi.advanceTimersByTime(1000))
+    vi.useRealTimers()
+    const last = [...container.querySelectorAll('.flip-card')].at(-1)!
+    expect(last.querySelector('.fc-top')).toHaveTextContent('6')
+    expect(last.querySelector('.fc-bot:not(.fc-old)')).toHaveTextContent('6')
+    // The old digit covers the bottom only until the up flap lands.
+    expect(last.querySelector('.fc-old')).toHaveTextContent('5')
   })
 })

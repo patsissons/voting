@@ -277,10 +277,6 @@
   align-items: flex-end;
   transform-origin: top;
 }
-.flip-card .fc-bot > b,
-.flip-card .fc-up > b {
-  transform: translateY(-50%);
-}
 .flip-card .fc-down {
   animation: fc-down 0.28s ease-in forwards;
 }
@@ -303,6 +299,7 @@
   padding: 0 1px;
 }
 @media (prefers-reduced-motion: reduce) {
+  .flip-card .fc-old,
   .flip-card .fc-down,
   .flip-card .fc-up {
     animation: none;
