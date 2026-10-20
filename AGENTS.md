@@ -124,11 +124,23 @@ After making changes from a prompt and BEFORE committing:
 "https://voting.lgtm.page/_voting/source/<slug>?url=<page>"` (the document's
    `sourcePrefix` and `eventMatch` gate it). Vancouver has no server fetch:
    run `pnpm relay --election vancouver-2026` (drives Chrome) instead.
-2. Add the PocketHost webhook on `GET /_voting/fetch` for the night; delete it
-   after.
+2. Add the PocketHost webhook on `GET /_voting/fetch?slug=<slug>` for the
+   night; delete it after. PocketHost allows one webhook per route, so the
+   `slug` param only tells them apart: every call checks every election
+   with a source.
 3. `phio logs`: every stored snapshot logs `[voting] <slug> snapshot ...`;
-   `GET /_voting/fetch` answers with per-election outcomes.
+   `GET /_voting/fetch` answers with per-election outcomes. If the server
+   fetch keeps failing, `pnpm relay --election <slug> --source <url>` pushes
+   from a laptop instead.
 4. Official count: `pnpm relay --election <slug> --source <url> --official --once`.
+5. This instance is the system of record for every election: Alberta moved
+   here on 2026-10-20 (cubby's source cleared, then a last `--sync`) and BC
+   night runs only here. cubby.fyi ingests nothing. Never `--sync` an
+   election from a cubby export once it fetches here: `--sync` deletes the
+   rows the export lacks. For the record, a mirror was `pnpm data:export`
+   (no creds needed), `pnpm data:transform` (check `git diff elections/`),
+   then `pnpm data:import --url <instance> --sync --election <slug>` with
+   `PB_SUPERUSER_EMAIL`/`PB_SUPERUSER_PASSWORD`.
 
 ## JSVM constraints (hooks)
 

@@ -54,7 +54,7 @@ instance does.
 | `POST /_voting/source/{slug}?url=` | set or clear the page the server-side fetch pulls (bearer token)           |
 | `GET /_voting/fetch`               | run one fetch tick (public; the election-night webhook target)             |
 
-The hash grammar is frozen because cubby.fyi links 301 here:
+The hash grammar is frozen because cubby.fyi links redirect here:
 `#/compass/<code>` is one character per question (`-` skipped, `0`-`9` the
 option, `A`-`J` the option counted double), `/q<i>` or `/r<i>` mid-quiz.
 
@@ -91,9 +91,9 @@ with `PB_SUPERUSER_EMAIL` and `PB_SUPERUSER_PASSWORD` set.
 | `pnpm elections:push`      | Upsert the documents into an instance (`--local` or `--url` + superuser env)    |
 | `pnpm new-vote`            | Scaffold a new election document (`docs/new-vote.md`)                           |
 | `pnpm relay`               | The election-night relay (`--fixture` posts a synthetic night)                  |
-| `pnpm data:export`         | Export the cubby.fyi elections and results (superuser env)                      |
+| `pnpm data:export`         | Export the cubby.fyi elections and results (superuser env adds hidden columns)  |
 | `pnpm data:transform`      | Transform an export into `elections/*.json` and `data/import/results.jsonl`     |
-| `pnpm data:import`         | Import the transformed rows into an instance, idempotently                      |
+| `pnpm data:import`         | Import the transformed rows idempotently (`--sync` overwrites to match)         |
 | `pnpm typegen`             | Regenerate `src/lib/pocketbase-types.ts` from a live schema                     |
 | `pnpm validate:quick`      | format check + typecheck + lint + election check + unit tests                   |
 | `pnpm validate`            | `validate:quick` + e2e tests                                                    |
