@@ -54,7 +54,7 @@ instance does.
 | `POST /_voting/source/{slug}?url=` | set or clear the page the server-side fetch pulls (bearer token)           |
 | `GET /_voting/fetch`               | run one fetch tick (public; the election-night webhook target)             |
 
-The hash grammar is frozen because cubby.fyi links 301 here:
+The hash grammar is frozen because cubby.fyi links redirect here:
 `#/compass/<code>` is one character per question (`-` skipped, `0`-`9` the
 option, `A`-`J` the option counted double), `/q<i>` or `/r<i>` mid-quiz.
 

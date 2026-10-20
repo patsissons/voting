@@ -9,3 +9,7 @@ also exports the hidden `results_*` columns, which only the cutover import
 turns the newest one into `elections/*.json` and `data/import/results.jsonl`,
 and `pnpm data:import` loads that into an instance (`--sync` overwrites the
 instance's results for every exported election to match the export).
+
+Since the 2026-10-20 cutover every election's results land only on the
+voting instance, so `--sync` from a cubby export would delete the rows cubby
+never saw. Keep these tools for archiving the cubby data, not for mirroring.
