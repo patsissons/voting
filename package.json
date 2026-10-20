@@ -1,0 +1,62 @@
+{
+  "name": "voting",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:e2e": "vite --port 5173 --strictPort --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "typegen": "pocketbase-typegen --url $PB_TYPEGEN_URL --email $PB_TYPEGEN_EMAIL --password $PB_TYPEGEN_PASSWORD --out src/lib/pocketbase-types.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "validate:quick": "run-s format:check typecheck lint test",
+    "validate": "run-s validate:quick test:e2e",
+    "format-and-validate": "run-s format validate"
+  },
+  "dependencies": {
+    "@radix-ui/react-label": "^2.1.11",
+    "@radix-ui/react-slot": "^1.3.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.24.0",
+    "pocketbase": "^0.27.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router": "^8.2.0",
+    "tailwind-merge": "^3.6.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.1",
+    "@tailwindcss/vite": "^4.3.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "eslint": "^10.7.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.7.0",
+    "jsdom": "^29.1.1",
+    "npm-run-all2": "^9.0.2",
+    "pocketbase-typegen": "^1.5.0",
+    "prettier": "^3.9.5",
+    "tailwindcss": "^4.3.2",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.64.0",
+    "vite": "^8.1.4",
+    "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

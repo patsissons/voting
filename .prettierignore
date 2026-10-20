@@ -1,0 +1,10 @@
+pb_public/
+pb_data/
+pb_migrations/
+pb_hooks/
+coverage/
+playwright-report/
+test-results/
+pnpm-lock.yaml
+bun.lock
+package-lock.json
