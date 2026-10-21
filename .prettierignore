@@ -12,3 +12,5 @@ package-lock.json
 data/
 elections/
 scripts/fixtures/
+src/geo/
+.geo-cache/
