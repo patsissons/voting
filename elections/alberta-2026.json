@@ -25,6 +25,7 @@
     { "label": "CBC, guide to the 10 questions", "url": "https://www.cbc.ca/news/canada/calgary/guide-to-the-10-questions-in-alberta-s-oct-19-referendum-9.7361550" },
     { "label": "Wikipedia, 2026 Alberta referendums", "url": "https://en.wikipedia.org/wiki/2026_Alberta_referendums" }
   ],
+  "boundaries": "ab-2017",
   "groups": [
     { "key": "separation", "label": "Separation", "order": "O.C. 160/2026", "note": "A choice between two options. Not binding." },
     { "key": "policy", "label": "Immigration, programs and voter ID", "order": "O.C. 110/2026", "note": "Yes or no. Not binding; each asks the government to write a law or seek more powers." },

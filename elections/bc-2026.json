@@ -33,6 +33,7 @@
     "text": "Also on the ballot in some ridings and not scored here: Libertarian (4), Communist (4), Christian Heritage (3), CanWest (2) and Freedom Party (1) candidates, and 15 independents or unaffiliated candidates. Candidate lists follow Elections BC's list as of Oct 12; the BC NDP has no candidate in Peace River North.",
     "link": { "label": "Elections BC's candidate list", "url": "https://elections.bc.ca/2026-provincial-election/candidate-list/" }
   },
+  "boundaries": "bc-2023",
   "seats": 93,
   "majority": 47,
   "facts": [{ "n": 1, "label": "vote, for one MLA in your riding" }, { "n": 93, "label": "ridings, 355 candidates" }, { "n": 47, "label": "seats for a majority" }],

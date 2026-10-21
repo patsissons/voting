@@ -29,6 +29,11 @@ const cssColor = z.string().min(1)
 export const BALLOTS = ['at-large', 'district', 'referendum'] as const
 export type Ballot = (typeof BALLOTS)[number]
 
+/** The boundary sets the results maps draw (src/geo/<set>.json, `pnpm geo`). */
+export const BOUNDARY_SETS = ['ab-2017', 'bc-2023'] as const
+export type BoundarySetKey = (typeof BOUNDARY_SETS)[number]
+const boundaries = z.enum(BOUNDARY_SETS).optional()
+
 const dates = z.strictObject({
   advance: z.array(day).default([]),
   final: day,
@@ -230,6 +235,8 @@ export const DistrictSchema = z.strictObject({
   ...head,
   ballot: z.literal('district'),
   ...header,
+  /** The divisions on the results map; no map without it. */
+  boundaries,
   seats: z.number().int().positive(),
   majority: z.number().int().positive(),
   facts: z
@@ -282,6 +289,8 @@ export const ReferendumSchema = z.strictObject({
   ...head,
   ballot: z.literal('referendum'),
   ...header,
+  /** The divisions on the results map; no map without it. */
+  boundaries,
   groups: z
     .array(
       z.strictObject({

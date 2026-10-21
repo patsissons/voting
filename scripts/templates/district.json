@@ -9,6 +9,7 @@
   "eyebrow": "TODO",
   "pollsClose": "2026-01-01T20:00:00-08:00",
   "timeZone": "America/Vancouver",
+  "boundaries": "bc-2023",
   "dates": {
     "advance": [],
     "final": "2026-01-01",
