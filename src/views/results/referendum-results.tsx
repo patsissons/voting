@@ -1,14 +1,17 @@
 // A referendum (Alberta): each question's count by group, then the charts
 // across questions: locations reported over time, votes counted per
 // question, how each question moved, momentum, Calgary/Edmonton/rest, and
-// every division for one question with the viewer's own ringed.
+// the map of one question by division, and every division for one question
+// with the viewer's own ringed.
 import { useMemo, useState } from 'react'
 import { DataTable, GroupHead, Note, Section } from '@/components/bits'
 import { TwoOptionBar } from '@/components/charts/bars'
+import { Choropleth } from '@/components/charts/choropleth'
 import { Dumbbell } from '@/components/charts/dumbbell'
 import { Legend } from '@/components/charts/legend'
 import { Lines } from '@/components/charts/lines'
 import { Strip } from '@/components/charts/strip'
+import type { TipContent } from '@/components/charts/tooltip'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -18,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { blendCss } from '@/lib/blend'
 import { seriesColor } from '@/lib/party'
 import { keys as storageKeys, readString, writeString } from '@/lib/storage'
 import { atClock, timeTicks } from '@/lib/time'
@@ -35,6 +39,7 @@ import type {
   ReferendumElection,
   ReferendumQuestion,
 } from '../../../shared/schema/election.ts'
+import { blendWeights, LEADER } from '../../../shared/stats/blend.ts'
 import {
   allReported,
   ballotWide,
@@ -49,6 +54,7 @@ import {
   stripRows,
   tally,
   votesSeries,
+  type DivisionRow,
   type DivisionSort,
 } from '../../../shared/stats/referendum.ts'
 import { pollsText, reportedText } from '../ballot/referendum-ballot'
@@ -65,6 +71,7 @@ export function referendumSections(
     { id: 'trend', label: 'Trend' },
     { id: 'momentum', label: 'Lately' },
     { id: 'regions', label: 'Regions' },
+    ...(election.boundaries ? [{ id: 'map', label: 'Map' }] : []),
     { id: 'divisions', label: 'Divisions' },
   ]
 }
@@ -92,6 +99,14 @@ export function ReferendumResults({
   const counted = tally(firstContest).total
   const done = allReported(latest, election)
   const colorOfQ = (q: ReferendumQuestion) => seriesColor(Q.indexOf(q))
+  // The viewer's own division, shared by the map and the division list.
+  const [own, setOwn] = useState(() =>
+    readString(storageKeys.division(election.slug)),
+  )
+  const pickOwn = (next: string) => {
+    setOwn(next)
+    writeString(storageKeys.division(election.slug), next)
+  }
   return (
     <div className="space-y-6">
       <StatusLine
@@ -164,7 +179,13 @@ export function ReferendumResults({
         colorOfQ={colorOfQ}
       />
       <RegionSection election={election} latest={latest} />
-      <DivisionsSection election={election} latest={latest} />
+      <MapSection election={election} latest={latest} own={own} />
+      <DivisionsSection
+        election={election}
+        latest={latest}
+        own={own}
+        onOwn={pickOwn}
+      />
 
       <SourceNote>
         Counts from{' '}
@@ -615,9 +636,13 @@ function RegionSection({
 function DivisionsSection({
   election,
   latest,
+  own,
+  onOwn,
 }: {
   election: ReferendumElection
   latest: Snapshot['payload']
+  own: string
+  onOwn: (code: string) => void
 }) {
   const withRows = useMemo(
     () =>
@@ -628,9 +653,6 @@ function DivisionsSection({
   )
   const [pickN, setPickN] = useState<number | null>(null)
   const [sort, setSort] = useState<DivisionSort>('name')
-  const [own, setOwn] = useState(() =>
-    readString(storageKeys.division(election.slug)),
-  )
   if (!withRows.length) return null
   const pick = withRows.find((q) => q.n === pickN) || withRows[0]
   const contest = contestOf(latest, pick)
@@ -669,11 +691,7 @@ function DivisionsSection({
           <span className="text-muted-foreground block">Your division</span>
           <Select
             value={own || '__none'}
-            onValueChange={(v) => {
-              const next = v === '__none' ? '' : v
-              setOwn(next)
-              writeString(storageKeys.division(election.slug), next)
-            }}
+            onValueChange={(v) => onOwn(v === '__none' ? '' : v)}
           >
             <SelectTrigger className="w-64" aria-label="Your division">
               <SelectValue placeholder="Choose…" />
@@ -732,22 +750,8 @@ function DivisionsSection({
                 in: true,
                 color: (d.share || 0) >= 50 ? 'var(--ref-a)' : 'var(--ref-b)',
                 ring: (d.code || d.name) === own,
-                describe: () => ({
-                  title: `${d.name}${(d.code || d.name) === own ? ' (yours)' : ''}`,
-                  lines: [
-                    { label: a, value: pct1(d.share || 0) },
-                    { label: b, value: pct1(100 - (d.share || 0)) },
-                    { label: 'Votes', value: fmt(d.total) },
-                    ...(d.polls && d.polls[1]
-                      ? [
-                          {
-                            label: capitalize(unit),
-                            value: `${fmt(d.polls[0])} of ${fmt(d.polls[1])}`,
-                          },
-                        ]
-                      : []),
-                  ],
-                }),
+                describe: () =>
+                  divisionTip(d, pick, unit, (d.code || d.name) === own),
               })),
             }))}
             xTicks={[0, 25, 50, 75, 100]}
@@ -850,6 +854,151 @@ function DivisionsSection({
           Next question
         </Button>
       ) : null}
+    </Section>
+  )
+}
+
+/** One division's count for one question, as tooltip lines. */
+function divisionTip(
+  d: DivisionRow,
+  q: ReferendumQuestion,
+  unit: string,
+  yours: boolean,
+): TipContent {
+  const [a, b] = q.options.map((o) => o.t)
+  return {
+    title: `${d.name}${yours ? ' (yours)' : ''}`,
+    lines: d.total
+      ? [
+          { label: a, value: pct1(d.share || 0), color: 'var(--ref-a)' },
+          {
+            label: b,
+            value: pct1(100 - (d.share || 0)),
+            color: 'var(--ref-b)',
+          },
+          { label: 'Votes', value: fmt(d.total) },
+          ...(d.polls && d.polls[1]
+            ? [
+                {
+                  label: capitalize(unit),
+                  value: `${fmt(d.polls[0])} of ${fmt(d.polls[1])}`,
+                },
+              ]
+            : []),
+        ]
+      : [{ label: 'Votes', value: 'none counted yet' }],
+  }
+}
+
+const optionColor = (key: string) =>
+  key === 'a' ? 'var(--ref-a)' : 'var(--ref-b)'
+
+/** The map fill for one division's two-option count. */
+const divisionFill = (votes: [number, number]): string =>
+  blendCss(
+    blendWeights([
+      { key: 'a', share: votes[0] },
+      { key: 'b', share: votes[1] },
+    ]),
+    optionColor,
+  )
+
+function MapSection({
+  election,
+  latest,
+  own,
+}: {
+  election: ReferendumElection
+  latest: Snapshot['payload']
+  own: string
+}) {
+  const withRows = useMemo(
+    () =>
+      election.questions.filter(
+        (q) => (contestOf(latest, q)?.eds || []).length,
+      ),
+    [election, latest],
+  )
+  const [pickN, setPickN] = useState<number | null>(null)
+  const set = election.boundaries
+  if (!set || !withRows.length) return null
+  const pick = withRows.find((q) => q.n === pickN) || withRows[0]
+  const rows = divisionRows(contestOf(latest, pick))
+  const byCode = new Map(rows.map((r) => [r.code || r.name, r]))
+  const unit = election.results.unit || 'voting locations'
+  const names =
+    election.results.format === 'eab-dash' ? election.results.divisions : null
+  const [a, b] = pick.options.map((o) => o.t)
+  const fills: Record<string, string> = {}
+  for (const r of rows)
+    if (r.total) fills[r.code || r.name] = divisionFill(r.votes)
+  // The legend runs from all b to all a, through the same blend.
+  const stops = Array.from({ length: 21 }, (_, i) =>
+    divisionFill([i * 5, 100 - i * 5]),
+  )
+  return (
+    <Section
+      id="map"
+      title="Map"
+      sub={`Question ${pick.n} by electoral division`}
+    >
+      <label className="block space-y-1 text-xs">
+        <span className="text-muted-foreground block">Question</span>
+        <Select
+          value={String(pick.n)}
+          onValueChange={(v) => setPickN(Number(v))}
+        >
+          <SelectTrigger className="w-64" aria-label="Map question">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {withRows.map((q) => (
+              <SelectItem key={q.n} value={String(q.n)}>
+                Q{q.n} {q.topic}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </label>
+      <div className="max-w-sm space-y-1 text-xs">
+        <div
+          className="h-2.5 rounded-full"
+          style={{
+            background: `linear-gradient(to right, ${stops.join(', ')})`,
+          }}
+          role="img"
+          aria-label={`From all ${b} on the left to all ${a} on the right`}
+        />
+        <div className="text-muted-foreground flex justify-between">
+          <span>{b}</span>
+          <span>even</span>
+          <span>{a}</span>
+        </div>
+      </div>
+      <Choropleth
+        set={set}
+        fills={fills}
+        ring={own || undefined}
+        ariaLabel={`Question ${pick.n}, ${pick.topic}: each division's blend of ${a} and ${b}`}
+        describe={(code) => {
+          const row = byCode.get(code)
+          return row
+            ? divisionTip(row, pick, unit, code === own)
+            : {
+                title: `${(names && names[code]) || code}${code === own ? ' (yours)' : ''}`,
+                lines: [{ label: 'Votes', value: 'none counted yet' }],
+              }
+        }}
+      />
+      <Note>
+        Each division blends the two options' colours by their share of its
+        votes, sharpened so the option ahead always makes up at least{' '}
+        {Math.round(LEADER * 100)}% of the colour; grey divisions have no votes
+        counted yet.{' '}
+        {own
+          ? 'Your division is outlined.'
+          : 'Pick your division below to outline it.'}
+      </Note>
     </Section>
   )
 }
