@@ -56,6 +56,16 @@ What each ballot mode needs:
 Party colours are per election (`color`, `colorDark`), so a new election
 never needs a stylesheet change.
 
+District and referendum elections draw a results map when `boundaries`
+names a set in `src/geo/` (`ab-2017`, `bc-2023`). The templates start with
+their province's set; delete the key for a place without one. The set's division codes
+must be the results' codes: `districts[].code` for a district election, the
+`results.divisions` keys for Alberta's dashboard feed (a test checks both).
+A new boundary set is an entry in `scripts/geo/build.ts` (its source, the
+field that becomes the code, the province frame and the city insets), a
+key in `BOUNDARY_SETS` in `shared/schema/election.ts`, then `pnpm geo`;
+commit the generated `src/geo/<set>.json`, never edit it by hand.
+
 ## 3. Results
 
 `results.format` names the feed parser in `shared/parsers/`:

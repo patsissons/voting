@@ -76,6 +76,15 @@ After making changes from a prompt and BEFORE committing:
   (`views/compass/`), the referendum ballot (`views/ballot/`) and the three
   results views (`views/results/`) sit on the shared stats. Charts are
   `components/charts/` (one tooltip context, `useMeasure` for width).
+- **Results maps**: `pnpm geo` (`scripts/geo/build.ts`, mapshaper) turns the
+  official boundary files into `src/geo/<set>.json` (generated and
+  committed; never edit by hand; sources cached in the ignored
+  `.geo-cache/`): a province frame plus city insets, one projected SVG path
+  per division code. An election opts in with `boundaries`. The geometry
+  loads lazily into its own hashed chunk (`components/charts/choropleth.tsx`).
+  Fills blend the choice colours with nested CSS `color-mix` over the page
+  tokens (`src/lib/blend.ts`) using `shared/stats/blend.ts`, which cubes the
+  shares and holds a sole leader at 75% or more so it reads first.
 - **Theme**: `src/lib/theme.ts` + `src/components/theme-toggle.tsx`; the
   visitor's choice is `localStorage` `voting:theme`, otherwise the system
   setting. `public/theme-init.js` applies it before first paint and mirrors the

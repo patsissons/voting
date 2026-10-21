@@ -84,6 +84,7 @@ with `PB_SUPERUSER_EMAIL` and `PB_SUPERUSER_PASSWORD` set.
 | `pnpm pb`                  | Local PocketBase alone (`--seed`; `--e2e` for a throwaway, seeded data dir)     |
 | `pnpm build`               | Vite build into `pb_public/` and the hooks bundle into `pb_hooks/lib/voting.js` |
 | `pnpm og`                  | Regenerate `public/og.png` and `public/apple-touch-icon.png`                    |
+| `pnpm geo`                 | Rebuild the results-map boundaries in `src/geo/` (`--refresh` re-downloads)     |
 | `pnpm test`                | Unit tests (vitest): parsers, stats, schema, store, MCP, components             |
 | `pnpm test:e2e`            | Playwright against the built app under a seeded local PocketBase                |
 | `pnpm smoke`               | Hit the admin routes, the ingest and the public API of a running instance       |
@@ -104,7 +105,7 @@ shared/         runtime-neutral TypeScript: schema, parsers, stats, permalinks
 server/         hook logic (store, fetch, pages, markdown, MCP), bundled to pb_hooks/lib/voting.js
 pb_hooks/       the committed one-line .pb.js files; lib/ is built
 pb_migrations/  the two collections
-src/            the React app
+src/            the React app; src/geo/ holds the generated map boundaries
 scripts/        local PocketBase, build, push, relay, fixtures
 e2e/            Playwright
 ```
