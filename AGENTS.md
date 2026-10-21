@@ -1,9 +1,9 @@
 # Agent Working Rules
 
 Voting is a standalone PocketHost app: vote compasses and live election
-results for Vancouver, British Columbia and Alberta, moving out of cubby.fyi to
-https://voting.lgtm.page. The plan of record is in the user's
-`~/.claude/plans/` (ask for the path); work lands as one PR per round.
+results, moving out of cubby.fyi to https://voting.lgtm.page. The plan of
+record is in the user's `~/.claude/plans/` (ask for the path); work lands as
+one PR per round.
 
 ## Before every commit
 

@@ -26,6 +26,22 @@ describe('the shell and its rewrite', () => {
     expect(shellOrigin(shell)).toBe('https://voting.lgtm.page')
   })
 
+  it('describes the site without naming the regions it covers', () => {
+    const descriptions = [
+      'description',
+      'og:description',
+      'twitter:description',
+    ].map(
+      (attr) =>
+        new RegExp(`(?:property|name)="${attr}"\\s+content="([^"]*)"`).exec(
+          shell,
+        )?.[1],
+    )
+    expect(new Set(descriptions).size).toBe(1)
+    expect(descriptions[0]).toMatch(/^Vote compasses/)
+    expect(descriptions[0]).not.toMatch(/Vancouver|British Columbia|Alberta/)
+  })
+
   it('rewrites the title, description and url for an election', () => {
     const e = bc()
     const html = rewriteShell(shell, e, 'https://voting.lgtm.page')
