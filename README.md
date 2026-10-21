@@ -71,8 +71,9 @@ phio deploy
 
 CI power cycles the instance after each deploy so hook and migration changes
 load; after a manual deploy, power cycle it in the PocketHost dashboard.
-`AGENTS.md` has the other PocketHost rules. Election documents
-need no deploy: `pnpm elections:push --url https://voting.pockethost.io`
+`AGENTS.md` has the other PocketHost rules. When a merge to main changes
+`elections/`, CI also runs `pnpm elections:push` after the deploy. To push
+documents without a merge: `pnpm elections:push --url https://voting.pockethost.io`
 with `PB_SUPERUSER_EMAIL` and `PB_SUPERUSER_PASSWORD` set.
 
 ## Scripts
