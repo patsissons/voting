@@ -173,3 +173,31 @@ jobs:
         env:
           PHIO_USERNAME: ${{ secrets.PHIO_USERNAME }}
           PHIO_PASSWORD: ${{ secrets.PHIO_PASSWORD }}
+      # Election documents are data, not code: push them only when a merge
+      # changed elections/, so a code-only deploy never touches the rows. A
+      # first push to main (no before commit), or one whose before commit is
+      # gone (a force push), pushes them all.
+      - name: Check for election document changes
+        id: elections
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ -z "${BEFORE//0/}" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git fetch --depth=1 origin "$BEFORE"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --quiet "$BEFORE" HEAD -- elections/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Push election documents
+        if: steps.elections.outputs.changed == 'true'
+        run: pnpm elections:push --url https://voting.pockethost.io
+        env:
+          PB_SUPERUSER_EMAIL: ${{ secrets.PHIO_USERNAME }}
+          PB_SUPERUSER_PASSWORD: ${{ secrets.PHIO_PASSWORD }}

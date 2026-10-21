@@ -110,13 +110,14 @@ for free.
 
 ## 5. Publish
 
-Set `"published": true`, then:
+Set `"published": true` and merge to main: CI pushes the changed documents
+after the deploy. To push without a merge:
 
 ```sh
 PB_SUPERUSER_EMAIL=... PB_SUPERUSER_PASSWORD=... pnpm elections:push --url https://voting.pockethost.io
 ```
 
-The page is live at `https://voting.lgtm.page/<slug>` immediately: the
+Either way, the page is live at `https://voting.lgtm.page/<slug>` immediately: the
 index, the OG tags, the markdown page, `llms.txt` and the MCP tools all
 read the row.
 

@@ -56,7 +56,9 @@ After making changes from a prompt and BEFORE committing:
   directory is in `.prettierignore`). The row columns (slug, title,
   description, voting_day, published, ballot) split off in
   `shared/election-row.ts`; everything else is the `config` column.
-  `pnpm elections:push` upserts by slug. New elections: `docs/new-vote.md`.
+  `pnpm elections:push` upserts by slug; CI runs it against production after
+  the deploy when a merge to main changes `elections/`, so merging a document
+  change makes it live. New elections: `docs/new-vote.md`.
 - **Shared code** (`shared/`): parsers (one per feed format, deep-equal to
   cubby's output: `scripts/fixtures/golden/payloads.json`), stats for the
   three ballot modes, the compass scoring and ballot/riding cards, the
