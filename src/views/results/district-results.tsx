@@ -1,6 +1,6 @@
 // A riding election (BC): the seat count across the province with the
 // majority line and the popular vote, the viewer's own riding, every riding
-// by region with a filter, the seat timeline, then the count (boxes left,
+// by region with a filter, the map, the seat timeline, then the count (boxes left,
 // popular-vote momentum), the ridings (changing hands, closest) and the
 // parties (vote by region, the legislature on the compass).
 import { useMemo, useState } from 'react'
@@ -13,13 +13,17 @@ import {
   Swatch,
 } from '@/components/bits'
 import { Meter, SegmentBar } from '@/components/charts/bars'
+import { Choropleth } from '@/components/charts/choropleth'
+import { Legend } from '@/components/charts/legend'
 import { useTip, tipHandlersFor } from '@/components/charts/tooltip'
 import { Input } from '@/components/ui/input'
+import { blendCss } from '@/lib/blend'
 import { partyColor, partyLookup, partyName, partyShort } from '@/lib/party'
 import { keys as storageKeys, readString, writeString } from '@/lib/storage'
 import { capitalize, fmt, pct1 } from '../../../shared/format.ts'
 import type { Contest, Payload, Snapshot } from '../../../shared/payload.ts'
 import type { DistrictElection } from '../../../shared/schema/election.ts'
+import { blendWeights, LEADER } from '../../../shared/stats/blend.ts'
 import {
   boxesReported,
   changingHands,
@@ -47,11 +51,12 @@ import {
 import { CountTiles, SourceNote, StatusLine } from './results-header'
 import type { SectionLink } from './results-view'
 
-export function districtSections(): SectionLink[] {
+export function districtSections(election: DistrictElection): SectionLink[] {
   return [
     { id: 'seats', label: 'Seats' },
     { id: 'mine', label: 'Your riding' },
     { id: 'ridings', label: 'Every riding' },
+    ...(election.boundaries ? [{ id: 'map', label: 'Map' }] : []),
     { id: 'timeline', label: 'Timeline' },
     { id: 'count', label: 'The count' },
     { id: 'hands', label: 'Changing hands' },
@@ -137,6 +142,8 @@ export function DistrictResults({
       </Section>
 
       <EveryRiding ridings={ridings} ctx={ctx} own={own} />
+
+      <MapSection ridings={ridings} ctx={ctx} own={mine} />
 
       <TimelineSection
         id="timeline"
@@ -665,6 +672,96 @@ function ChangingSection({
           `${fmt(c.votes)} votes · ${c.margin.toFixed(1)} pts`,
         ])}
       />
+    </Section>
+  )
+}
+
+/** Each party's share of a riding's votes, independents and others together. */
+function partyVotes(contest: Contest): { key: string; share: number }[] {
+  const votes = new Map<string, number>()
+  for (const c of contest.choices)
+    votes.set(keyOf(c), (votes.get(keyOf(c)) || 0) + c.votes)
+  const total = [...votes.values()].reduce((a, b) => a + b, 0)
+  return [...votes]
+    .map(([key, v]) => ({ key, share: total ? (v / total) * 100 : 0 }))
+    .sort((a, b) => b.share - a.share)
+}
+
+function MapSection({
+  ridings,
+  ctx,
+  own,
+}: {
+  ridings: Contest[]
+  ctx: RaceContext
+  own: string
+}) {
+  const { election, P } = ctx
+  if (election.ballot !== 'district' || !election.boundaries) return null
+  const byCode = new Map(ridings.map((c) => [c.id, c]))
+  const names = new Map(election.districts.map((d) => [d.code, d.name]))
+  const fills: Record<string, string> = {}
+  for (const c of ridings)
+    fills[c.id] = blendCss(blendWeights(partyVotes(c)), partyColor)
+  const hasOthers = ridings.some((c) => c.choices.some((ch) => !ch.party))
+  return (
+    <Section id="map" title="Map" sub="every riding by vote share">
+      <Legend
+        items={[
+          ...election.parties.map((p) => ({
+            label: p.short,
+            color: partyColor(p.key),
+          })),
+          ...(hasOthers
+            ? [{ label: 'Others', color: partyColor('other') }]
+            : []),
+        ]}
+      />
+      <Choropleth
+        set={election.boundaries}
+        fills={fills}
+        ring={own || undefined}
+        ariaLabel="Each riding's blend of party colours by vote share"
+        describe={(code) => {
+          const c = byCode.get(code)
+          const title = `${c ? c.label : names.get(code) || code}${code === own ? ' (yours)' : ''}`
+          const shares = c ? partyVotes(c).filter((s) => s.share > 0) : []
+          if (!c || !shares.length)
+            return {
+              title,
+              lines: [{ label: 'Votes', value: 'none counted yet' }],
+            }
+          const lead = leaderOf(c)
+          return {
+            title,
+            lines: [
+              ...shares.slice(0, 5).map((s) => ({
+                label: partyShort(P, s.key),
+                value: pct1(s.share),
+                color: partyColor(s.key),
+              })),
+              ...(lead
+                ? [
+                    {
+                      label: lead.winner ? 'Elected' : 'Leading',
+                      value: lead.name,
+                    },
+                  ]
+                : []),
+            ],
+          }
+        }}
+      />
+      <Note>
+        Each riding blends its parties' colours by their share of its votes,
+        sharpened so the party ahead always makes up at least{' '}
+        {Math.round(LEADER * 100)}% of the colour: the leader reads first, and a
+        close race shows as a tint of the runner-up. Grey ridings have no votes
+        counted yet.{' '}
+        {own
+          ? 'Your riding is outlined.'
+          : 'Pick your riding above to outline it.'}
+      </Note>
     </Section>
   )
 }
