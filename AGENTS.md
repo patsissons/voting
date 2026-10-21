@@ -23,7 +23,7 @@ After making changes from a prompt and BEFORE committing:
   `main`, then branch) in the main working tree; no worktrees.
 - Small, modular commits: one logical unit per commit.
 - Never commit `.env`, `pb_data/`, `pb_public/` (Vite output), `pb_hooks/lib/`
-  (bundled hooks), `.pb/` (local PocketBase) or `data/export/`, `data/import/`.
+  (bundled hooks) or `.pb/` (local PocketBase).
 - Commit messages are sentence-case summaries; conventional prefixes
   (`feat:`, `chore:`, `docs:`, `ci:`) are fine.
 
@@ -133,14 +133,11 @@ After making changes from a prompt and BEFORE committing:
    fetch keeps failing, `pnpm relay --election <slug> --source <url>` pushes
    from a laptop instead.
 4. Official count: `pnpm relay --election <slug> --source <url> --official --once`.
-5. This instance is the system of record for every election: Alberta moved
-   here on 2026-10-20 (cubby's source cleared, then a last `--sync`) and BC
-   night runs only here. cubby.fyi ingests nothing. Never `--sync` an
-   election from a cubby export once it fetches here: `--sync` deletes the
-   rows the export lacks. For the record, a mirror was `pnpm data:export`
-   (no creds needed), `pnpm data:transform` (check `git diff elections/`),
-   then `pnpm data:import --url <instance> --sync --election <slug>` with
-   `PB_SUPERUSER_EMAIL`/`PB_SUPERUSER_PASSWORD`.
+5. This instance is the system of record for every election; cubby.fyi
+   ingests nothing. Alberta moved here on 2026-10-20 (cubby's source
+   cleared, then a last sync) and BC night runs only here. The one-off
+   export/import tooling is gone; cubby's final export is the
+   `cubby-archive-2026-10-20` release.
 
 ## JSVM constraints (hooks)
 

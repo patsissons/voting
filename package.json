@@ -28,10 +28,7 @@
     "elections:check": "node scripts/elections/check.ts",
     "elections:push": "node scripts/elections/push.ts",
     "relay": "node scripts/relay.ts",
-    "new-vote": "node scripts/new-vote.ts",
-    "data:export": "node scripts/data/export.ts",
-    "data:transform": "node scripts/data/transform.ts",
-    "data:import": "node scripts/data/import.ts"
+    "new-vote": "node scripts/new-vote.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
