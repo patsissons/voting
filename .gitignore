@@ -32,8 +32,3 @@ test-results/
 
 # bundled hooks library (built by scripts/build-hooks.ts)
 pb_hooks/lib/
-
-# cubby.fyi exports (scripts/data/export.ts)
-data/export/*
-!data/export/README.md
-data/import/

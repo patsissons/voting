@@ -42,6 +42,4 @@ export type Golden = {
 
 export const golden = (): Golden => JSON.parse(fixture('golden/payloads.json'))
 
-export const legacyConfig = (slug: string): Record<string, unknown> => JSON.parse(fixture(`legacy/${slug}.json`))
-
 export type AnyElection = Election
