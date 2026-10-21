@@ -136,8 +136,8 @@ After making changes from a prompt and BEFORE committing:
 5. This instance is the system of record for every election; cubby.fyi
    ingests nothing. Alberta moved here on 2026-10-20 (cubby's source
    cleared, then a last sync) and BC night runs only here. The one-off
-   export/import tooling is gone; cubby's final export is the
-   `cubby-archive-2026-10-20` release.
+   export/import tooling is gone; cubby's final export is kept, unpublished,
+   as the `cubby-archive-2026-10-20` draft release.
 
 ## JSVM constraints (hooks)
 
