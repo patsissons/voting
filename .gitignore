@@ -32,3 +32,6 @@ test-results/
 
 # bundled hooks library (built by scripts/build-hooks.ts)
 pb_hooks/lib/
+
+# boundary sources downloaded by scripts/geo/build.ts
+.geo-cache/

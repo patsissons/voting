@@ -39,7 +39,7 @@ export function ResultsView({
     election.ballot === 'referendum'
       ? referendumSections(election)
       : election.ballot === 'district'
-        ? districtSections()
+        ? districtSections(election)
         : atLargeSections(latest, election)
   return (
     <div className="space-y-6">

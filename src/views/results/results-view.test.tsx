@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { TipProvider } from '@/components/charts/tooltip'
 import { feedText, fixtureFeeds } from '../../../scripts/fixtures/fixture.ts'
@@ -86,6 +86,7 @@ describe('ResultsView', () => {
       'Changing hands since last time',
       'Popular vote by region',
       'The legislature so far, on the compass',
+      'Map',
     ]) {
       expect(
         screen.getByRole('heading', { name, level: 2 }),
@@ -109,6 +110,7 @@ describe('ResultsView', () => {
       'How each question moved',
       'Lately',
       'Calgary, Edmonton and the rest',
+      'Map',
       'By electoral division',
     ]) {
       expect(
@@ -117,5 +119,33 @@ describe('ResultsView', () => {
       ).toBeInTheDocument()
     }
     expect(screen.getByText(/Your ballot:/)).toHaveTextContent('Remain')
+  })
+
+  it('blends every riding on the BC map', async () => {
+    mount(bc())
+    const map = await screen.findByRole('img', {
+      name: "Each riding's blend of party colours by vote share",
+    })
+    const paths = [...map.querySelectorAll('path[data-code]')]
+    expect(paths).toHaveLength(93)
+    const fills = paths.map((p) => p.getAttribute('fill') || '')
+    expect(fills.every((f) => f.includes('var(--party-'))).toBe(true)
+    expect(fills.some((f) => f.startsWith('color-mix(in oklab'))).toBe(true)
+  })
+
+  it('maps the first question with division rows on the Alberta map', async () => {
+    mount(alberta())
+    const section = document.getElementById('map')!
+    const [map] = await within(section).findAllByRole('img', {
+      name: /^Question 10, Separation: each division's blend/,
+    })
+    const fills = [...map.querySelectorAll('path[data-code]')].map((p) =>
+      p.getAttribute('fill'),
+    )
+    expect(fills).toHaveLength(87)
+    expect(fills.some((f) => f!.includes('var(--ref-a)'))).toBe(true)
+    expect(
+      within(section).getByRole('combobox', { name: 'Map question' }),
+    ).toHaveTextContent('Q10 Separation')
   })
 })

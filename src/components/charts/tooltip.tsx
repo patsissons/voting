@@ -52,7 +52,9 @@ export function TipProvider({ children }: { children: ReactNode }) {
         <div
           ref={node}
           role="status"
-          className="bg-popover text-popover-foreground pointer-events-none fixed z-50 max-w-xs rounded-md border px-3 py-2 text-xs shadow-md"
+          // election-scope: the box renders outside the election page, and
+          // the --party-* tokens behind line colours are defined on that class.
+          className="election-scope bg-popover text-popover-foreground pointer-events-none fixed z-50 max-w-xs rounded-md border px-3 py-2 text-xs shadow-md"
         >
           <div className="mb-1 font-medium">{tip.title}</div>
           {tip.lines.map((line, i) => (

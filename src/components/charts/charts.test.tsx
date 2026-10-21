@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { Meter, SegmentBar, TwoOptionBar } from './bars'
+import { Choropleth } from './choropleth'
 import { Dumbbell } from './dumbbell'
 import { FlipClock } from './flip-clock'
 import { Legend } from './legend'
@@ -19,6 +20,44 @@ function withWidth(width: number) {
 }
 
 describe('chart kit', () => {
+  it('fills the map by division, rings yours and describes on focus', async () => {
+    const { container } = render(
+      <TipProvider>
+        <Choropleth
+          set="ab-2017"
+          fills={{ '04': 'red' }}
+          ring="04"
+          describe={(code) => ({
+            title: `division ${code}`,
+            lines: [{ label: 'Votes', value: '12' }],
+          })}
+          ariaLabel="map"
+        />
+      </TipProvider>,
+    )
+    const province = await screen.findByRole('img', { name: 'map' })
+    expect(province.querySelectorAll('path[data-code]')).toHaveLength(87)
+    expect(
+      screen.getByRole('img', { name: 'map: Calgary' }),
+    ).toBeInTheDocument()
+    const own = province.querySelector('path[data-code="04"]')!
+    expect(own).toHaveAttribute('fill', 'red')
+    expect(own).toHaveAttribute('tabindex', '0')
+    expect(province.querySelector('path[data-code="05"]')).toHaveAttribute(
+      'fill',
+      'var(--muted)',
+    )
+    // The ring is drawn in the province and in the Calgary inset, whose
+    // paths stay out of the tab order.
+    expect(container.querySelectorAll('path[data-ring="04"]')).toHaveLength(2)
+    expect(
+      container.querySelector('[data-frame=calgary] path[data-code="04"]'),
+    ).toHaveAttribute('tabindex', '-1')
+    fireEvent.focus(own)
+    expect(screen.getByRole('status')).toHaveTextContent('division 04')
+    expect(screen.getByText(/Elections Alberta/)).toBeInTheDocument()
+  })
+
   it('draws lines with a crosshair the keyboard can move', () => {
     withWidth(600)
     render(

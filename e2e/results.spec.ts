@@ -80,3 +80,35 @@ test('the referendum shows every question and the divisions', async ({
   await page.getByRole('option', { name: 'Edmonton-McClung' }).click()
   await expect(page.getByText(/Edmonton-McClung.*of .* votes/)).toBeVisible()
 })
+
+test('the riding map blends every riding and describes it', async ({
+  page,
+}) => {
+  await page.goto('/bc-2026#/results')
+  const map = page.locator('#map')
+  await map.scrollIntoViewIfNeeded()
+  const province = map.locator('[data-frame=province]')
+  await expect(province.locator('path[data-code]')).toHaveCount(93)
+  await expect(map.locator('[data-frame=metro]')).toBeVisible()
+  const riding = province.locator('path[data-code="PCN"]')
+  await expect(riding).toHaveAttribute('fill', /var\(--party-/)
+  await riding.focus()
+  await expect(page.getByRole('status')).toContainText('Peace River North')
+})
+
+test('the referendum map follows the question picked', async ({ page }) => {
+  await page.goto('/alberta-2026#/results')
+  const map = page.locator('#map')
+  await map.scrollIntoViewIfNeeded()
+  const division = map.locator('[data-frame=province] path[data-code="87"]')
+  await expect(division).toHaveAttribute('fill', /var\(--ref-/)
+  const before = await division.getAttribute('fill')
+  await map.getByRole('combobox', { name: 'Map question' }).click()
+  await page.getByRole('option', { name: /^Q1 / }).click()
+  await expect(map.getByText('Question 1 by electoral division')).toBeVisible()
+  await expect(division).not.toHaveAttribute('fill', before!)
+  // Your division, picked in the list below, is outlined on the map too.
+  await page.getByRole('combobox', { name: 'Your division' }).click()
+  await page.getByRole('option', { name: 'Edmonton-McClung' }).click()
+  await expect(map.locator('path[data-ring="36"]')).toHaveCount(2)
+})
