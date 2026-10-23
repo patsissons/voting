@@ -246,8 +246,12 @@ jobs:
       # the PDFs with pdftotext and writes the row only when the counts
       # changed, so a repeat is a no-op and an amended table lands with the
       # next merge. Prints "nothing to push" once no document has such a feed.
+      # The runner image's package index goes stale between image builds
+      # (the 2026-10-23 deploy 404ed on poppler), so refresh it first.
       - name: Install pdftotext
-        run: sudo apt-get install -y --no-install-recommends poppler-utils
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends poppler-utils
       - name: Push the advance vote
         run: pnpm early-vote:push --all --url https://voting.pockethost.io
         env:
