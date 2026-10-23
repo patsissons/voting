@@ -1,7 +1,8 @@
 // Early vote turnout for the waiting screen and its markdown: each state's
 // ballots cast as a share of its 2022 midterm count (so a big state does not
-// read as a busy one), the map's colour steps, and the party registration
-// split. Turnout only: who has voted, never how.
+// read as a busy one), the turnout map's colour steps, the party registration
+// split per state and summed, and the margin bands of the party map. Turnout
+// only: who has voted, never how.
 import type { EarlyVote, EarlyVoteState } from '../early-vote.ts'
 
 export type StateTurnout = EarlyVoteState & {
@@ -65,4 +66,73 @@ export function partySplit(
     n: party[key],
     share: sum ? party[key] / sum : 0,
   }))
+}
+
+export type PartyTotals = {
+  /** How many states report a party split, and their ballots cast. */
+  states: number
+  voted: number
+  /** Early voters by party across those states. */
+  party: Record<string, number>
+  /** The same for returned mail ballots and early in-person voters, where any state reports them. */
+  mail?: Record<string, number>
+  inPerson?: Record<string, number>
+}
+
+const addInto = (sum: Record<string, number>, part: Record<string, number>) => {
+  for (const k of Object.keys(part)) sum[k] = (sum[k] || 0) + part[k]
+}
+
+/** Party registration summed over the states that report it. */
+export function partyTotals(rows: readonly StateTurnout[]): PartyTotals {
+  const out: PartyTotals = { states: 0, voted: 0, party: {} }
+  const mail: Record<string, number> = {}
+  const inPerson: Record<string, number> = {}
+  let mails = 0
+  let inPersons = 0
+  for (const r of rows) {
+    if (r.party) {
+      out.states++
+      out.voted += r.voted
+      addInto(out.party, r.party)
+    }
+    if (r.partyMail) {
+      mails++
+      addInto(mail, r.partyMail)
+    }
+    if (r.partyInPerson) {
+      inPersons++
+      addInto(inPerson, r.partyInPerson)
+    }
+  }
+  if (mails) out.mail = mail
+  if (inPersons) out.inPerson = inPerson
+  return out
+}
+
+/**
+ * The first party's share minus the second's among the party-registered
+ * (positive: the first party leads), or null without two parties or any voters.
+ */
+export function partyMargin(
+  party: Record<string, number>,
+  order: readonly string[],
+): number | null {
+  if (order.length < 2) return null
+  const slices = partySplit(party, order)
+  if (!slices.some((s) => s.n > 0)) return null
+  const share = (k: string) => slices.find((s) => s.key === k)?.share || 0
+  return share(order[0]) - share(order[1])
+}
+
+/** The margin map's bands: within 5 points reads neutral, then 5–15, 15–30 and 30+. */
+export const MARGIN_CUTS: readonly number[] = [0.05, 0.15, 0.3]
+
+/** The band a margin falls in: 0 inside the first cut, then ±1..±cuts.length, the sign saying who leads. */
+export const marginStep = (
+  margin: number,
+  cuts: readonly number[] = MARGIN_CUTS,
+): number => {
+  const step = cuts.filter((c) => Math.abs(margin) >= c).length
+  return margin < 0 && step ? -step : step
 }

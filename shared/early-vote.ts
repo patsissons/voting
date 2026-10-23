@@ -14,6 +14,10 @@ export type EarlyVoteState = EarlyVoteCount & {
   updated?: string
   /** Early voters by party registration (dem, gop, other), where a state registers by party. */
   party?: Record<string, number>
+  /** Returned mail ballots by party registration, where the state reports them. */
+  partyMail?: Record<string, number>
+  /** Early in-person voters by party registration, where the state reports them. */
+  partyInPerson?: Record<string, number>
 }
 
 export type EarlyVote = {
@@ -28,6 +32,10 @@ export type EarlyVote = {
 
 const count = (v: unknown) =>
   typeof v === 'number' && Number.isFinite(v) && v >= 0
+
+/** A party-keyed object of counts. */
+const isPartyCounts = (v: unknown): boolean =>
+  !!v && typeof v === 'object' && Object.values(v).every(count)
 
 const isCount = (v: unknown): boolean => {
   const c = v as Record<string, unknown>
@@ -59,12 +67,9 @@ export function asEarlyVote(value: unknown): EarlyVote | null {
   if (!states || typeof states !== 'object') return null
   for (const s of Object.values(states)) {
     if (!isCount(s)) return null
-    const party = (s as Record<string, unknown>).party
-    if (
-      party != null &&
-      (typeof party !== 'object' || !Object.values(party).every(count))
-    )
-      return null
+    const st = s as Record<string, unknown>
+    for (const k of ['party', 'partyMail', 'partyInPerson'])
+      if (st[k] != null && !isPartyCounts(st[k])) return null
   }
   return d as EarlyVote
 }
