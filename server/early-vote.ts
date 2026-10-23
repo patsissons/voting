@@ -6,9 +6,15 @@
 // /_voting/early-vote for a PocketHost webhook. Each election is pulled at
 // most once per EARLY_VOTE_THROTTLE_MS whatever hits the route, a pull that
 // fails keeps the last good counts, and nothing is pulled once its polls
-// close (the results page has moved on by then).
+// close (the results page has moved on by then). A feed the hooks cannot
+// read (Elections BC's PDF, format ebc-advance) is pushed into the same
+// column by `pnpm early-vote:push` and skipped here.
 import { asEarlyVote } from '../shared/early-vote.ts'
 import { parseEarlyVote } from '../shared/parsers/early-vote.ts'
+import {
+  earlyVoteDivisions,
+  earlyVoteFormat,
+} from '../shared/stats/early-vote.ts'
 import type { Db } from './db.ts'
 import { bust, loadConfig, nowStamp } from './store.ts'
 import type { Http, Logger } from './store.ts'
@@ -18,7 +24,7 @@ export const EARLY_VOTE_THROTTLE_MS = 15 * 60000
 export type EarlyVoteRow = {
   slug: string
   ran: boolean
-  skipped?: 'closed' | 'throttled'
+  skipped?: 'closed' | 'throttled' | 'push_only'
   stored?: boolean
   unchanged?: boolean
   asOf?: string
@@ -42,6 +48,10 @@ export function earlyVoteTick(
     const early = config.results.earlyVote
     if (!early) continue
     const slug = config.slug
+    if (earlyVoteFormat(config) !== 'ufel-csv') {
+      out.push({ slug, ran: false, skipped: 'push_only' })
+      continue
+    }
     if (now >= Date.parse(config.pollsClose)) {
       out.push({ slug, ran: false, skipped: 'closed' })
       continue
@@ -61,7 +71,7 @@ export function earlyVoteTick(
       const modified = Date.parse(res.lastModified || '')
       const ev = parseEarlyVote(
         res.text,
-        'regions' in config ? config.regions : [],
+        earlyVoteDivisions(config),
         new Date(Number.isFinite(modified) ? modified : now).toISOString(),
       )
       const prev = asEarlyVote(row.getString('early_vote'))
