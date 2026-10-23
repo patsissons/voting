@@ -182,9 +182,9 @@ describe('ResultsView', () => {
       fills.filter((f) => f.startsWith('color-mix(in oklab, var(--brand)')),
     ).toHaveLength(5)
     expect(map.querySelector('path[data-ring="ga"]')).not.toBeNull()
-    const party = document.getElementById('early-vote-party')!
+    const states = document.getElementById('early-vote-party-states')!
     expect(
-      within(party)
+      within(states)
         .getAllByRole('img')
         .map((b) => b.getAttribute('aria-label')),
     ).toEqual([
@@ -195,6 +195,63 @@ describe('ResultsView', () => {
     expect(
       screen.getByText('This is who has voted, not how they voted.'),
     ).toBeInTheDocument()
+    // The totals over the three states that register by party, with the
+    // mail and in-person rows where they report those.
+    const party = document.getElementById('early-vote-party')!
+    expect(party).toHaveTextContent('3 states that register voters by party')
+    for (const [label, value, share] of [
+      ['Dem', '2,067,470', '45.9%'],
+      ['GOP', '1,308,379', '29.1%'],
+      ['Unaffiliated or other', '1,127,492', '25.0%'],
+    ])
+      expect(
+        within(party).getByText(label, { selector: 'span.uppercase' })
+          .parentElement,
+      ).toHaveTextContent(`${label}${value}${share}`)
+    expect(party).toHaveTextContent(
+      'Dem +16.9 pts among early voters in the 3 states that register by party, 74% of all ballots cast.',
+    )
+    expect(
+      within(document.getElementById('early-vote-party-total')!)
+        .getAllByRole('img')
+        .map((b) => b.getAttribute('aria-label')),
+    ).toEqual([
+      'Reporting states: Dem 45.9%, GOP 29.1%, Unaffiliated or other 25.0%',
+      'By mail: Dem 47.3%, GOP 31.1%, Unaffiliated or other 21.6%',
+      'In person: Dem 42.2%, GOP 23.6%, Unaffiliated or other 34.2%',
+    ])
+    expect(party).toHaveTextContent('(3 by mail, 1 in person)')
+    // The margin map: a diverging scale, grey within five points, hatched
+    // where a state does not register by party.
+    const [lean] = await screen.findAllByRole('img', {
+      name: /^Party registration of early voters by state: /,
+    })
+    expect(lean.getAttribute('aria-label')).toBe(
+      'Party registration of early voters by state: California Dem +20.9, North Carolina Dem +18.9, Arizona Dem +0.2',
+    )
+    const fillOf = (code: string) =>
+      lean.querySelector(`path[data-code="${code}"]`)!.getAttribute('fill')
+    expect(fillOf('ca')).toBe(
+      'color-mix(in oklab, var(--party-dem, var(--party-other)) 70%, var(--muted))',
+    )
+    expect(fillOf('nc')).toBe(fillOf('ca'))
+    expect(fillOf('az')).toBe(
+      'color-mix(in oklab, var(--muted-foreground) 45%, var(--muted))',
+    )
+    expect(fillOf('ga')).toMatch(/^url\(#.*-hatch\)$/)
+    expect(lean.querySelector('path[data-code="ak"]')).toHaveAttribute(
+      'data-hatched',
+    )
+    expect(fillOf('tx')).toBe('var(--muted)')
+    expect(lean.querySelector('path[data-ring="ga"]')).not.toBeNull()
+    fireEvent.focus(lean.querySelector('path[data-code="nc"]')!)
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'North CarolinaDem535,973 (42.2%)GOP296,478 (23.3%)Unaffiliated or other437,469 (34.4%)MarginDem +18.9 ptsBy mailDem 42% · GOP 18% · Unaffiliated or other 40%In personDem 42% · GOP 24% · Unaffiliated or other 34%UpdatedFri Oct 23',
+    )
+    fireEvent.focus(lean.querySelector('path[data-code="ga"]')!)
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Does not register voters by party',
+    )
   })
 
   it('drops the early vote once contests arrive', () => {
