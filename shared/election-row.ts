@@ -27,6 +27,10 @@ export type ElectionRow = {
   results_source?: string
   results_checked?: string
   results_error?: string
+  /** The early vote turnout the hooks pulled (shared/early-vote.ts); never pushed. */
+  early_vote?: unknown
+  early_vote_checked?: string
+  early_vote_error?: string
 }
 
 /** The row for a document: columns plus the rest as config. */
