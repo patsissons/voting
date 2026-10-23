@@ -10,6 +10,7 @@ import { consumeImport, keys, readJson } from '@/lib/storage'
 import { useElection } from '@/lib/use-election'
 import { useHash } from '@/lib/use-hash'
 import { useResults } from '@/lib/use-results'
+import type { EarlyVote } from '../../shared/early-vote.ts'
 import type { CompassElection, Election } from '../../shared/schema/election.ts'
 import {
   blankState,
@@ -69,7 +70,13 @@ export function ElectionPage({ slug }: { slug: string }) {
       </Shell>
     )
   }
-  return <ElectionView id={state.id} election={state.election} />
+  return (
+    <ElectionView
+      id={state.id}
+      election={state.election}
+      earlyVote={state.earlyVote}
+    />
+  )
 }
 
 function initialMatch(election: Election): string | null {
@@ -85,7 +92,15 @@ function initialMatch(election: Election): string | null {
   return scored.answered ? scored.rows[0].p : null
 }
 
-function ElectionView({ id, election }: { id: string; election: Election }) {
+function ElectionView({
+  id,
+  election,
+  earlyVote,
+}: {
+  id: string
+  election: Election
+  earlyVote: EarlyVote | null
+}) {
   // First, before anything reads the hash or storage: an import link from
   // cubby.fyi stores its state and becomes the plain permalink.
   useState(() => consumeImport(election))
@@ -203,6 +218,7 @@ function ElectionView({ id, election }: { id: string; election: Election }) {
           <ResultsView
             election={election}
             snapshots={results.snapshots}
+            earlyVote={earlyVote}
             live={results.live}
             matchParty={matchParty}
             marks={marks}

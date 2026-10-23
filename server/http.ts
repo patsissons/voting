@@ -55,7 +55,12 @@ export const pocketbaseHttp: Http = {
       headers: { accept: 'text/html,application/json,*/*' },
       timeout: timeoutSeconds,
     })
-    return { status: res.statusCode, text: toString(res.body) }
+    const modified = res.headers && res.headers['Last-Modified']
+    return {
+      status: res.statusCode,
+      text: toString(res.body),
+      lastModified: (modified && modified[0]) || undefined,
+    }
   },
 }
 

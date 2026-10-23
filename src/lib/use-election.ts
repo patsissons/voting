@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { asEarlyVote, type EarlyVote } from '../../shared/early-vote.ts'
 import type { ElectionRow } from '../../shared/election-row.ts'
 import { fromRow } from '../../shared/election-row.ts'
 import type { Election } from '../../shared/schema/election.ts'
@@ -9,11 +10,17 @@ export type ElectionState =
   | { status: 'loading' }
   | { status: 'missing' }
   | { status: 'error'; message: string }
-  | { status: 'ready'; id: string; election: Election }
+  | {
+      status: 'ready'
+      id: string
+      election: Election
+      /** The early vote turnout the hooks pulled, if any (server/early-vote.ts). */
+      earlyVote: EarlyVote | null
+    }
 
 const LOADING: ElectionState = { status: 'loading' }
 
-/** The election row for a slug, as its document (config column merged). */
+/** The election row for a slug, as its document (config column merged) and its pulled early vote. */
 export function useElection(slug: string): ElectionState {
   // Keyed by slug, so a slug change reads as loading without a reset effect.
   const [loaded, setLoaded] = useState<{
@@ -31,7 +38,12 @@ export function useElection(slug: string): ElectionState {
         if (cancelled) return
         setLoaded({
           slug,
-          state: { status: 'ready', id: row.id, election: fromRow(row) },
+          state: {
+            status: 'ready',
+            id: row.id,
+            election: fromRow(row),
+            earlyVote: asEarlyVote(row.early_vote),
+          },
         })
       })
       .catch((err: { status?: number; message?: string }) => {

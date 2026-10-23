@@ -2,7 +2,15 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { TipProvider } from '@/components/charts/tooltip'
 import { feedText, fixtureFeeds } from '../../../scripts/fixtures/fixture.ts'
-import { alberta, bc, us, vancouver } from '../../../scripts/fixtures/load.ts'
+import {
+  alberta,
+  bc,
+  fixture,
+  us,
+  vancouver,
+} from '../../../scripts/fixtures/load.ts'
+import type { EarlyVote } from '../../../shared/early-vote.ts'
+import { parseEarlyVote } from '../../../shared/parsers/early-vote.ts'
 import { normalize } from '../../../shared/parsers/index.ts'
 import type { Election } from '../../../shared/schema/election.ts'
 import { ResultsView } from './results-view'
@@ -21,12 +29,14 @@ function mount(
   e: Election,
   snapshots = night(e),
   matchParty: string | null = null,
+  earlyVote: EarlyVote | null = null,
 ) {
   render(
     <TipProvider>
       <ResultsView
         election={e}
         snapshots={snapshots}
+        earlyVote={earlyVote}
         live
         matchParty={matchParty}
         marks={{ 0: 0 }}
@@ -142,6 +152,62 @@ describe('ResultsView', () => {
       screen.queryByRole('link', { name: 'the ballot compass' }),
     ).toBeNull()
     expect(screen.getByText(/as civicAPI reports them/)).toBeInTheDocument()
+  })
+
+  it('shows the early vote while waiting, until the first contests', async () => {
+    const ev = parseEarlyVote(
+      fixture('voting-2026-early-vote.csv'),
+      us().regions,
+      '2026-10-23T19:25:09Z',
+    )
+    localStorage.setItem('voting:us-2026:district', 'ga')
+    const [first] = night(us())
+    const empty = { ...first, payload: { ...first.payload, contests: [] } }
+    mount(us(), [empty], null, ev)
+    expect(
+      screen.getByRole('heading', {
+        name: 'Ballots cast as of Fri, Oct 23, 3:25 pm EDT',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Early voting is under way/)).toBeInTheDocument()
+    expect(screen.getByText('6,071,374')).toBeInTheDocument()
+    const [map] = await screen.findAllByRole('img', {
+      name: /^Ballots cast by state as a share of the 2022 midterm: /,
+    })
+    expect(map.getAttribute('aria-label')).toMatch(/Georgia 38%/)
+    const fills = [...map.querySelectorAll('path[data-code]')].map(
+      (p) => p.getAttribute('fill') || '',
+    )
+    expect(
+      fills.filter((f) => f.startsWith('color-mix(in oklab, var(--brand)')),
+    ).toHaveLength(5)
+    expect(map.querySelector('path[data-ring="ga"]')).not.toBeNull()
+    const party = document.getElementById('early-vote-party')!
+    expect(
+      within(party)
+        .getAllByRole('img')
+        .map((b) => b.getAttribute('aria-label')),
+    ).toEqual([
+      'California: Dem 50.0%, GOP 29.1%, Unaffiliated or other 20.9%',
+      'North Carolina: Dem 42.2%, GOP 23.3%, Unaffiliated or other 34.4%',
+      'Arizona: Dem 38.7%, GOP 38.5%, Unaffiliated or other 22.8%',
+    ])
+    expect(
+      screen.getByText('This is who has voted, not how they voted.'),
+    ).toBeInTheDocument()
+  })
+
+  it('drops the early vote once contests arrive', () => {
+    const ev = parseEarlyVote(
+      fixture('voting-2026-early-vote.csv'),
+      us().regions,
+      '2026-10-23T19:25:09Z',
+    )
+    mount(us(), undefined, null, ev)
+    expect(
+      screen.queryByRole('heading', { name: /^Ballots cast as of/ }),
+    ).toBeNull()
+    expect(screen.queryByText(/Early voting is under way/)).toBeNull()
   })
 
   it('renders every chamber with its balance, races and the state picker', async () => {

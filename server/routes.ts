@@ -12,7 +12,12 @@
 //        and answers with per-election outcomes. A PocketHost webhook hits it
 //        on election nights because the instance hibernates and misses cron
 //        ticks; it only does what the next tick would do anyway.
+//   GET|POST /_voting/early-vote                public: pulls each election's
+//        early vote turnout before its polls close (server/early-vote.ts),
+//        for a PocketHost webhook; throttled per election, so extra hits
+//        cost nothing.
 import { pocketbaseDb } from './db.ts'
+import { earlyVoteTick } from './early-vote.ts'
 import { SLUG_RE, log, pocketbaseHttp, readBody, tokenProblem } from './http.ts'
 import { fetchTick, setSource, storeSnapshot } from './store.ts'
 
@@ -74,5 +79,27 @@ export function cronFetch(): void {
     }
   } catch (err) {
     log(`fetch failed: ${(err as Error).message || err}`)
+  }
+}
+
+export function handleEarlyVote(e: RequestEvent): void {
+  try {
+    return e.json(200, {
+      elections: earlyVoteTick(pocketbaseDb(e.app), pocketbaseHttp, { log }),
+    })
+  } catch (err) {
+    return e.json(500, {
+      code: 'early_vote_failed',
+      message: (err as Error).message || String(err),
+    })
+  }
+}
+
+/** The hourly cron body; the tick logs what it stored or what failed. */
+export function cronEarlyVote(): void {
+  try {
+    earlyVoteTick(pocketbaseDb($app), pocketbaseHttp, { log })
+  } catch (err) {
+    log(`early vote failed: ${(err as Error).message || err}`)
   }
 }

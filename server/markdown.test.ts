@@ -4,9 +4,12 @@ import {
   alberta,
   bc,
   civicCounted,
+  fixture,
   tinyChambers,
+  us,
   vancouver,
 } from '../scripts/fixtures/load.ts'
+import { parseEarlyVote } from '../shared/parsers/early-vote.ts'
 import { normalize } from '../shared/parsers/index.ts'
 import type { Election } from '../shared/schema/election.ts'
 import { electionMarkdown, llmsText } from './markdown.ts'
@@ -126,6 +129,39 @@ describe('electionMarkdown', () => {
     const waiting = electionMarkdown(e, null, origin)
     expect(waiting).toContain('No results yet')
     expect(waiting).toContain('[civicAPI](https://civicapi.org/)')
+  })
+
+  it('adds the early vote while no race has reported, and drops it after', () => {
+    const e = us()
+    const ev = parseEarlyVote(
+      fixture('voting-2026-early-vote.csv'),
+      e.regions,
+      '2026-10-23T19:25:09.000Z',
+    )
+    const waiting = electionMarkdown(e, null, origin, ev)
+    expect(waiting).toContain('No results yet')
+    expect(waiting).toContain('### Early vote so far')
+    expect(waiting).toContain(
+      'Ballots cast as of Oct 23, 7:25 pm UTC from [UF Election Lab, 2026 early voting](https://election.lab.ufl.edu/early-vote/2026-early-voting/): 6,071,374 (2,660,455 in person, 3,410,919 by mail).',
+    )
+    expect(waiting).toContain(
+      '| State | Ballots cast | Share of 2022 turnout | Registration (Dem / GOP / other) |',
+    )
+    expect(waiting).toContain(
+      '| California | 2,478,771 | 22.2% | 50.0% / 29.1% / 20.9% |',
+    )
+    expect(waiting).toContain('| Georgia | 1,497,446 | 37.8% |  |')
+    const empty = latest(e)
+    const noContests = {
+      ...empty,
+      payload: { ...empty.payload, contests: [] },
+    }
+    expect(electionMarkdown(e, noContests, origin, ev)).toContain(
+      '### Early vote so far',
+    )
+    expect(electionMarkdown(e, latest(e), origin, ev)).not.toContain(
+      'Early vote',
+    )
   })
 
   it('says when there are no results', () => {

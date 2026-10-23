@@ -635,6 +635,7 @@
     "serverFetch": true,
     "fetchHours": 96,
     "throttleSeconds": 120,
-    "sourcePrefix": "https://civicapi.org/"
+    "sourcePrefix": "https://civicapi.org/",
+    "earlyVote": { "source": "https://election.lab.ufl.edu/data-downloads/earlyvote/2026/US.csv", "page": { "label": "UF Election Lab, 2026 early voting", "url": "https://election.lab.ufl.edu/early-vote/2026-early-voting/" }, "boundaries": "us-state" }
   }
 }

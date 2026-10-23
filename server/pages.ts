@@ -15,6 +15,7 @@
 // subtree pattern that would swallow /assets/*). The shell is read per
 // request, so a redeploy of pb_public needs no restart.
 import type { Election } from '../shared/schema/election.ts'
+import { asEarlyVote } from '../shared/early-vote.ts'
 import { electionOf, pocketbaseDb, snapshotOf } from './db.ts'
 import type { Db } from './db.ts'
 import { electionMarkdown, llmsText, SLUG_RE } from './markdown.ts'
@@ -76,7 +77,12 @@ export function markdownFor(
   if (!row) return null
   const election = electionOf(row)
   const latest = db.latestResult(row.id)
-  return electionMarkdown(election, latest ? snapshotOf(latest) : null, origin)
+  return electionMarkdown(
+    election,
+    latest ? snapshotOf(latest) : null,
+    origin,
+    asEarlyVote(row.getString('early_vote')),
+  )
 }
 
 export function handlePage(e: RequestEvent): void {

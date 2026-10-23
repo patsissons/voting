@@ -3,7 +3,8 @@
 // cubby.fyi's content.js over the shared stats, so the numbers match the
 // page. Pure: the hooks and the MCP summary tool call these with rows the
 // Db already filtered to published.
-import { fmt, pct1 } from '../shared/format.ts'
+import type { EarlyVote } from '../shared/early-vote.ts'
+import { fmt, pct1, wallClock } from '../shared/format.ts'
 import type { Payload, Snapshot } from '../shared/payload.ts'
 import type {
   ChambersElection,
@@ -15,6 +16,7 @@ import type {
 import { changingHands, complete, leaderOf } from '../shared/stats/results.ts'
 import { ballotWide, contestOf } from '../shared/stats/referendum.ts'
 import { balanceOf, calledOf, contestsOf } from '../shared/stats/chambers.ts'
+import { partySplit, turnoutByState } from '../shared/stats/early-vote.ts'
 
 export const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/
 
@@ -389,6 +391,7 @@ export function electionMarkdown(
   election: Election,
   snapshot: Snapshot | null,
   origin: string,
+  earlyVote: EarlyVote | null = null,
 ): string {
   const head = [
     `# ${election.title}`,
@@ -413,7 +416,7 @@ export function electionMarkdown(
       : election.ballot === 'chambers'
         ? [
             datesMarkdown(election),
-            chambersResultsMarkdown(election, snapshot),
+            chambersResultsMarkdown(election, snapshot, earlyVote),
             chambersMarkdown(election),
           ]
         : [
@@ -455,14 +458,17 @@ const partyShort = (election: ChambersElection, key: string) => {
 export function chambersResultsMarkdown(
   election: ChambersElection,
   snapshot: Snapshot | null,
+  earlyVote: EarlyVote | null = null,
 ): string {
   const results = election.results
   const follow = results.alternatives.length
     ? `\n\nAlso follow:\n\n${links(results.alternatives)}`
     : ''
   const source = results.label || 'the results feed'
-  if (!snapshot)
-    return `## Results\n\nNo results yet. They appear after the first polls close on voting day, from [${source}](${results.official}).${follow}`
+  // The page waits for the first contests, not the first row: the fetch can
+  // store a snapshot before any race reports.
+  if (!snapshot || !snapshot.payload.contests.length)
+    return `## Results\n\nNo results yet. They appear after the first polls close on voting day, from [${source}](${results.official}).${follow}${earlyVote ? `\n\n${earlyVoteMarkdown(election, earlyVote)}` : ''}`
   const r = snapshot.payload
   const short = (key: string | null) => (key ? partyShort(election, key) : '')
   const lines = [
@@ -551,5 +557,39 @@ export function llmsText(entries: IndexEntry[], origin: string): string {
     `- Source: https://github.com/patsissons/voting`,
     '',
   )
+  return lines.join('\n')
+}
+
+/** Early vote turnout by state while there are no results: ballots cast, not votes. */
+export function earlyVoteMarkdown(
+  election: ChambersElection,
+  ev: EarlyVote,
+): string {
+  const page = election.results.earlyVote
+  const from = page ? ` from [${page.page.label}](${page.page.url})` : ''
+  const t = ev.total
+  const split =
+    t.inPerson != null && t.mail != null
+      ? ` (${fmt(t.inPerson)} in person, ${fmt(t.mail)} by mail)`
+      : ''
+  const order = election.parties.map((p) => p.key)
+  const lines = [
+    '### Early vote so far',
+    '',
+    `Ballots cast as of ${wallClock(ev.asOf)} UTC${from}: ${fmt(t.voted)}${split}. This is who has voted, not how: no state releases vote counts before its polls close.`,
+    '',
+    `| State | Ballots cast | Share of 2022 turnout | Registration (${[...order.map((k) => partyShort(election, k)), 'other'].join(' / ')}) |`,
+    '| --- | ---: | ---: | --- |',
+  ]
+  for (const r of turnoutByState(ev, election.regions)) {
+    const party = r.party
+      ? partySplit(r.party, order)
+          .map((s) => pct1(s.share * 100))
+          .join(' / ')
+      : ''
+    lines.push(
+      `| ${r.label} | ${fmt(r.voted)} | ${r.share != null ? pct1(r.share * 100) : ''} | ${party} |`,
+    )
+  }
   return lines.join('\n')
 }

@@ -1,6 +1,8 @@
 // The voting tools: every one is read-only, filters to published elections
 // itself (hooks bypass collection rules) and wraps a shared/stats function,
 // so an agent's numbers match the page's.
+import { asEarlyVote } from '../../shared/early-vote.ts'
+import type { EarlyVote } from '../../shared/early-vote.ts'
 import { fmt } from '../../shared/format.ts'
 import type { Payload, Snapshot } from '../../shared/payload.ts'
 import type { Election } from '../../shared/schema/election.ts'
@@ -54,7 +56,7 @@ export const tools: Tool[] = [
     name: 'get_election',
     title: 'Get an election',
     description:
-      'The election document (parties, offices or ridings, compass questions or referendum questions, dates, sources). Pass section to get one top-level section, e.g. "questions", "parties", "districts", "dates", "results".',
+      'The election document (parties, offices or ridings, compass questions or referendum questions, dates, sources), plus earlyVoteTurnout (ballots cast so far by state, before voting day) when the election has it. Pass section to get one top-level section, e.g. "questions", "parties", "districts", "dates", "results", "earlyVoteTurnout".',
     inputSchema: {
       type: 'object',
       properties: { slug: slugArg, section: { type: 'string', maxLength: 40 } },
@@ -165,12 +167,16 @@ export const tools: Tool[] = [
   },
 ]
 
-type Loaded = { id: string; election: Election }
+type Loaded = { id: string; election: Election; earlyVote: EarlyVote | null }
 
 function load(db: Db, slug: unknown): Loaded {
   const row = db.publishedElection(String(slug))
   if (!row) throw new InvalidParams(`no published election "${String(slug)}"`)
-  return { id: row.id, election: electionOf(row) }
+  return {
+    id: row.id,
+    election: electionOf(row),
+    earlyVote: asEarlyVote(row.getString('early_vote')),
+  }
 }
 
 const latestOf = (db: Db, id: string): Snapshot | null => {
@@ -248,14 +254,15 @@ export function call(
         }),
       }
     case 'get_election': {
-      const { election } = load(db, args.slug)
-      if (args.section == null) return election
-      const section = (election as unknown as Record<string, unknown>)[
-        String(args.section)
-      ]
+      const { election, earlyVote } = load(db, args.slug)
+      const doc: Record<string, unknown> = earlyVote
+        ? { ...election, earlyVoteTurnout: earlyVote }
+        : { ...election }
+      if (args.section == null) return doc
+      const section = doc[String(args.section)]
       if (section === undefined)
         throw new InvalidParams(
-          `no section "${String(args.section)}"; one of ${Object.keys(election).join(', ')}`,
+          `no section "${String(args.section)}"; one of ${Object.keys(doc).join(', ')}`,
         )
       return { slug: election.slug, section: args.section, value: section }
     }
@@ -483,8 +490,8 @@ export function call(
       }
     }
     case 'summary': {
-      const { id, election } = load(db, args.slug)
-      return electionMarkdown(election, latestOf(db, id), ctx.origin)
+      const { id, election, earlyVote } = load(db, args.slug)
+      return electionMarkdown(election, latestOf(db, id), ctx.origin, earlyVote)
     }
     default:
       throw new InvalidParams(`unknown tool "${name}"`)
