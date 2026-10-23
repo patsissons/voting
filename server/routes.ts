@@ -95,7 +95,7 @@ export function handleEarlyVote(e: RequestEvent): void {
   }
 }
 
-/** The hourly cron body; the tick logs what it stored or what failed. */
+/** The cron body (four times a day); the tick logs what it stored or what failed. */
 export function cronEarlyVote(): void {
   try {
     earlyVoteTick(pocketbaseDb($app), pocketbaseHttp, { log })

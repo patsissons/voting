@@ -2,7 +2,7 @@
 // results.earlyVote source (the UF Election Lab's per-state CSV) and keep the
 // turnout in the row's `early_vote` column. Not in `config`, because
 // `pnpm elections:push` rewrites that whole. Two triggers like the results
-// fetch: an hourly cron while the instance is awake and GET/POST
+// fetch: a cron four times a day while the instance is awake and GET/POST
 // /_voting/early-vote for a PocketHost webhook. Each election is pulled at
 // most once per EARLY_VOTE_THROTTLE_MS whatever hits the route, a pull that
 // fails keeps the last good counts, and nothing is pulled once its polls
