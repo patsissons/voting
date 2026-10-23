@@ -189,6 +189,68 @@ describe('election documents', () => {
     )
   })
 
+  it('name the early vote feed, the CSV unless the document says', () => {
+    const page = { label: 'Elections BC', url: 'https://example.org/ev' }
+    const source = 'https://example.org/advance.pdf'
+    const prior = { source: 'https://example.org/prior.pdf', label: '2024' }
+    const tiny = tinyChambers()
+    expect(
+      ElectionSchema.parse({
+        ...tiny,
+        results: { ...tiny.results, earlyVote: { source, page } },
+      }).results.earlyVote?.format,
+    ).toBe('ufel-csv')
+    expect(
+      ElectionSchema.safeParse({
+        ...tiny,
+        results: {
+          ...tiny.results,
+          earlyVote: { format: 'bogus', source, page },
+        },
+      }).success,
+    ).toBe(false)
+    expect(
+      electionProblems(
+        ElectionSchema.parse({
+          ...tiny,
+          results: { ...tiny.results, earlyVote: { source, page, prior } },
+        }),
+      ),
+    ).toContain(
+      'results.earlyVote: prior is for ebc-advance; the CSV carries its own baseline',
+    )
+    expect(
+      electionProblems(
+        ElectionSchema.parse({
+          ...tiny,
+          results: {
+            ...tiny.results,
+            earlyVote: { format: 'ebc-advance', source, page },
+          },
+        }),
+      ),
+    ).toContain(
+      'results.earlyVote: the counts are by riding, so it needs a district ballot with districts',
+    )
+    const early = bcDoc.results.earlyVote!
+    expect(early.format).toBe('ebc-advance')
+    expect(early.prior?.source).toMatch(/2024-advance-voting-turnout\.pdf$/)
+    expect(
+      electionProblems(
+        ElectionSchema.parse({
+          ...bcDoc,
+          results: {
+            ...bcDoc.results,
+            earlyVote: {
+              ...early,
+              prior: { ...prior, source: 'http://example.org/prior.pdf' },
+            },
+          },
+        }),
+      ),
+    ).toContain('results.earlyVote.prior: links must be https')
+  })
+
   it('round-trip through the elections row', () => {
     for (const e of elections) {
       const row = toRow(e)

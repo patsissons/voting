@@ -62,6 +62,38 @@ test('the riding election shows seats, every riding and the closest races', asyn
   ).toBeVisible()
 })
 
+test('the riding election keeps its advance vote folded under the results', async ({
+  page,
+}) => {
+  await page.goto('/bc-2026#/results')
+  const folded = page.locator('details#early-vote')
+  await folded.scrollIntoViewIfNeeded()
+  await expect(folded).toContainText('Advance voting')
+  await expect(folded).toContainText(
+    'advance ballots cast Fri Oct 16 to Wed Oct 21',
+  )
+  await expect(folded).not.toHaveAttribute('open', '')
+  await folded.locator('summary').click()
+  await expect(
+    folded.getByRole('heading', {
+      name: 'Advance voting, Fri Oct 16 to Wed Oct 21',
+    }),
+  ).toBeVisible()
+  await expect(folded.getByText('891,348')).toBeVisible()
+  await expect(
+    folded.getByRole('img', { name: /^Advance ballots by day: Fri Oct 16/ }),
+  ).toBeVisible()
+  const map = folded.locator('#early-vote-map')
+  await map.scrollIntoViewIfNeeded()
+  const ridings = map.locator('[data-frame=province] path[data-code]')
+  await expect(ridings).toHaveCount(93)
+  const riding = ridings.and(map.locator('path[data-code="LAO"]'))
+  await expect(riding).toHaveAttribute('fill', /var\(--brand\)/)
+  await riding.focus()
+  await expect(page.getByRole('status')).toContainText('Ladysmith-Oceanside')
+  await expect(page.getByRole('status')).toContainText('17,436')
+})
+
 test('the referendum shows every question and the divisions', async ({
   page,
 }) => {

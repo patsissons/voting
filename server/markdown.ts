@@ -4,7 +4,7 @@
 // page. Pure: the hooks and the MCP summary tool call these with rows the
 // Db already filtered to published.
 import type { EarlyVote } from '../shared/early-vote.ts'
-import { fmt, pct1, signed, wallClock } from '../shared/format.ts'
+import { dayShort, fmt, pct1, signed, wallClock } from '../shared/format.ts'
 import type { Payload, Snapshot } from '../shared/payload.ts'
 import type {
   ChambersElection,
@@ -17,9 +17,14 @@ import { changingHands, complete, leaderOf } from '../shared/stats/results.ts'
 import { ballotWide, contestOf } from '../shared/stats/referendum.ts'
 import { balanceOf, calledOf, contestsOf } from '../shared/stats/chambers.ts'
 import {
+  changeFromPrior,
+  daySeries,
+  earlyVoteDivisions,
+  earlyVoteFormat,
   partyMargin,
   partySplit,
   partyTotals,
+  shareOfRegistered,
   turnoutByState,
 } from '../shared/stats/early-vote.ts'
 
@@ -165,6 +170,7 @@ export function compassMarkdown(
 export function resultsMarkdown(
   election: CompassElection,
   snapshot: Snapshot | null,
+  earlyVote: EarlyVote | null = null,
 ): string {
   const results = election.results
   const follow = results.alternatives.length
@@ -174,7 +180,7 @@ export function resultsMarkdown(
     ? `${results.label}'s results page`
     : "the City's results page"
   if (!snapshot)
-    return `## Results\n\nNo results yet. They appear after polls close on voting day, from [${source}](${results.official}).${follow}`
+    return `## Results\n\nNo results yet. They appear after polls close on voting day, from [${source}](${results.official}).${follow}${earlyVote ? `\n\n${earlyVoteMarkdown(election, earlyVote)}` : ''}`
   const r = snapshot.payload
   const parties: Record<string, CompassElection['parties'][number]> = {}
   for (const p of election.parties) parties[p.key] = p
@@ -299,6 +305,7 @@ export function resultsMarkdown(
       lines.push(`- …and ${c.choices.length - c.voteFor - 3} more`)
     lines.push('')
   }
+  if (earlyVote) lines.push(earlyVoteMarkdown(election, earlyVote, true), '')
   return lines.join('\n').trimEnd() + follow
 }
 
@@ -426,7 +433,7 @@ export function electionMarkdown(
           ]
         : [
             datesMarkdown(election),
-            resultsMarkdown(election, snapshot),
+            resultsMarkdown(election, snapshot, earlyVote),
             compassMarkdown(election, origin),
           ]
   return `${[...head, ...body].filter(Boolean).join('\n\n').trimEnd()}\n`
@@ -454,7 +461,10 @@ export function chambersMarkdown(election: ChambersElection): string {
   return lines.join('\n')
 }
 
-const partyShort = (election: ChambersElection, key: string) => {
+const partyShort = (
+  election: { parties: readonly { key: string; short: string }[] },
+  key: string,
+) => {
   const p = election.parties.filter((x) => x.key === key)[0]
   return key === 'other' || !p ? 'Others' : p.short
 }
@@ -566,23 +576,30 @@ export function llmsText(entries: IndexEntry[], origin: string): string {
   return lines.join('\n')
 }
 
-/** Early vote turnout by state: ballots cast, not votes. `done` once the results are in, so the copy stops saying "so far". */
+/**
+ * Early vote turnout by division: ballots cast, not votes. By state for the
+ * UF Election Lab feed, by riding for Elections BC's advance voting table.
+ * `done` once the results are in, so the copy stops saying "so far".
+ */
 export function earlyVoteMarkdown(
-  election: ChambersElection,
+  election: Election,
   ev: EarlyVote,
   done = false,
 ): string {
   const page = election.results.earlyVote
   const from = page ? ` from [${page.page.label}](${page.page.url})` : ''
+  if (earlyVoteFormat(election) === 'ebc-advance')
+    return advanceVoteMarkdown(election, ev, from)
   const t = ev.total
   const split =
     t.inPerson != null && t.mail != null
       ? ` (${fmt(t.inPerson)} in person, ${fmt(t.mail)} by mail)`
       : ''
-  const order = election.parties.map((p) => p.key)
+  const parties = 'parties' in election ? election.parties : []
+  const order = parties.map((p) => p.key)
   const nameOf = (k: string) =>
-    k === 'other' ? 'other' : partyShort(election, k)
-  const rows = turnoutByState(ev, election.regions)
+    k === 'other' ? 'other' : partyShort({ parties }, k)
+  const rows = turnoutByState(ev, earlyVoteDivisions(election))
   const totals = partyTotals(rows)
   const lines = [
     done ? '### Early vote' : '### Early vote so far',
@@ -623,6 +640,62 @@ export function earlyVoteMarkdown(
       : ''
     lines.push(
       `| ${r.label} | ${fmt(r.voted)} | ${r.share != null ? pct1(r.share * 100) : ''} | ${party} |`,
+    )
+  }
+  return lines.join('\n')
+}
+
+/** A change from the baseline as "-11.0%" / "+2.3%", or '' without one. */
+const change = (x: { voted: number; prior?: number }): string => {
+  const c = changeFromPrior(x)
+  return c == null ? '' : `${signed(c * 100)}%`
+}
+
+/** Elections BC's advance voting turnout: the province by day, then every riding. */
+function advanceVoteMarkdown(
+  election: Election,
+  ev: EarlyVote,
+  from: string,
+): string {
+  const t = ev.total
+  const days = daySeries(t.days, t.priorDays)
+  const span = days.length
+    ? ` ${dayShort(days[0].day)} to ${dayShort(days[days.length - 1].day)}`
+    : ''
+  const registered = shareOfRegistered(t)
+  const priorYear = t.priorDays
+    ? Object.keys(t.priorDays)[0].slice(0, 4)
+    : 'last time'
+  const parts = [`${fmt(t.voted)}`]
+  if (registered != null)
+    parts.push(
+      `${pct1(registered * 100)} of ${fmt(t.registered)} registered voters`,
+    )
+  if (t.prior) parts.push(`${change(t)} from ${priorYear} (${fmt(t.prior)})`)
+  const lines = [
+    '### Advance voting',
+    '',
+    `Advance ballots cast${span} (as of ${wallClock(ev.asOf)} UTC${from}): ${parts.join(', ')}. Voters are counted in the riding where they voted, not where they live; the figures are preliminary.`,
+    '',
+  ]
+  if (days.length)
+    lines.push(
+      `By day: ${days
+        .map(
+          (d, i) =>
+            `${dayShort(d.day)} ${fmt(d.n)}${d.prior != null ? ` (${priorYear} day ${i + 1}: ${fmt(d.prior)})` : ''}`,
+        )
+        .join('; ')}.`,
+      '',
+    )
+  lines.push(
+    `| Riding | Advance ballots | Of registered | vs ${priorYear} |`,
+    '| --- | ---: | ---: | ---: |',
+  )
+  for (const r of turnoutByState(ev, earlyVoteDivisions(election))) {
+    const share = shareOfRegistered(r)
+    lines.push(
+      `| ${r.label} | ${fmt(r.voted)} | ${share != null ? pct1(share * 100) : ''} | ${change(r)} |`,
     )
   }
   return lines.join('\n')

@@ -131,11 +131,17 @@ After making changes from a prompt and BEFORE committing:
 - The instance hibernates when idle. In-process cron is unreliable while it
   sleeps, so election-night fetching is also driven by a PocketHost webhook on
   `GET /_voting/fetch`, added for the night and deleted afterwards.
-- **Early vote**: an election whose results block has `earlyVote` (a CSV
-  source, the page to credit, a map set) gets its turnout pulled by
-  `server/early-vote.ts` into the row's `early_vote` column (hidden
-  `early_vote_checked` / `early_vote_error` hold the pull state), never
-  into `config`, which `elections:push` rewrites whole. Triggers: a cron
+- **Early vote**: an election whose results block has `earlyVote` (a
+  `format`, a source, the page to credit, a map set) shows turnout before
+  voting day from the row's `early_vote` column (hidden `early_vote_checked`
+  / `early_vote_error` hold the pull state), never from `config`, which
+  `elections:push` rewrites whole. Format `ufel-csv` (us-2026) is pulled by
+  `server/early-vote.ts`; `ebc-advance` (bc-2026, Elections BC's advance
+  voting PDF, a row per riding and day, with the 2024 table as `prior`)
+  cannot be read in the hooks, so `pnpm early-vote:push --election bc-2026`
+  parses it with pdftotext and writes the same column from a laptop (the
+  tick skips it as `push_only`); re-run it if Elections BC amends the
+  table. Pull triggers: a cron
   four times a day (`7 */6 * * *`) and a PocketHost webhook on
   `GET /_voting/early-vote?slug=<slug>` (on the same schedule, from when
   early voting opens until polls close; delete it after). As with the fetch
@@ -144,12 +150,17 @@ After making changes from a prompt and BEFORE committing:
   pull per election per 15 minutes; a failed pull keeps the last counts.
   Each state keeps its ballots cast, the in-person/mail split and, where the
   state registers by party, `party`, `partyMail` and `partyInPerson`
-  (dem/gop/other). The waiting screen, the markdown page and the MCP tools
+  (dem/gop/other); each riding keeps its ballots, `registered` voters,
+  per-day `days` and the 2024 `prior` (the province total adds `priorDays`).
+  Rows are keyed by `earlyVoteDivisions` (regions for states, district codes
+  for ridings). The waiting screen, the markdown page and the MCP tools
   show it; once the first contests arrive it stays as a folded `#early-vote`
-  section under the results (and after them in the markdown): totals, a one-hue turnout map
-  (share of 2022), the party registration summed over the reporting states
+  section under the results (and after them in the markdown), worded per
+  feed by `src/views/results/early-vote-copy.ts`: totals, a one-hue turnout
+  map (share of the baseline), for BC a by-day dumbbell against 2024, for
+  the US the party registration summed over the reporting states
   (`partyTotals` in `shared/stats/early-vote.ts`, also in the markdown
-  paragraph and the MCP `earlyVoteTurnout.partyTotals`), and a diverging
+  paragraph and the MCP `earlyVoteTurnout.partyTotals`) and a diverging
   margin map (`partyMargin`, `marginStep`: grey within 5 points, three bands
   a side, hatched where a state does not register by party).
 - PocketHost rate-limits `/api`: 50 requests per 10 s per IP and 1,000 per

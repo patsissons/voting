@@ -133,17 +133,39 @@ export class PbClient {
     return out
   }
 
+  /** The election row for a slug (every column), or undefined. */
+  async findElection(
+    slug: string,
+  ): Promise<({ id: string } & Record<string, unknown>) | undefined> {
+    const filter = encodeURIComponent(`slug = "${slug}"`)
+    const found = await this.request<{
+      items: ({ id: string } & Record<string, unknown>)[]
+    }>('GET', `/api/collections/elections/records?filter=${filter}&perPage=1`)
+    return found.status === 200 ? found.body.items[0] : undefined
+  }
+
+  /** Writes some columns of an election row (the early vote, say). */
+  async patchElection(
+    id: string,
+    fields: Record<string, unknown>,
+  ): Promise<void> {
+    const { status, body } = await this.request<{
+      message?: string
+      data?: unknown
+    }>('PATCH', `/api/collections/elections/records/${id}`, fields)
+    if (status !== 200)
+      throw new Error(
+        `update ${id} failed (${status}): ${body.message} ${JSON.stringify(body.data || '')}`,
+      )
+  }
+
   /** Creates or updates the election row for a document; returns what happened. */
   async upsertElection(
     doc: Election,
     extra: Record<string, unknown> = {},
   ): Promise<{ id: string; action: 'created' | 'updated' | 'unchanged' }> {
     const row = { ...toRow(doc), ...extra }
-    const filter = encodeURIComponent(`slug = "${doc.slug}"`)
-    const found = await this.request<{
-      items: ({ id: string } & Record<string, unknown>)[]
-    }>('GET', `/api/collections/elections/records?filter=${filter}&perPage=1`)
-    const existing = found.status === 200 ? found.body.items[0] : undefined
+    const existing = await this.findElection(doc.slug)
     if (existing) {
       const same = (Object.keys(row) as (keyof typeof row)[]).every(
         (k) => stableJson(existing[k]) === stableJson(row[k]),

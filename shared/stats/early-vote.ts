@@ -4,17 +4,66 @@
 // split per state and summed, and the margin bands of the party map. Turnout
 // only: who has voted, never how.
 import type { EarlyVote, EarlyVoteState } from '../early-vote.ts'
+import type { EarlyVoteFormat, Election } from '../schema/election.ts'
+
+/** The early vote feed an election names; the CSV when the document predates `format`. */
+export const earlyVoteFormat = (election: Election): EarlyVoteFormat =>
+  (election.results.earlyVote && election.results.earlyVote.format) ||
+  'ufel-csv'
+
+/** The divisions the early vote is keyed by: ridings for a district ballot, regions (states) otherwise. */
+export function earlyVoteDivisions(
+  election: Election,
+): { key: string; label: string }[] {
+  if (election.ballot === 'district')
+    return election.districts.map((d) => ({ key: d.code, label: d.name }))
+  return 'regions' in election ? election.regions : []
+}
 
 export type StateTurnout = EarlyVoteState & {
   key: string
   label: string
-  /** voted / prior, or null without a 2022 count. */
+  /** voted / prior, or null without a baseline count. */
   share: number | null
 }
 
-/** Ballots cast as a share of the 2022 midterm's count, or null without one. */
+/** Ballots cast as a share of the baseline count (the 2022 midterm, the last advance vote), or null without one. */
 export const shareOfPrior = (s: EarlyVoteState): number | null =>
   s.prior ? s.voted / s.prior : null
+
+/** Ballots cast as a share of registered voters, or null without a count. */
+export const shareOfRegistered = (s: {
+  voted: number
+  registered?: number
+}): number | null => (s.registered ? s.voted / s.registered : null)
+
+/** The change from the baseline as a fraction (-0.11 for 11% fewer), or null without one. */
+export const changeFromPrior = (s: {
+  voted: number
+  prior?: number
+}): number | null => (s.prior ? s.voted / s.prior - 1 : null)
+
+export type DayCount = { day: string; n: number; prior: number | null }
+
+/**
+ * The per-day totals in day order, each paired with the same-numbered day
+ * of the baseline (the first advance day with the first, and so on), since
+ * the calendar dates differ between elections.
+ */
+export function daySeries(
+  days: Record<string, number> | undefined,
+  priorDays?: Record<string, number>,
+): DayCount[] {
+  if (!days) return []
+  const before = Object.keys(priorDays || {}).sort()
+  return Object.keys(days)
+    .sort()
+    .map((day, i) => ({
+      day,
+      n: days[day],
+      prior: priorDays && before[i] != null ? priorDays[before[i]] : null,
+    }))
+}
 
 /** The states with ballots in the election's regions, most ballots first. */
 export function turnoutByState(

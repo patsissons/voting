@@ -5,6 +5,7 @@ import { feedText, fixtureFeeds } from '../../../scripts/fixtures/fixture.ts'
 import {
   alberta,
   bc,
+  bcEarlyVote,
   fixture,
   us,
   vancouver,
@@ -271,6 +272,73 @@ describe('ResultsView', () => {
     const nav = screen.getByRole('navigation', { name: 'Results sections' })
     fireEvent.click(within(nav).getByRole('link', { name: 'Early vote' }))
     expect(folded.open).toBe(true)
+  })
+
+  it('shows the advance vote by riding while BC waits', async () => {
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+      configurable: true,
+      get: () => 640,
+    })
+    localStorage.setItem('voting:bc-2026:district', 'LAO')
+    mount(bc(), [], null, bcEarlyVote())
+    expect(
+      screen.getByText(
+        /Advance voting ran Fri Oct 16 to Wed Oct 21: 891,348 ballots cast, 23\.8% of registered voters\./,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', {
+        name: 'Advance voting, Fri Oct 16 to Wed Oct 21',
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/Figures as of Thu, Oct 22, 9:33 am PDT/),
+    ).toBeInTheDocument()
+    expect(screen.getByText('891,348')).toBeInTheDocument()
+    for (const [label, text] of [
+      ['Of registered voters', '23.8%3,738,182 registered'],
+      ['vs 2024', '-11.0%1,001,331 in 2024'],
+    ])
+      expect(
+        screen.getByText(label, { selector: 'span.uppercase' }).parentElement,
+      ).toHaveTextContent(text)
+    const days = screen.getByRole('img', { name: /^Advance ballots by day: / })
+    expect(days.getAttribute('aria-label')).toBe(
+      'Advance ballots by day: Fri Oct 16 137,832 (2024: 171,381), Sat Oct 17 201,774 (2024: 155,464), Sun Oct 18 105,049 (2024: 150,250), Mon Oct 19 128,636 (2024: 119,660), Tue Oct 20 139,101 (2024: 181,669), Wed Oct 21 178,956 (2024: 222,907)',
+    )
+    const [map] = await screen.findAllByRole('img', {
+      name: /^Advance ballots by riding as a share of 2024 advance voting: /,
+    })
+    expect(map.getAttribute('aria-label')).toMatch(/Ladysmith-Oceanside 111%/)
+    expect(map.querySelector('path[data-ring="LAO"]')).not.toBeNull()
+    expect(
+      map.querySelectorAll(
+        'path[data-code][fill^="color-mix(in oklab, var(--brand)"]',
+      ).length,
+    ).toBeGreaterThan(90)
+    expect(document.getElementById('early-vote-party')).toBeNull()
+    expect(document.getElementById('early-vote-lean')).toBeNull()
+    expect(screen.queryByText(/state/i)).toBeNull()
+    expect(
+      screen.getByRole('link', { name: 'the daily table' }),
+    ).toHaveAttribute(
+      'href',
+      'https://elections.bc.ca/2026election/2026-advance-voting-turnout.pdf',
+    )
+  })
+
+  it('folds the advance vote under the BC results', () => {
+    mount(bc(), undefined, null, bcEarlyVote())
+    expect(screen.queryByText(/Advance voting ran/)).toBeNull()
+    const folded = document.getElementById('early-vote') as HTMLDetailsElement
+    expect(folded.open).toBe(false)
+    expect(folded).toHaveTextContent(
+      'Advance votingadvance ballots cast Fri Oct 16 to Wed Oct 21',
+    )
+    const nav = screen.getByRole('navigation', { name: 'Results sections' })
+    fireEvent.click(within(nav).getByRole('link', { name: 'Advance voting' }))
+    expect(folded.open).toBe(true)
+    expect(within(folded).getByText('891,348')).toBeInTheDocument()
   })
 
   it('renders every chamber with its balance, races and the state picker', async () => {

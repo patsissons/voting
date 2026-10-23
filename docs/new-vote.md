@@ -121,11 +121,18 @@ night; it posts each new snapshot to `/_voting/ingest/<slug>`.
 ### Early vote turnout (optional)
 
 Before voting day, the results tab can show ballots cast so far instead of
-an empty "No results yet". Add `earlyVote` to the results block of an
+an empty "No results yet". Add `earlyVote` to the results block; `format`
+names the feed, and the counts land in the row's `early_vote` column (the
+document only says where from). Once the first contests arrive the panel
+folds into a section under the results, and the markdown table moves after
+them; the MCP `earlyVoteTurnout` stays.
+
+**`ufel-csv`** (the default): the UF Election Lab's per-state CSV, for an
 election with `regions` (US states):
 
 ```json
 "earlyVote": {
+  "format": "ufel-csv",
   "source": "https://election.lab.ufl.edu/data-downloads/earlyvote/2026/US.csv",
   "page": { "label": "UF Election Lab, 2026 early voting", "url": "https://election.lab.ufl.edu/early-vote/2026-early-voting/" },
   "boundaries": "us-state"
@@ -133,21 +140,48 @@ election with `regions` (US states):
 ```
 
 The hooks pull the CSV (`shared/parsers/early-vote.ts` reads the UF
-Election Lab's columns) into the row's `early_vote` column; the document
-only says where from. The panel shows the totals, a turnout map (ballots as
-a share of the 2022 count), and, for the states that register by party, the
-Dem/GOP/other totals (all ballots, by mail, in person where reported), a
+Election Lab's columns). The panel shows the totals, a turnout map (ballots
+as a share of the 2022 count), and, for the states that register by party,
+the Dem/GOP/other totals (all ballots, by mail, in person where reported), a
 margin map of each state's lead and a bar per state. The margin map and the
 totals take their colours and names from the document's first two
 `parties`. After the merge, prime it with
 `curl https://voting.lgtm.page/_voting/early-vote` and add a PocketHost
 webhook on `GET https://voting.pockethost.io/_voting/early-vote?slug=<slug>`,
 four times a day (`7 */6 * * *`), until the polls close (`slug` only names
-the webhook; every call pulls every election with a source). Once the first
-contests arrive the panel folds into an "Early vote" section under the
-results, and the markdown table moves after them; the MCP
-`earlyVoteTurnout` stays. The data is CC BY-NC-ND 4.0: keep the credit
-link.
+the webhook; every call pulls every election with a source). The data is
+CC BY-NC-ND 4.0: keep the credit link.
+
+**`ebc-advance`**: Elections BC's advance voting turnout table, a PDF with a
+row per riding (voters per advance voting day, the total, registered
+voters), for a `district` election whose `districts[].code` are the ED
+codes the table uses. `prior` is the same table for the last election, the
+baseline for the "vs 2024" tile, the by-day comparison and the riding map:
+
+```json
+"earlyVote": {
+  "format": "ebc-advance",
+  "source": "https://elections.bc.ca/2026election/2026-advance-voting-turnout.pdf",
+  "prior": { "source": "https://elections.bc.ca/2024election/2024-advance-voting-turnout.pdf", "label": "2024 advance voting" },
+  "page": { "label": "Elections BC, advance voting turnout", "url": "https://elections.bc.ca/2026-provincial-election/" },
+  "boundaries": "bc-2023"
+}
+```
+
+The hooks cannot read a PDF, so this feed is pushed from a laptop with
+`pdftotext` (poppler) installed:
+
+```sh
+pnpm early-vote:push --election bc-2026 --dry-run          # parse and print
+PB_SUPERUSER_EMAIL=... PB_SUPERUSER_PASSWORD=... pnpm early-vote:push --election bc-2026 --url https://voting.pockethost.io
+```
+
+It downloads both PDFs, parses the text (`shared/parsers/ebc-advance.ts`
+checks that every riding's days sum to its total and the ridings to the
+provincial total), and writes the column unless the counts and the PDF's
+Last-Modified are unchanged (`--force` writes anyway; `--out` saves the
+JSON; `--pdf`/`--prior-pdf` read local files). Re-run it when Elections BC
+amends the table; the pull tick skips the election.
 
 ## 4. Try it locally
 

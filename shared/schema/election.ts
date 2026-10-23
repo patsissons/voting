@@ -46,6 +46,10 @@ export const BOUNDARY_SETS = [
 export type BoundarySetKey = (typeof BOUNDARY_SETS)[number]
 const boundaries = z.enum(BOUNDARY_SETS).optional()
 
+/** The early vote feeds (see `earlyVote` in the results block). */
+export const EARLY_VOTE_FORMATS = ['ufel-csv', 'ebc-advance'] as const
+export type EarlyVoteFormat = (typeof EARLY_VOTE_FORMATS)[number]
+
 const dates = z.strictObject({
   advance: z.array(day).default([]),
   final: day,
@@ -105,11 +109,30 @@ const resultsBase = {
     })
     .optional(),
   /**
-   * Early vote turnout to pull before voting day (server/early-vote.ts): the
-   * UF Election Lab's per-state CSV, the page to credit, and the map set its
-   * state codes draw on. The pulled counts live in the `early_vote` column.
+   * Early vote turnout shown before voting day; the counts live in the
+   * `early_vote` column, never here. `format` names the feed:
+   *
+   *   ufel-csv     the UF Election Lab's per-state CSV, pulled by the hooks
+   *                (server/early-vote.ts); needs `regions`
+   *   ebc-advance  Elections BC's advance voting turnout PDF (a row per
+   *                riding and day), pushed by `pnpm early-vote:push` since
+   *                the hooks cannot read a PDF; needs `districts`. `prior`
+   *                is the same table for the last election, the baseline.
+   *
+   * `page` is the page to credit and `boundaries` the map set whose codes
+   * are the division keys.
    */
-  earlyVote: z.strictObject({ source: url, page: link, boundaries }).optional(),
+  earlyVote: z
+    .strictObject({
+      format: z.enum(EARLY_VOTE_FORMATS).default('ufel-csv'),
+      source: url,
+      prior: z
+        .strictObject({ source: url, label: z.string().min(1) })
+        .optional(),
+      page: link,
+      boundaries,
+    })
+    .optional(),
 }
 
 const vancouverResults = z.strictObject({
@@ -434,10 +457,24 @@ export function electionProblems(e: Election): string[] {
     if (!/^https:\/\//.test(s.url))
       problems.push(`${s.label}: links must be https`)
   }
-  if (early && !('regions' in e && e.regions.length))
-    problems.push(
-      'results.earlyVote: the counts are by state, so it needs regions',
-    )
+  if (early && early.format === 'ufel-csv') {
+    if (!('regions' in e && e.regions.length))
+      problems.push(
+        'results.earlyVote: the counts are by state, so it needs regions',
+      )
+    if (early.prior)
+      problems.push(
+        'results.earlyVote: prior is for ebc-advance; the CSV carries its own baseline',
+      )
+  }
+  if (early && early.format === 'ebc-advance') {
+    if (e.ballot !== 'district' || !e.districts.length)
+      problems.push(
+        'results.earlyVote: the counts are by riding, so it needs a district ballot with districts',
+      )
+    if (early.prior && !/^https:\/\//.test(early.prior.source))
+      problems.push('results.earlyVote.prior: links must be https')
+  }
   if (
     e.results.source &&
     e.results.sourcePrefix &&

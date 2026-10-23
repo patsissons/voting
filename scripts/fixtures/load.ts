@@ -6,6 +6,9 @@ import { fileURLToPath } from 'node:url'
 import type { AtLargeElection, ChambersElection, DistrictElection, Election, ReferendumElection } from '../../shared/schema/election.ts'
 import { parseElection } from '../../shared/schema/election.ts'
 import type { Payload } from '../../shared/payload.ts'
+import type { EarlyVote } from '../../shared/early-vote.ts'
+import { ebcAdvanceEarlyVote, parseEbcAdvance } from '../../shared/parsers/ebc-advance.ts'
+import { parseEarlyVote } from '../../shared/parsers/early-vote.ts'
 import { loadElection } from '../lib/elections.ts'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
@@ -16,6 +19,23 @@ export const vancouver = (): AtLargeElection => loadElection('vancouver-2026') a
 export const bc = (): DistrictElection => loadElection('bc-2026') as DistrictElection
 export const alberta = (): ReferendumElection => loadElection('alberta-2026') as ReferendumElection
 export const us = (): ChambersElection => loadElection('us-2026') as ChambersElection
+
+/** Elections BC's advance voting tables of 2026-10-22 (and 2024's as the baseline) as the stored early vote. */
+export const bcEarlyVote = (): EarlyVote =>
+  ebcAdvanceEarlyVote(
+    parseEbcAdvance(fixture('voting-2026-ebc-advance.txt')),
+    parseEbcAdvance(fixture('voting-2024-ebc-advance.txt')),
+    bc().districts.map((d) => d.code),
+    '2026-10-22T16:33:12.000Z',
+  )
+
+/** The UF Election Lab CSV of 2026-10-23 as the stored early vote for a chambers election. */
+export const usEarlyVote = (e: ChambersElection = us()): EarlyVote =>
+  parseEarlyVote(fixture('voting-2026-early-vote.csv'), e.regions, '2026-10-23T19:25:09.000Z')
+
+/** The early vote the e2e seed stores for an election, or null when it has no feed fixture. */
+export const earlyVoteFixture = (e: Election): EarlyVote | null =>
+  e.slug === 'bc-2026' ? bcEarlyVote() : e.slug === 'us-2026' ? usEarlyVote(e as ChambersElection) : null
 
 /** The Vancouver document accepting any project (the 2022 and 2025 feeds). */
 export const vancouverAny = (): AtLargeElection => {

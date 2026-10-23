@@ -4,6 +4,7 @@ import { feedText, fixtureFeeds } from '../../scripts/fixtures/fixture.ts'
 import {
   alberta,
   bc,
+  bcEarlyVote,
   civicCounted,
   civicSample,
   fixture,
@@ -111,6 +112,32 @@ describe('voting tools', () => {
     )
     expect(run('get_election', { slug: 'bc-2026' }).earlyVoteTurnout).toBe(
       undefined,
+    )
+  })
+
+  it('adds a pushed advance vote by riding, with no party totals', () => {
+    const db = memoryDb()
+    db.addElection(bc(), { early_vote: bcEarlyVote() })
+    const bcCtx = { db, origin: 'https://voting.lgtm.page' }
+    const doc = call('get_election', { slug: 'bc-2026' }, bcCtx) as any
+    expect(doc.earlyVoteTurnout.total).toMatchObject({
+      voted: 891348,
+      registered: 3738182,
+      prior: 1001331,
+    })
+    expect(doc.earlyVoteTurnout.states.LAO).toMatchObject({
+      voted: 17436,
+      registered: 51098,
+    })
+    expect(doc.earlyVoteTurnout.partyTotals).toEqual({
+      states: 0,
+      voted: 0,
+      party: {},
+    })
+    const summary = call('summary', { slug: 'bc-2026' }, bcCtx) as string
+    expect(summary).toContain('### Advance voting')
+    expect(summary).toContain(
+      '| Ladysmith-Oceanside | 17,436 | 34.1% | +11.4% |',
     )
   })
 

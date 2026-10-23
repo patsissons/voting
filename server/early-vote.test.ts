@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fixture, us, vancouver } from '../scripts/fixtures/load.ts'
+import { bc, fixture, us, vancouver } from '../scripts/fixtures/load.ts'
 import { asEarlyVote } from '../shared/early-vote.ts'
 import { memoryDb } from './db.memory.ts'
 import { EARLY_VOTE_THROTTLE_MS, earlyVoteTick } from './early-vote.ts'
@@ -124,6 +124,18 @@ describe('earlyVoteTick', () => {
     ])
     row.set('published', false)
     expect(earlyVoteTick(db, http, { now })).toEqual([])
+    expect(http.calls).toEqual([])
+  })
+})
+
+describe('earlyVoteTick with a pushed feed', () => {
+  it('leaves an ebc-advance election to the push script', () => {
+    const db = memoryDb()
+    db.addElection(bc())
+    const http = fakeHttp(() => ({ status: 200, text: csv }))
+    expect(earlyVoteTick(db, http, { now })).toEqual([
+      { slug: 'bc-2026', ran: false, skipped: 'push_only' },
+    ])
     expect(http.calls).toEqual([])
   })
 })

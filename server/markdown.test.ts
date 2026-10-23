@@ -3,6 +3,7 @@ import { feedText, fixtureFeeds } from '../scripts/fixtures/fixture.ts'
 import {
   alberta,
   bc,
+  bcEarlyVote,
   civicCounted,
   fixture,
   tinyChambers,
@@ -129,6 +130,37 @@ describe('electionMarkdown', () => {
     const waiting = electionMarkdown(e, null, origin)
     expect(waiting).toContain('No results yet')
     expect(waiting).toContain('[civicAPI](https://civicapi.org/)')
+  })
+
+  it('adds the advance vote by riding to a district election, before and after the results', () => {
+    const e = bc()
+    const ev = bcEarlyVote()
+    const waiting = electionMarkdown(e, null, origin, ev)
+    expect(waiting).toContain('No results yet')
+    expect(waiting).toContain('### Advance voting')
+    expect(waiting).toContain(
+      'Advance ballots cast Fri Oct 16 to Wed Oct 21 (as of Oct 22, 4:33 pm UTC from [Elections BC, advance voting turnout](https://elections.bc.ca/2026-provincial-election/)): 891,348, 23.8% of 3,738,182 registered voters, -11.0% from 2024 (1,001,331). Voters are counted in the riding where they voted, not where they live; the figures are preliminary.',
+    )
+    expect(waiting).toContain(
+      'By day: Fri Oct 16 137,832 (2024 day 1: 171,381); Sat Oct 17 201,774 (2024 day 2: 155,464);',
+    )
+    expect(waiting).toContain(
+      '| Riding | Advance ballots | Of registered | vs 2024 |',
+    )
+    expect(waiting).toContain(
+      '| Ladysmith-Oceanside | 17,436 | 34.1% | +11.4% |',
+    )
+    expect(waiting).toContain('| Abbotsford West | 6,072 | 15.6% | -33.7% |')
+    const section = waiting.slice(waiting.indexOf('### Advance voting'))
+    expect(section.slice(0, section.indexOf('\n## '))).not.toMatch(/state/i)
+    const after = electionMarkdown(e, latest(e), origin, ev)
+    expect(after).not.toContain('No results yet')
+    expect(after.indexOf('### Advance voting')).toBeGreaterThan(
+      after.indexOf('### Seats'),
+    )
+    expect(after.indexOf('Also follow:')).toBeGreaterThan(
+      after.indexOf('### Advance voting'),
+    )
   })
 
   it('adds the early vote while no race has reported, and drops it after', () => {
