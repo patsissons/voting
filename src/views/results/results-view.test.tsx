@@ -254,17 +254,23 @@ describe('ResultsView', () => {
     )
   })
 
-  it('drops the early vote once contests arrive', () => {
+  it('folds the early vote under the results once contests arrive', () => {
     const ev = parseEarlyVote(
       fixture('voting-2026-early-vote.csv'),
       us().regions,
       '2026-10-23T19:25:09Z',
     )
     mount(us(), undefined, null, ev)
-    expect(
-      screen.queryByRole('heading', { name: /^Ballots cast as of/ }),
-    ).toBeNull()
     expect(screen.queryByText(/Early voting is under way/)).toBeNull()
+    const folded = document.getElementById('early-vote') as HTMLDetailsElement
+    expect(folded.open).toBe(false)
+    expect(
+      within(folded).getByRole('heading', { name: /^Ballots cast as of/ }),
+    ).toBeInTheDocument()
+    expect(within(folded).getByText('6,071,374')).toBeInTheDocument()
+    const nav = screen.getByRole('navigation', { name: 'Results sections' })
+    fireEvent.click(within(nav).getByRole('link', { name: 'Early vote' }))
+    expect(folded.open).toBe(true)
   })
 
   it('renders every chamber with its balance, races and the state picker', async () => {

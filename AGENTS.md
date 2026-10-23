@@ -145,7 +145,8 @@ After making changes from a prompt and BEFORE committing:
   Each state keeps its ballots cast, the in-person/mail split and, where the
   state registers by party, `party`, `partyMail` and `partyInPerson`
   (dem/gop/other). The waiting screen, the markdown page and the MCP tools
-  show it until the first contests arrive: totals, a one-hue turnout map
+  show it; once the first contests arrive it stays as a folded `#early-vote`
+  section under the results (and after them in the markdown): totals, a one-hue turnout map
   (share of 2022), the party registration summed over the reporting states
   (`partyTotals` in `shared/stats/early-vote.ts`, also in the markdown
   paragraph and the MCP `earlyVoteTurnout.partyTotals`), and a diverging

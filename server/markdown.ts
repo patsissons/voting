@@ -521,6 +521,7 @@ export function chambersResultsMarkdown(
   }
   const house = contestsOf(r, election.chambers[0].key)
   if (!house.length) lines.push('No races reported yet.', '')
+  if (earlyVote) lines.push(earlyVoteMarkdown(election, earlyVote, true), '')
   return lines.join('\n').trimEnd() + follow
 }
 
@@ -565,10 +566,11 @@ export function llmsText(entries: IndexEntry[], origin: string): string {
   return lines.join('\n')
 }
 
-/** Early vote turnout by state while there are no results: ballots cast, not votes. */
+/** Early vote turnout by state: ballots cast, not votes. `done` once the results are in, so the copy stops saying "so far". */
 export function earlyVoteMarkdown(
   election: ChambersElection,
   ev: EarlyVote,
+  done = false,
 ): string {
   const page = election.results.earlyVote
   const from = page ? ` from [${page.page.label}](${page.page.url})` : ''
@@ -583,9 +585,9 @@ export function earlyVoteMarkdown(
   const rows = turnoutByState(ev, election.regions)
   const totals = partyTotals(rows)
   const lines = [
-    '### Early vote so far',
+    done ? '### Early vote' : '### Early vote so far',
     '',
-    `Ballots cast as of ${wallClock(ev.asOf)} UTC${from}: ${fmt(t.voted)}${split}. This is who has voted, not how: no state releases vote counts before its polls close.`,
+    `Ballots cast before voting day as of ${wallClock(ev.asOf)} UTC${from}: ${fmt(t.voted)}${split}. This is who ${done ? 'had' : 'has'} voted, not how: no state releases vote counts before its polls close.`,
     '',
   ]
   if (totals.states) {

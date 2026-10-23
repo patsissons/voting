@@ -143,9 +143,10 @@ totals take their colours and names from the document's first two
 `curl https://voting.lgtm.page/_voting/early-vote` and add a PocketHost
 webhook on `GET https://voting.pockethost.io/_voting/early-vote?slug=<slug>`,
 four times a day (`7 */6 * * *`), until the polls close (`slug` only names
-the webhook; every call pulls every election with a source). The panel, the
-markdown table and the MCP `earlyVoteTurnout` disappear by themselves once
-the first contests arrive. The data is CC BY-NC-ND 4.0: keep the credit
+the webhook; every call pulls every election with a source). Once the first
+contests arrive the panel folds into an "Early vote" section under the
+results, and the markdown table moves after them; the MCP
+`earlyVoteTurnout` stays. The data is CC BY-NC-ND 4.0: keep the credit
 link.
 
 ## 4. Try it locally
