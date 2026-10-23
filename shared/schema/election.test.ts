@@ -18,6 +18,7 @@ describe('election documents', () => {
     expect(elections.map((e) => e.slug)).toEqual([
       'alberta-2026',
       'bc-2026',
+      'us-2026',
       'vancouver-2026',
     ])
     for (const e of elections) expect(electionProblems(e), e.slug).toEqual([])

@@ -3,12 +3,13 @@
 // Vancouver feed objects for a "vancouver" election, Elections BC ENR-shaped
 // HTML pages (strings) for an "ebc-enr" one, Elections Alberta referendum
 // page sets ({ fetchedAt, pages }) for "eab-ref" and dashboard documents for
-// "eab-dash" (see shared/parsers for the shapes). Deterministic: the same
+// "eab-dash", and civicAPI race-document sets ({ fetchedAt, races }) for
+// "civicapi" (see shared/parsers for the shapes). Deterministic: the same
 // election always yields the same night, and the same night cubby.fyi's
 // fixture produced (scripts/fixtures/golden.ts checks). Used by the relay's
 // --fixture mode, the e2e seed and the tests. Not real results: every count
 // here is made up.
-import type { AtLargeElection, DistrictElection, Election, ReferendumElection, ReferendumQuestion } from '../../shared/schema/election.ts'
+import type { AtLargeElection, ChambersElection, DistrictElection, Election, ReferendumElection, ReferendumQuestion } from '../../shared/schema/election.ts'
 
 function rng(seed: number) {
   let a = seed >>> 0
@@ -64,7 +65,7 @@ export function fixtureFeeds(election: Election, options: FixtureOptions = {}): 
   if (election.ballot === 'referendum') {
     return election.results.format === 'eab-ref' ? fixtureEabNight(election, options) : fixtureEabDashNight(election, options)
   }
-  if (election.ballot === 'chambers') return []
+  if (election.ballot === 'chambers') return fixtureCivicNight(election, options)
   return election.ballot === 'district' ? fixtureEnrPages(election, options) : fixtureVancouverFeeds(election, options)
 }
 
@@ -410,4 +411,156 @@ export function fixtureEabDashNight(election: ReferendumElection, options: Fixtu
       },
     }
   })
+}
+
+// ---- civicAPI (chambers) ------------------------------------------------------
+
+const FIRST = ['Maria', 'James', 'Aisha', 'Daniel', 'Grace', 'Luis', 'Hannah', 'Marcus', 'Priya', 'Tom', 'Elena', 'Victor', 'Nora', 'Samuel', 'Ruth', 'Omar', 'Clara', 'Felix', 'Ingrid', 'Jonah', 'Leah', 'Mateo', 'Naomi', 'Owen']
+const LAST = ['Alvarez', 'Brooks', 'Chen', 'Dawson', 'Ellis', 'Foster', 'Garcia', 'Hughes', 'Iwata', 'Jensen', 'Kim', 'Lopez', 'Morgan', 'Nguyen', 'Okafor', 'Patel', 'Quinn', 'Reyes', 'Singh', 'Torres', 'Underwood', 'Vance', 'Walker', 'Young', 'Zimmerman', 'Baker', 'Collins', 'Duarte', 'Fischer', 'Hale']
+const MINOR = ['Libertarian', 'Independent', 'Green', 'Nonpartisan']
+
+type CivicCandidate = {
+  name: string
+  party: string
+  color: string
+  votes: number
+  percent: number
+  winner: boolean
+  advanced: boolean
+  incumbent: boolean
+  major_candidate: boolean
+}
+
+/**
+ * Eight civicAPI document sets for a chambers election, from the first
+ * counts to a night nearly done: every division gets two main candidates
+ * (one per election party, a few with a minor-party or independent third),
+ * a lean of its own, a start step and a pace, a share of the expected vote
+ * that climbs to 100, and a call once 95% is in with a margin of at least
+ * two points.
+ * A few tight races stay uncalled at the end. Nothing here is a real count.
+ */
+export function fixtureCivicNight(election: ChambersElection, { steps = 8, seed = 2026 }: FixtureOptions = {}): { fetchedAt: string; races: Record<string, unknown> }[] {
+  const rand = rng(seed)
+  const [major, ...otherParties] = election.parties
+  const minor = otherParties[0] || major
+  const labelOf: Record<string, string> = {}
+  for (const [label, key] of Object.entries(election.affiliations || {})) if (!labelOf[key]) labelOf[key] = label
+  const colorOf: Record<string, string> = {}
+  for (const p of election.parties) colorOf[p.key] = p.color
+  const close = Date.parse(election.pollsClose)
+  const lean: Record<string, number> = {}
+  for (const r of election.regions) lean[r.key] = (rand() - 0.5) * 0.3
+  const name = () => `${FIRST[Math.floor(rand() * FIRST.length)]} ${LAST[Math.floor(rand() * LAST.length)]}`
+
+  const chambers = election.chambers.map((chamber) => {
+    const codes = Object.keys(chamber.divisions)
+    const divisions = codes.map((code) => {
+      const state = code.split('-')[0]
+      const tight = rand() < 0.08
+      const majorShare = 0.5 + (lean[state] || 0) + (rand() - 0.5) * 0.16
+      const share = tight ? 0.5 + (rand() - 0.5) * 0.02 : Math.max(0.3, Math.min(0.72, majorShare))
+      const third = rand() < 0.3 ? MINOR[Math.floor(rand() * MINOR.length)] : ''
+      const thirdShare = third ? 0.01 + rand() * 0.05 : 0
+      const incumbent = rand() < 0.7 ? (rand() < share ? 0 : 1) : -1
+      const candidates = [
+        { name: name(), party: labelOf[major.key] || major.name, color: colorOf[major.key], share: share * (1 - thirdShare), incumbent: incumbent === 0 },
+        { name: name(), party: labelOf[minor.key] || minor.name, color: colorOf[minor.key], share: (1 - share) * (1 - thirdShare), incumbent: incumbent === 1 },
+      ]
+      if (third) candidates.push({ name: name(), party: third, color: '#808080', share: thirdShare, incumbent: false })
+      const voters = chamber.key === 'house' ? 220000 + Math.floor(rand() * 140000) : 900000 + Math.floor(rand() * 3000000)
+      const start = Math.floor(rand() * 4)
+      const span = 2 + Math.floor(rand() * (steps - start - 1))
+      return { code, state, candidates, voters, start, span, drift: (rand() - 0.5) * 0.04 }
+    })
+    return { chamber, divisions }
+  })
+
+  const out: { fetchedAt: string; races: Record<string, unknown> }[] = []
+  for (let s = 1; s <= steps; s++) {
+    const at = new Date(close + s * 20 * 60000).toISOString()
+    const races: Record<string, unknown> = {}
+    for (const { chamber, divisions } of chambers) {
+      const region_results: Record<string, unknown> = {}
+      const totals: Record<string, { votes: number; seats: number; color: string }> = {}
+      let reportingSum = 0
+      for (const d of divisions) {
+        const progress = Math.max(0, Math.min(1, (s - d.start) / d.span))
+        const reporting = Math.round(100 * progress)
+        reportingSum += reporting
+        const counted = Math.round(d.voters * progress)
+        const weights = d.candidates.map((c, i) => Math.max(0.001, c.share + (i === 0 ? d.drift : i === 1 ? -d.drift : 0) * (progress - 0.5)))
+        const sum = weights.reduce((a, b) => a + b, 0)
+        const votes = weights.map((w) => Math.round((w / sum) * counted))
+        const total = votes.reduce((a, b) => a + b, 0)
+        const pct = votes.map((v) => (total ? Math.round((1000 * v) / total) / 10 : 0))
+        const order = votes.map((_v, i) => i).sort((a, b) => votes[b] - votes[a])
+        const called = reporting >= 95 && total > 0 && pct[order[0]] - pct[order[1]] >= 2
+        const candidates: CivicCandidate[] = d.candidates.map((c, i) => ({
+          name: c.name,
+          party: c.party,
+          color: c.color,
+          votes: votes[i],
+          percent: pct[i],
+          winner: called && i === order[0],
+          advanced: false,
+          incumbent: c.incumbent,
+          major_candidate: true,
+        }))
+        for (const c of candidates) {
+          const t = totals[c.party] || (totals[c.party] = { votes: 0, seats: 0, color: c.color })
+          t.votes += c.votes
+          if (c.winner) t.seats++
+        }
+        region_results[d.code] = {
+          name: chamber.key === 'house' ? `${chamber.divisions[d.code]} Congressional District` : chamber.divisions[d.code],
+          type: chamber.key === 'house' ? 'Congressional District' : 'State',
+          fill: '#404040',
+          election_id: 100000 + Object.keys(region_results).length,
+          percent_reporting: reporting,
+          candidates,
+        }
+      }
+      for (const [key, n] of Object.entries(chamber.holdovers || {})) {
+        const label = labelOf[key] || key
+        const t = totals[label] || (totals[label] = { votes: 0, seats: 0, color: colorOf[key] || '#808080' })
+        t.seats += n
+      }
+      const allVotes = Object.values(totals).reduce((n, t) => n + t.votes, 0)
+      races[chamber.key] = {
+        election_name: `Fixture ${chamber.label}`,
+        election_type: chamber.label,
+        election_scope: 'General',
+        election_date: `${election.votingDay}T05:00:00.000Z`,
+        country: 'US',
+        province: 'US',
+        district: null,
+        municipality: null,
+        polls_open: null,
+        polls_close: null,
+        is_disputed: false,
+        has_map: false,
+        registered_voters: 217223010,
+        percent_reporting: Math.round(reportingSum / divisions.length),
+        test_data: false,
+        last_updated: at,
+        round: 1,
+        candidates: Object.entries(totals).map(([party, t]) => ({
+          name: party,
+          party,
+          incumbent: false,
+          major_candidate: true,
+          winner: false,
+          advanced: false,
+          color: t.color,
+          votes: t.votes,
+          seats: t.seats,
+          percent: allVotes ? Math.round((1000 * t.votes) / allVotes) / 10 : 0,
+        })),
+        region_results,
+      }
+    }
+    out.push({ fetchedAt: at, races })
+  }
+  return out
 }

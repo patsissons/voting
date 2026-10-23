@@ -7,6 +7,7 @@ import {
   fixture,
   golden,
   tinyChambers,
+  us,
   vancouver,
   vancouverAny,
 } from '../../scripts/fixtures/load.ts'
@@ -704,6 +705,39 @@ describe('civicapi race documents', () => {
       choices: [],
       reporting: 0,
     })
+  })
+
+  it('turns the fixture night into a count that climbs and calls races', () => {
+    const e = us()
+    const night = fixtureFeeds(e).map((f) => normalize(feedText(f), e))
+    expect(night.length).toBe(8)
+    expect(night[0].asOf).toBe('2026-11-03 18:20:00')
+    expect(night[7].asOf).toBe('2026-11-03 20:40:00')
+    expect(night[0].polls).toEqual({ closed: 0, total: 506 })
+    for (let i = 1; i < night.length; i++) {
+      expect(night[i].polls.closed).toBeGreaterThanOrEqual(
+        night[i - 1].polls.closed,
+      )
+      expect(night[i].ballots).toBeGreaterThan(night[i - 1].ballots)
+      expect(night[i].sig).not.toBe(night[i - 1].sig)
+    }
+    const last = night[7]
+    expect(last.polls.closed).toBeGreaterThan(400)
+    expect(last.polls.closed).toBeLessThan(506)
+    expect(last.contests.filter((c) => c.kind === 'house').length).toBe(435)
+    expect(last.contests.map((c) => c.id)).toContain('ak-sen')
+    const house = last.chambers!.house
+    expect(
+      house.parties.reduce((n, p) => n + p.leading, 0),
+    ).toBeLessThanOrEqual(435)
+    expect(house.parties.reduce((n, p) => n + (p.called || 0), 0)).toBe(
+      house.called,
+    )
+    expect(last.summary!.parties).toEqual(house.parties)
+    expect(last.turnout).toBeGreaterThan(0.4)
+    expect(last.turnout).toBeLessThan(0.8)
+    expect(JSON.stringify(last).length).toBeLessThan(400000)
+    expect(new Set(last.contests.map((c) => c.id)).size).toBe(506)
   })
 
   it('names contests uniquely across chambers', () => {

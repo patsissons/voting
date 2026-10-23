@@ -15,6 +15,7 @@ export const fixture = (name: string): string => readFileSync(path.join(here, na
 export const vancouver = (): AtLargeElection => loadElection('vancouver-2026') as AtLargeElection
 export const bc = (): DistrictElection => loadElection('bc-2026') as DistrictElection
 export const alberta = (): ReferendumElection => loadElection('alberta-2026') as ReferendumElection
+export const us = (): ChambersElection => loadElection('us-2026') as ChambersElection
 
 /** The Vancouver document accepting any project (the 2022 and 2025 feeds). */
 export const vancouverAny = (): AtLargeElection => {
