@@ -131,6 +131,16 @@ After making changes from a prompt and BEFORE committing:
 - The instance hibernates when idle. In-process cron is unreliable while it
   sleeps, so election-night fetching is also driven by a PocketHost webhook on
   `GET /_voting/fetch`, added for the night and deleted afterwards.
+- **Early vote**: an election whose results block has `earlyVote` (a CSV
+  source, the page to credit, a map set) gets its turnout pulled by
+  `server/early-vote.ts` into the row's `early_vote` column (hidden
+  `early_vote_checked` / `early_vote_error` hold the pull state), never
+  into `config`, which `elections:push` rewrites whole. Triggers: an hourly
+  cron and a PocketHost webhook on `GET /_voting/early-vote` (hourly, from
+  when early voting opens until polls close; delete it after). At most one
+  pull per election per 15 minutes; a failed pull keeps the last counts.
+  The waiting screen, the markdown page and the MCP tools show it until the
+  first contests arrive.
 - PocketHost rate-limits `/api`: 50 requests per 10 s per IP and 1,000 per
   hour. Scripts that write many rows pace themselves and honor `Retry-After`
   (`scripts/lib/pb-client.ts`).

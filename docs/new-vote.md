@@ -118,6 +118,29 @@ curl -X POST -H "Authorization: Bearer $VOTING_INGEST_TOKEN" \
 server fetch, run `pnpm relay --election <slug> --source <url>` on the
 night; it posts each new snapshot to `/_voting/ingest/<slug>`.
 
+### Early vote turnout (optional)
+
+Before voting day, the results tab can show ballots cast so far instead of
+an empty "No results yet". Add `earlyVote` to the results block of an
+election with `regions` (US states):
+
+```json
+"earlyVote": {
+  "source": "https://election.lab.ufl.edu/data-downloads/earlyvote/2026/US.csv",
+  "page": { "label": "UF Election Lab, 2026 early voting", "url": "https://election.lab.ufl.edu/early-vote/2026-early-voting/" },
+  "boundaries": "us-state"
+}
+```
+
+The hooks pull the CSV (`shared/parsers/early-vote.ts` reads the UF
+Election Lab's columns) into the row's `early_vote` column; the document
+only says where from. After the merge, prime it with
+`curl https://voting.lgtm.page/_voting/early-vote` and add a PocketHost
+webhook on that route, hourly, until the polls close. The panel, the
+markdown table and the MCP `earlyVoteTurnout` disappear by themselves once
+the first contests arrive. The data is CC BY-NC-ND 4.0: keep the credit
+link.
+
 ## 4. Try it locally
 
 ```sh
