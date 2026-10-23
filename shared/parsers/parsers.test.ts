@@ -6,6 +6,7 @@ import {
   bcAny,
   fixture,
   golden,
+  tinyChambers,
   vancouver,
   vancouverAny,
 } from '../../scripts/fixtures/load.ts'
@@ -18,6 +19,7 @@ import {
 import type { Payload } from '../payload.ts'
 import type { Election } from '../schema/election.ts'
 import {
+  contestId,
   dashSource,
   markOfficial,
   normalize,
@@ -509,6 +511,217 @@ describe('elections alberta dashboard (eab-dash)', () => {
     expect(
       dashSource('https://results.elections.ab.ca/data/8400?questions=1', page),
     ).toBe('')
+  })
+})
+
+describe('civicapi race documents', () => {
+  // The three real documents of 2026-10-23, trimmed to a few regions. Taken
+  // before voting day, so every count is zero and nothing is called.
+  const sample = fixture('voting-2026-civicapi-sample.json')
+  const tiny = tinyChambers()
+  const wrapper = () =>
+    JSON.parse(sample) as {
+      fetchedAt: string
+      races: Record<string, Record<string, unknown>>
+    }
+
+  it('turns every division into a contest of its chamber', () => {
+    const r = normalize(sample, tiny)
+    expect(r.format).toBe('civicapi')
+    expect(r.project).toBe('Tiny Midterms 2026')
+    // max(last_updated) = 02:10:37.040Z, as Eastern wall-clock time.
+    expect(r.asOf).toBe('2026-10-22 21:10:37')
+    expect(r.contests.map((c) => c.id)).toEqual([
+      'ak-al',
+      'ca-12',
+      'ny-10',
+      'wi-02',
+      'ak-sen',
+      'ga-sen',
+      'ak-gov',
+      'ca-gov',
+    ])
+    expect(r.contests.map((c) => c.kind)).toEqual([
+      ...Array(4).fill('house'),
+      'senate',
+      'senate',
+      'governor',
+      'governor',
+    ])
+    const ak = r.contests[0]
+    expect(ak.label).toBe('Alaska at-large')
+    expect(ak.name).toBe("Alaska's At-large Congressional District")
+    expect(ak.region).toBe('ak')
+    expect(ak.voteFor).toBe(1)
+    expect(ak.reporting).toBe(0)
+    expect(ak.choices.map((c) => [c.name, c.party, c.partyName])).toEqual([
+      ['Bill Hill', null, 'Nonpartisan'],
+      ['Eric Hafner', 'dem', 'Democratic'],
+      ['James C. “Jim” McDermott', null, 'Libertarian'],
+      ['Nick Begich III', 'gop', 'Republican'],
+    ])
+    expect(r.contests[3].acclaimed).toBe(true)
+    expect(r.contests[3].choices[0].name).toBe('Mark Pocan')
+    const sen = r.contests[4]
+    expect(sen.label).toBe('Alaska')
+    expect(sen.choices.some((c) => c.incumbent)).toBe(true)
+    expect(r.polls).toEqual({ closed: 0, total: 8 })
+    expect(r.eligible).toBe(217223010)
+    expect(r.ballots).toBe(0)
+    expect(r.turnout).toBe(0)
+    expect(r.sig).toMatch(/^[0-9a-z]+$/)
+    expect(Object.keys(r.chambers!)).toEqual(['house', 'senate', 'governor'])
+    expect(r.chambers!.senate).toEqual({
+      parties: [
+        { key: 'dem', leading: 0, votes: 0, pct: 0, called: 0 },
+        { key: 'gop', leading: 0, votes: 0, pct: 0, called: 0 },
+        { key: 'other', leading: 0, votes: 0, pct: 0, called: 0 },
+      ],
+      reporting: 0,
+      called: 0,
+    })
+    expect(r.summary).toEqual({
+      parties: r.chambers!.house.parties,
+      reporting: '0%',
+    })
+    expect(r.official).toBe(false)
+    expect(
+      markOfficial({ ...r, official: true }).contests[0].choices[0].winner,
+    ).toBe(false)
+  })
+
+  it('counts leaders, calls and votes per chamber', () => {
+    const doc = wrapper()
+    const house = doc.races.house as {
+      percent_reporting: number
+      region_results: Record<
+        string,
+        { percent_reporting: number; candidates: Record<string, unknown>[] }
+      >
+    }
+    house.percent_reporting = 40
+    const region = house.region_results['ak-al']
+    region.percent_reporting = 97
+    region.candidates[0].votes = 120000 // Begich (gop)
+    region.candidates[0].winner = true
+    region.candidates[1].votes = 80000 // Hafner (dem)
+    region.candidates[2].votes = 5000
+    house.region_results['ny-10'].candidates[0].votes = 50000 // Lander (dem)
+    house.region_results['ny-10'].candidates[1].votes = 50000 // a tie leads nobody
+    const r = normalize(doc, tiny)
+    const ak = r.contests[0]
+    expect(ak.choices[0].name).toBe('Nick Begich III')
+    expect(ak.choices[0].winner).toBe(true)
+    expect(ak.ballots).toBe(205000)
+    expect(ak.reporting).toBe(97)
+    expect(r.chambers!.house).toEqual({
+      parties: [
+        {
+          key: 'dem',
+          leading: 0,
+          votes: 130000,
+          pct: expect.any(Number),
+          called: 0,
+        },
+        {
+          key: 'gop',
+          leading: 1,
+          votes: 170000,
+          pct: expect.any(Number),
+          called: 1,
+        },
+        {
+          key: 'other',
+          leading: 0,
+          votes: 5000,
+          pct: expect.any(Number),
+          called: 0,
+        },
+      ],
+      reporting: 40,
+      called: 1,
+    })
+    expect(r.polls).toEqual({ closed: 1, total: 8 })
+    expect(r.ballots).toBe(305000)
+    expect(r.turnout).toBeCloseTo(305000 / 217223010, 9)
+    expect(r.summary!.reporting).toBe('40%')
+    expect(r.sig).not.toBe(normalize(sample, tiny).sig)
+    // The same counts fingerprint the same whatever the stamps say.
+    const again = wrapper()
+    ;(again.races.house as typeof house).percent_reporting = 40
+    ;(again.races.house as typeof house).region_results = house.region_results
+    again.fetchedAt = '2026-11-04T05:00:00Z'
+    expect(normalize(again, tiny).sig).toBe(r.sig)
+  })
+
+  it('accepts the wrapper as text or object, with race documents as text', () => {
+    const doc = wrapper()
+    const asText = {
+      fetchedAt: doc.fetchedAt,
+      races: Object.fromEntries(
+        Object.entries(doc.races).map(([k, v]) => [k, JSON.stringify(v)]),
+      ),
+    }
+    expect(normalize(asText, tiny)).toEqual(normalize(sample, tiny))
+    expect(normalize(JSON.stringify(doc), tiny)).toEqual(normalize(doc, tiny))
+  })
+
+  it('stamps the fetch time when no race carries one', () => {
+    const doc = wrapper()
+    for (const race of Object.values(doc.races)) delete race.last_updated
+    expect(normalize(doc, tiny).asOf).toBe('2026-10-22 21:30:00')
+  })
+
+  it('refuses empty, partial and test documents', () => {
+    expect(code(() => normalize('', tiny))).toBe('empty_feed')
+    expect(code(() => normalize('<html>', tiny))).toBe('bad_feed')
+    expect(code(() => normalize({ hello: 1 }, tiny))).toBe('bad_feed')
+    const missing = wrapper()
+    delete missing.races.senate
+    expect(code(() => normalize(missing, tiny))).toBe('bad_feed')
+    expect(() => normalize(missing, tiny)).toThrow(
+      /no race document for senate/,
+    )
+    const test = wrapper()
+    test.races.house.test_data = true
+    expect(code(() => normalize(test, tiny))).toBe('not_reporting')
+    const elsewhere = wrapper()
+    elsewhere.races.governor.region_results = {
+      tx: { name: 'Texas', candidates: [] },
+    }
+    expect(() => normalize(elsewhere, tiny)).toThrow(
+      /none of the election's divisions/,
+    )
+    // One missing region is an empty contest, not a failure.
+    const partial = wrapper()
+    delete (partial.races.house.region_results as Record<string, unknown>)[
+      'ny-10'
+    ]
+    const r = normalize(partial, tiny)
+    expect(r.contests[2]).toMatchObject({
+      id: 'ny-10',
+      name: 'New York 10',
+      choices: [],
+      reporting: 0,
+    })
+  })
+
+  it('names contests uniquely across chambers', () => {
+    const [house, senate, governor] = tiny.chambers
+    expect(contestId(house, 'ak-al')).toBe('ak-al')
+    expect(contestId(senate, 'ak')).toBe('ak-sen')
+    expect(contestId(governor, 'ak')).toBe('ak-gov')
+  })
+
+  it('strips an older row to its chamber tallies', () => {
+    const r = normalize(sample, tiny)
+    const stripped = stripDetail(r)!
+    expect(stripped.contests).toEqual([])
+    expect(stripped.chambers).toEqual(r.chambers)
+    expect(stripped.summary).toEqual(r.summary)
+    expect(stripped.sig).toBe(r.sig)
+    expect(stripDetail(stripped)).toBeNull()
+    expect(stripDetail(normalize(feed2022, any))).toBeNull()
   })
 })
 
