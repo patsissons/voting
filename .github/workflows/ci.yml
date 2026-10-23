@@ -14,6 +14,8 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    # Normally ~2 minutes; fail a stalled mirror or registry fast.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
 
@@ -39,13 +41,31 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
 
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm exec playwright install --with-deps webkit chromium
+      # install-deps pulls ~120 MB of .debs (mostly WebKit's media and font
+      # stack) on every run, and the Azure apt mirror sometimes serves them at
+      # dial-up speed (a 32-minute install on 2026-10-23). Keep apt's download
+      # archive in a cached directory so it only fetches what changed since
+      # the runner image last moved. The *.deb glob skips apt's root-owned
+      # partial/ dir and lock file.
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/apt-archives/*.deb
+          key: apt-${{ env.ImageOS }}-${{ env.ImageVersion }}-playwright-${{ steps.playwright.outputs.version }}
+          restore-keys: apt-${{ env.ImageOS }}-
+
+      - name: Point apt at the cached archive
+        run: |
+          mkdir -p ~/.cache/apt-archives/partial
+          echo "Dir::Cache::Archives \"$HOME/.cache/apt-archives\";" \
+            | sudo tee /etc/apt/apt.conf.d/99cached-archives
 
       - name: Install Playwright system deps
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps webkit chromium
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install webkit chromium
 
       # The e2e suite runs the built app under a local PocketBase
       # (scripts/pb.ts downloads the binary into .pb/ on first use).
@@ -71,6 +91,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: validate
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: production
     steps:
       - uses: actions/checkout@v5
