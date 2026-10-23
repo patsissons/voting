@@ -145,6 +145,9 @@ describe('electionMarkdown', () => {
       'Ballots cast as of Oct 23, 7:25 pm UTC from [UF Election Lab, 2026 early voting](https://election.lab.ufl.edu/early-vote/2026-early-voting/): 6,071,374 (2,660,455 in person, 3,410,919 by mail).',
     )
     expect(waiting).toContain(
+      'Party registration of early voters across the 3 states that register by party (74.3% of ballots cast): Dem 2,067,470 (45.9%), GOP 1,308,379 (29.1%), other 1,127,492 (25.0%); Dem +16.9 pts. By mail: Dem 1,554,742 (47.3%), GOP 1,021,711 (31.1%), other 711,856 (21.6%). In person: Dem 512,728 (42.2%), GOP 286,668 (23.6%), other 415,636 (34.2%), in the states that report the split.',
+    )
+    expect(waiting).toContain(
       '| State | Ballots cast | Share of 2022 turnout | Registration (Dem / GOP / other) |',
     )
     expect(waiting).toContain(

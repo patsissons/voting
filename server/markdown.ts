@@ -4,7 +4,7 @@
 // page. Pure: the hooks and the MCP summary tool call these with rows the
 // Db already filtered to published.
 import type { EarlyVote } from '../shared/early-vote.ts'
-import { fmt, pct1, wallClock } from '../shared/format.ts'
+import { fmt, pct1, signed, wallClock } from '../shared/format.ts'
 import type { Payload, Snapshot } from '../shared/payload.ts'
 import type {
   ChambersElection,
@@ -16,7 +16,12 @@ import type {
 import { changingHands, complete, leaderOf } from '../shared/stats/results.ts'
 import { ballotWide, contestOf } from '../shared/stats/referendum.ts'
 import { balanceOf, calledOf, contestsOf } from '../shared/stats/chambers.ts'
-import { partySplit, turnoutByState } from '../shared/stats/early-vote.ts'
+import {
+  partyMargin,
+  partySplit,
+  partyTotals,
+  turnoutByState,
+} from '../shared/stats/early-vote.ts'
 
 export const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/
 
@@ -573,15 +578,42 @@ export function earlyVoteMarkdown(
       ? ` (${fmt(t.inPerson)} in person, ${fmt(t.mail)} by mail)`
       : ''
   const order = election.parties.map((p) => p.key)
+  const nameOf = (k: string) =>
+    k === 'other' ? 'other' : partyShort(election, k)
+  const rows = turnoutByState(ev, election.regions)
+  const totals = partyTotals(rows)
   const lines = [
     '### Early vote so far',
     '',
     `Ballots cast as of ${wallClock(ev.asOf)} UTC${from}: ${fmt(t.voted)}${split}. This is who has voted, not how: no state releases vote counts before its polls close.`,
     '',
-    `| State | Ballots cast | Share of 2022 turnout | Registration (${[...order.map((k) => partyShort(election, k)), 'other'].join(' / ')}) |`,
-    '| --- | ---: | ---: | --- |',
   ]
-  for (const r of turnoutByState(ev, election.regions)) {
+  if (totals.states) {
+    const counts = (party: Record<string, number>) =>
+      partySplit(party, order)
+        .map((s) => `${nameOf(s.key)} ${fmt(s.n)} (${pct1(s.share * 100)})`)
+        .join(', ')
+    const m = partyMargin(totals.party, order)
+    const lead =
+      m == null
+        ? ''
+        : m === 0
+          ? '; even'
+          : `; ${nameOf(order[m > 0 ? 0 : 1])} ${signed(Math.abs(m) * 100)} pts`
+    const halves = [
+      totals.mail ? `By mail: ${counts(totals.mail)}` : '',
+      totals.inPerson ? `In person: ${counts(totals.inPerson)}` : '',
+    ].filter(Boolean)
+    lines.push(
+      `Party registration of early voters across the ${totals.states} states that register by party (${pct1((totals.voted / t.voted) * 100)} of ballots cast): ${counts(totals.party)}${lead}.${halves.length ? ` ${halves.join('. ')}, in the states that report the split.` : ''}`,
+      '',
+    )
+  }
+  lines.push(
+    `| State | Ballots cast | Share of 2022 turnout | Registration (${[...order, 'other'].map(nameOf).join(' / ')}) |`,
+    '| --- | ---: | ---: | --- |',
+  )
+  for (const r of rows) {
     const party = r.party
       ? partySplit(r.party, order)
           .map((s) => pct1(s.share * 100))
