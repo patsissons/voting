@@ -92,6 +92,8 @@ function ElectionView({ id, election }: { id: string; election: Election }) {
   const hash = useHash()
   const results = useResults(id)
   const referendum = election.ballot === 'referendum'
+  // A results-only election has no compass tab: the page is the results.
+  const resultsOnly = election.ballot === 'chambers'
   // The compass tab keeps pointing at the viewer's own permalink.
   const [compassHash, setCompassHash] = useState(() =>
     tabOf(hash) === 'compass' ? hash : TAB,
@@ -106,11 +108,20 @@ function ElectionView({ id, election }: { id: string; election: Election }) {
     ? results.snapshots[results.snapshots.length - 1].payload
     : null
   const named = tabOf(hash)
-  const tab = named || (results.snapshots.length ? 'results' : 'compass')
+  const tab = resultsOnly
+    ? 'results'
+    : named || (results.snapshots.length ? 'results' : 'compass')
 
   useEffect(() => {
     document.title = `${election.title} · Voting`
   }, [election.title])
+
+  // A results-only page always carries the results hash, so a copied link
+  // and a reload land in the same place.
+  useEffect(() => {
+    if (resultsOnly && tabOf(window.location.hash) !== 'results')
+      window.history.replaceState(null, '', '#/results')
+  }, [resultsOnly])
 
   // An import link pasted into an open page: every card read its storage on
   // mount, so reload to let them read the imported state.
@@ -143,7 +154,7 @@ function ElectionView({ id, election }: { id: string; election: Election }) {
   }
   const css = useMemo(() => partyCss(election), [election])
   const shareHash = tab === 'results' ? '#/results' : compassHash
-  const waiting = !named && !results.loaded
+  const waiting = resultsOnly ? !results.loaded : !named && !results.loaded
 
   return (
     <Shell
@@ -162,28 +173,30 @@ function ElectionView({ id, election }: { id: string; election: Election }) {
           live={results.live}
           shareHash={shareHash}
         />
-        <Tabs value={tab} onValueChange={switchTab}>
-          <TabsList className="w-full sm:w-auto">
-            <TabsTrigger
-              value="compass"
-              className="flex-1 sm:flex-none sm:px-5"
-            >
-              {referendum ? 'Your ballot' : 'Compass'}
-            </TabsTrigger>
-            <TabsTrigger
-              value="results"
-              className="flex-1 gap-2 sm:flex-none sm:px-5"
-            >
-              {results.live && latest ? (
-                <i
-                  className="bg-brand inline-block size-1.5 animate-pulse rounded-full"
-                  aria-hidden="true"
-                />
-              ) : null}
-              Results
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {resultsOnly ? null : (
+          <Tabs value={tab} onValueChange={switchTab}>
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger
+                value="compass"
+                className="flex-1 sm:flex-none sm:px-5"
+              >
+                {referendum ? 'Your ballot' : 'Compass'}
+              </TabsTrigger>
+              <TabsTrigger
+                value="results"
+                className="flex-1 gap-2 sm:flex-none sm:px-5"
+              >
+                {results.live && latest ? (
+                  <i
+                    className="bg-brand inline-block size-1.5 animate-pulse rounded-full"
+                    aria-hidden="true"
+                  />
+                ) : null}
+                Results
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
         {waiting ? (
           <Skeleton className="h-64 w-full" />
         ) : tab === 'results' ? (

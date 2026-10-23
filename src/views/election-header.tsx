@@ -157,7 +157,9 @@ function AboutSheet({ election }: { election: Election }) {
             eyebrow={
               election.ballot === 'referendum'
                 ? 'Wording, context and polls from'
-                : 'Positions drawn from'
+                : election.ballot === 'chambers'
+                  ? 'Results and background from'
+                  : 'Positions drawn from'
             }
             links={election.sources}
           />
