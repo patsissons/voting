@@ -14,6 +14,10 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    # Normally ~2 minutes. The headroom is for a cold apt cache on a slow
+    # mirror, which must finish once to seed the cache; it still stops a
+    # stalled run hours short of the 6h default.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
 
@@ -39,13 +43,48 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
 
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm exec playwright install --with-deps webkit chromium
+      # install-deps pulls ~120 MB of .debs (mostly WebKit's media and font
+      # stack) on every run, and the Azure apt mirror sometimes serves them at
+      # dial-up speed (a 32-minute install on 2026-10-23). Keep apt's download
+      # archive in a cached directory so it only fetches what changed since
+      # the runner image last moved. ImageOS and ImageVersion are runner
+      # environment variables, not workflow env, so a shell step reads them.
+      - name: Resolve apt cache key
+        id: apt
+        run: |
+          echo "prefix=apt-$ImageOS-" >> "$GITHUB_OUTPUT"
+          echo "key=apt-$ImageOS-$ImageVersion-playwright-${{ steps.playwright.outputs.version }}" >> "$GITHUB_OUTPUT"
+
+      # The *.deb glob skips apt's root-owned partial/ dir and lock file.
+      - name: Restore apt packages
+        id: apt-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/apt-archives/*.deb
+          key: ${{ steps.apt.outputs.key }}
+          restore-keys: ${{ steps.apt.outputs.prefix }}
+
+      - name: Point apt at the cached archive
+        run: |
+          mkdir -p ~/.cache/apt-archives/partial
+          echo "Dir::Cache::Archives \"$HOME/.cache/apt-archives\";" \
+            | sudo tee /etc/apt/apt.conf.d/99cached-archives
 
       - name: Install Playwright system deps
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps webkit chromium
+
+      # Save as soon as the download lands, so a later test failure doesn't
+      # throw away a slow fetch.
+      - name: Save apt packages
+        if: steps.apt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/apt-archives/*.deb
+          key: ${{ steps.apt.outputs.key }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install webkit chromium
 
       # The e2e suite runs the built app under a local PocketBase
       # (scripts/pb.ts downloads the binary into .pb/ on first use).
@@ -71,6 +110,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: validate
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: production
     steps:
       - uses: actions/checkout@v5
