@@ -137,8 +137,10 @@ After making changes from a prompt and BEFORE committing:
   `early_vote_checked` / `early_vote_error` hold the pull state), never
   into `config`, which `elections:push` rewrites whole. Triggers: a cron
   four times a day (`7 */6 * * *`) and a PocketHost webhook on
-  `GET /_voting/early-vote` (on the same schedule, from
-  when early voting opens until polls close; delete it after). At most one
+  `GET /_voting/early-vote?slug=<slug>` (on the same schedule, from when
+  early voting opens until polls close; delete it after). As with the fetch
+  webhook, `slug` only tells webhooks apart: every call pulls every election
+  with an early vote source. us-2026's webhook is live (2026-10-23). At most one
   pull per election per 15 minutes; a failed pull keeps the last counts.
   The waiting screen, the markdown page and the MCP tools show it until the
   first contests arrive.
