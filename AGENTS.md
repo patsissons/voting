@@ -138,10 +138,11 @@ After making changes from a prompt and BEFORE committing:
   `elections:push` rewrites whole. Format `ufel-csv` (us-2026) is pulled by
   `server/early-vote.ts`; `ebc-advance` (bc-2026, Elections BC's advance
   voting PDF, a row per riding and day, with the 2024 table as `prior`)
-  cannot be read in the hooks, so `pnpm early-vote:push --election bc-2026`
-  parses it with pdftotext and writes the same column from a laptop (the
-  tick skips it as `push_only`); re-run it if Elections BC amends the
-  table. Pull triggers: a cron
+  cannot be read in the hooks, so `pnpm early-vote:push` parses it with
+  pdftotext and writes the same column (the tick skips it as `push_only`).
+  CI runs `early-vote:push --all` after every deploy of main (a no-op when
+  the counts are unchanged), so an amended table lands with the next
+  merge; `--election bc-2026` runs it by hand. Pull triggers: a cron
   four times a day (`7 */6 * * *`) and a PocketHost webhook on
   `GET /_voting/early-vote?slug=<slug>` (on the same schedule, from when
   early voting opens until polls close; delete it after). As with the fetch

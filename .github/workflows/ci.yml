@@ -241,3 +241,15 @@ jobs:
         env:
           PB_SUPERUSER_EMAIL: ${{ secrets.PHIO_USERNAME }}
           PB_SUPERUSER_PASSWORD: ${{ secrets.PHIO_PASSWORD }}
+      # An early vote the hooks cannot pull (Elections BC's advance voting
+      # PDF) is pushed from here on every deploy of main: the script parses
+      # the PDFs with pdftotext and writes the row only when the counts
+      # changed, so a repeat is a no-op and an amended table lands with the
+      # next merge. Prints "nothing to push" once no document has such a feed.
+      - name: Install pdftotext
+        run: sudo apt-get install -y --no-install-recommends poppler-utils
+      - name: Push the advance vote
+        run: pnpm early-vote:push --all --url https://voting.pockethost.io
+        env:
+          PB_SUPERUSER_EMAIL: ${{ secrets.PHIO_USERNAME }}
+          PB_SUPERUSER_PASSWORD: ${{ secrets.PHIO_PASSWORD }}

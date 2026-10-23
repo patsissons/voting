@@ -168,8 +168,10 @@ baseline for the "vs 2024" tile, the by-day comparison and the riding map:
 }
 ```
 
-The hooks cannot read a PDF, so this feed is pushed from a laptop with
-`pdftotext` (poppler) installed:
+The hooks cannot read a PDF, so this feed is pushed by
+`pnpm early-vote:push`, which needs `pdftotext` (poppler). CI runs it with
+`--all` after every deploy of main, so merging the document is enough; by
+hand:
 
 ```sh
 pnpm early-vote:push --election bc-2026 --dry-run          # parse and print
@@ -180,8 +182,9 @@ It downloads both PDFs, parses the text (`shared/parsers/ebc-advance.ts`
 checks that every riding's days sum to its total and the ridings to the
 provincial total), and writes the column unless the counts and the PDF's
 Last-Modified are unchanged (`--force` writes anyway; `--out` saves the
-JSON; `--pdf`/`--prior-pdf` read local files). Re-run it when Elections BC
-amends the table; the pull tick skips the election.
+JSON; `--pdf`/`--prior-pdf` read local files). If Elections BC amends the
+table, the next merge to main picks it up, or run the script by hand; the
+pull tick skips the election.
 
 ## 4. Try it locally
 

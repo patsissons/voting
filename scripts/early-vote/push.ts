@@ -9,6 +9,8 @@
 //   pnpm early-vote:push --election bc-2026 --local
 //   pnpm early-vote:push --election bc-2026 --url https://voting.pockethost.io
 //        with PB_SUPERUSER_EMAIL and PB_SUPERUSER_PASSWORD in the environment
+//   pnpm early-vote:push --all ...   every published document with such a feed
+//        (CI runs this after each deploy of main; nothing to do is fine)
 //   ... --dry-run                parse and print, write nothing
 //   ... --out early-vote.json    also write the EarlyVote JSON
 //   ... --force                  write even when the counts are unchanged
@@ -28,8 +30,10 @@ import {
   parseEbcAdvance,
 } from '../../shared/parsers/ebc-advance.ts'
 import type { EbcAdvanceTable } from '../../shared/parsers/ebc-advance.ts'
-import { argv, loadElection } from '../lib/elections.ts'
+import type { Election } from '../../shared/schema/election.ts'
+import { argv, loadElection, loadElections } from '../lib/elections.ts'
 import { clientFor } from '../lib/pb-client.ts'
+import type { PbClient } from '../lib/pb-client.ts'
 
 const run = promisify(execFile)
 const USER_AGENT = 'voting.lgtm.page (+https://github.com/patsissons/voting)'
@@ -90,11 +94,15 @@ function describe(ev: EarlyVote, year: number): void {
     console.log(`  ${day}: ${fmt(n)}`)
 }
 
-async function main() {
-  const args = argv()
-  const slug = args.flag('election')
-  if (!slug) throw new Error('pass --election <slug>')
-  const election = loadElection(slug)
+type Args = ReturnType<typeof argv>
+
+/** Parses one election's tables and writes its row (unless --dry-run). */
+async function push(
+  election: Election,
+  args: Args,
+  client: () => Promise<PbClient>,
+): Promise<void> {
+  const slug = election.slug
   const early = election.results.earlyVote
   if (!early || early.format !== 'ebc-advance')
     throw new Error(`${slug}: results.earlyVote is not an ebc-advance feed`)
@@ -120,8 +128,8 @@ async function main() {
     console.log(`wrote ${out}`)
   }
   if (args.has('dry-run')) return
-  const client = await clientFor(args)
-  const row = await client.findElection(slug)
+  const pb = await client()
+  const row = await pb.findElection(slug)
   if (!row)
     throw new Error(`${slug}: no election row (push the documents first)`)
   const stored = asEarlyVote(row.early_vote)
@@ -132,19 +140,55 @@ async function main() {
     stored.asOf === ev.asOf &&
     !args.has('force')
   ) {
-    await client.patchElection(row.id, {
+    await pb.patchElection(row.id, {
       early_vote_checked: stamp,
       early_vote_error: '',
     })
     console.log(`${slug}: unchanged since ${stored.asOf}`)
     return
   }
-  await client.patchElection(row.id, {
+  await pb.patchElection(row.id, {
     early_vote: ev,
     early_vote_checked: stamp,
     early_vote_error: '',
   })
   console.log(`${slug}: ${stored ? 'updated' : 'stored'} (${row.id})`)
+}
+
+async function main() {
+  const args = argv()
+  const slug = args.flag('election')
+  if (!slug && !args.has('all'))
+    throw new Error('pass --election <slug> or --all')
+  const elections = slug
+    ? [loadElection(slug)]
+    : loadElections().filter(
+        (e) =>
+          e.published &&
+          e.results.earlyVote &&
+          e.results.earlyVote.format === 'ebc-advance',
+      )
+  if (!elections.length) {
+    console.log(
+      'no published election has an ebc-advance early vote; nothing to push',
+    )
+    return
+  }
+  // One login for every election, made only when something is written.
+  let pb: Promise<PbClient> | null = null
+  const client = () => (pb ||= clientFor(args))
+  const failed: string[] = []
+  for (const election of elections) {
+    try {
+      await push(election, args, client)
+    } catch (err) {
+      failed.push(election.slug)
+      console.error(
+        `${election.slug}: ${String((err as Error).message || err)}`,
+      )
+    }
+  }
+  if (failed.length) throw new Error(`failed: ${failed.join(', ')}`)
 }
 
 main().catch((err) => {
