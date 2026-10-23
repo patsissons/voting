@@ -16,6 +16,7 @@ import { createWriteStream, existsSync, mkdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
+import { earlyVoteFixture } from './fixtures/load.ts'
 import { argv, loadElections, root } from './lib/elections.ts'
 import {
   LOCAL_INGEST_TOKEN,
@@ -150,12 +151,18 @@ export async function seed(
   await client.authenticate(LOCAL_SUPERUSER)
   for (const doc of loadElections()) {
     await waitForHealth(client)
-    const { action } = await client.upsertElection(doc)
+    const { id, action } = await client.upsertElection(doc)
+    const early = earlyVoteFixture(doc)
+    if (early)
+      await client.patchElection(id, {
+        early_vote: early,
+        early_vote_checked: early.asOf.replace('T', ' '),
+      })
     const posted = await client.ingestFixtures(doc, token)
     const stored = posted.filter((p) => p.status === 201).length
     const bad = posted.find((p) => p.status >= 400)
     console.log(
-      `[pb] ${doc.slug}: election ${action}, ${stored} of ${posted.length} fixture snapshots stored${bad ? ` (${bad.status} ${JSON.stringify(bad.body)})` : ''}`,
+      `[pb] ${doc.slug}: election ${action}${early ? ', early vote seeded' : ''}, ${stored} of ${posted.length} fixture snapshots stored${bad ? ` (${bad.status} ${JSON.stringify(bad.body)})` : ''}`,
     )
     if (bad) throw new Error(`seeding ${doc.slug} failed`)
   }

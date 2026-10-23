@@ -28,6 +28,7 @@
     "golden": "node scripts/fixtures/golden.ts",
     "elections:check": "node scripts/elections/check.ts",
     "elections:push": "node scripts/elections/push.ts",
+    "early-vote:push": "node scripts/early-vote/push.ts",
     "relay": "node scripts/relay.ts",
     "new-vote": "node scripts/new-vote.ts"
   },
