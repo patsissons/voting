@@ -17,7 +17,7 @@ import {
 import { votingTools } from './tools.ts'
 
 export const INSTRUCTIONS =
-  "Read-only tools over the voting elections: list_elections first, then get_election for a document, latest_results and results_series for counts, closest_districts and changing_hands for a riding election, question_divisions for a referendum, and summary for the markdown page. Results are unofficial until marked official; stamps are wall-clock time in the election's zone."
+  "Read-only tools over the voting elections: list_elections first, then get_election for a document, latest_results and results_series for counts, closest_districts and changing_hands for a riding election, question_divisions for a referendum, results_series with metric seats and a chamber key for a chambers (results-only) election, and summary for the markdown page. Results are unofficial until marked official; stamps are wall-clock time in the election's zone."
 
 /** Is this Origin allowed to call the endpoint? */
 export function originAllowed(origin: string, host: string): boolean {

@@ -6,14 +6,16 @@
 // another election, marks an official count's winners, and stores one row
 // per distinct source stamp; a repeat, or a row the other writer stored a
 // moment earlier (the unique (election, source_ts) index), is a no-op. A
-// payload with a "sig" (Alberta's referendum feeds) is skipped when the
-// newest stored row has the same counts, and only the newest row keeps
-// per-division detail: storing a new one strips it from the row before.
+// payload with a "sig" (Alberta's referendum feeds, civicAPI) is skipped
+// when the newest stored row has the same counts, and only the newest row
+// keeps its detail (per-division rows, or every contest for civicapi):
+// storing a new one strips it from the row before.
 //
 // fetchTick runs shouldFetch (shared/fetch-policy) over every election with
 // a results source and fetches the ones due: one page per question for an
-// eab-ref election, else the source itself, following a retired Alberta
-// dashboard version to the current one.
+// eab-ref election, one race document per chamber for a civicapi election
+// (all or nothing: a chamber that fails fails the tick), else the source
+// itself, following a retired Alberta dashboard version to the current one.
 import { checkSource, shouldFetch } from '../shared/fetch-policy.ts'
 import {
   dashSource,
@@ -224,6 +226,33 @@ export function fetchTick(
             error = `${stored.body.code}: ${stored.body.message}`
           else if (failed.length)
             error = `some pages failed: ${failed.join(', ')}`
+        }
+      } else if (results.format === 'civicapi') {
+        // One document per chamber, stored together or not at all.
+        const races: Record<string, unknown> = {}
+        const failed: string[] = []
+        for (const key of Object.keys(results.races)) {
+          const url = `${state.source}${results.races[key]}`
+          try {
+            const res = http.get(bust(url, now), 20)
+            if (res.status === 200) races[key] = JSON.parse(res.text)
+            else failed.push(`${key} ${res.status}`)
+          } catch (err) {
+            failed.push(`${key} ${(err as Error).message || err}`)
+          }
+        }
+        if (failed.length) {
+          error = `race fetch failed: ${failed.join(', ')}`
+        } else {
+          const stored = storeSnapshot(
+            db,
+            slug,
+            { fetchedAt: new Date(now).toISOString(), races },
+            { now, log },
+          )
+          row = { ...row, status: stored.status, ...stored.body }
+          if (stored.status >= 300)
+            error = `${stored.body.code}: ${stored.body.message}`
         }
       } else {
         let res = http.get(bust(state.source, now), 30)

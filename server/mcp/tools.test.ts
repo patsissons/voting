@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it } from 'vitest'
 import { feedText, fixtureFeeds } from '../../scripts/fixtures/fixture.ts'
-import { alberta, bc, vancouver } from '../../scripts/fixtures/load.ts'
+import {
+  alberta,
+  bc,
+  civicCounted,
+  civicSample,
+  tinyChambers,
+  vancouver,
+} from '../../scripts/fixtures/load.ts'
 import { memoryDb } from '../db.memory.ts'
 import { storeSnapshot } from '../store.ts'
 import { describeServer, dispatch, validateModule } from './rpc.ts'
@@ -15,6 +22,10 @@ function seeded() {
       storeSnapshot(db, e.slug, feedText(feed))
   }
   db.addElection({ ...vancouver(), slug: 'draft-2027', published: false })
+  const tiny = tinyChambers()
+  db.addElection(tiny)
+  storeSnapshot(db, tiny.slug, civicSample())
+  storeSnapshot(db, tiny.slug, civicCounted())
   return db
 }
 const ctx = { db: seeded(), origin: 'https://voting.lgtm.page' }
@@ -38,16 +49,17 @@ describe('voting tools', () => {
   it('lists only published elections, newest first', () => {
     const out = run('list_elections')
     expect(out.elections.map((e: { slug: string }) => e.slug)).toEqual([
+      'tiny-2026',
       'bc-2026',
       'alberta-2026',
       'vancouver-2026',
     ])
-    expect(out.elections[0]).toMatchObject({
+    expect(out.elections[1]).toMatchObject({
       ballot: 'district',
       page: 'https://voting.lgtm.page/bc-2026',
       results: { status: 'counting' },
     })
-    expect(out.elections[2].results.status).toBe('count complete')
+    expect(out.elections[3].results.status).toBe('count complete')
     expect(fails('get_election', { slug: 'draft-2027' })).toBe(
       'no published election "draft-2027"',
     )
@@ -126,6 +138,36 @@ describe('voting tools', () => {
     expect(
       fails('results_series', { slug: 'vancouver-2026', metric: 'share' }),
     ).toBe('metric "share" needs contest')
+  })
+
+  it('answers a chambers election by race and by chamber', () => {
+    const listed = run('list_elections').elections.find(
+      (e: { slug: string }) => e.slug === 'tiny-2026',
+    )
+    expect(listed.ballot).toBe('chambers')
+    const race = run('latest_results', { slug: 'tiny-2026', contest: 'ak-sen' })
+    expect(race.contest.label).toBe('Alaska')
+    expect(race.contest.choices[0].name).toBe('Dan S. Sullivan')
+    const seats = run('results_series', {
+      slug: 'tiny-2026',
+      metric: 'seats',
+      chamber: 'house',
+    })
+    expect(seats.rows.length).toBe(2)
+    expect(seats.rows[1]).toEqual({
+      asOf: '2026-11-03 22:30:00',
+      polls: { closed: 5, total: 8 },
+      reporting: 60,
+      led: { dem: 3, gop: 1, other: 0 },
+      called: { dem: 2, gop: 1, other: 0 },
+    })
+    expect(
+      fails('results_series', { slug: 'tiny-2026', metric: 'seats' }),
+    ).toMatch(/seats needs chamber: one of house, senate, governor/)
+    expect(fails('closest_districts', { slug: 'tiny-2026' })).toMatch(/riding/)
+    expect(run('summary', { slug: 'tiny-2026' } as never)).toContain(
+      '### Governors (3)',
+    )
   })
 
   it('answers the riding questions', () => {

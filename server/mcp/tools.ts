@@ -85,7 +85,7 @@ export const tools: Tool[] = [
     name: 'results_series',
     title: 'Results over time',
     description:
-      'One row per stored snapshot: as-of stamp, polls reported and the metric. metric "ballots" (ballots counted), "polls" (polls reported), "seats" (ridings led per party; a riding election), "share" (vote share per choice of a contest: pass contest, an office kind, a riding code, or "q<n>" for a referendum question), "votes" (votes per choice of a contest). since narrows to stamps after an as-of value.',
+      'One row per stored snapshot: as-of stamp, polls reported and the metric. metric "ballots" (ballots counted), "polls" (polls reported), "seats" (ridings led per party in a riding election; in a chambers election pass chamber, a chamber key, for seats led and called per party), "share" (vote share per choice of a contest: pass contest, an office kind, a riding code, a chamber race id, or "q<n>" for a referendum question), "votes" (votes per choice of a contest). since narrows to stamps after an as-of value.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -95,6 +95,7 @@ export const tools: Tool[] = [
           enum: ['ballots', 'polls', 'seats', 'share', 'votes'],
         },
         contest: { type: 'string', maxLength: 60 },
+        chamber: { type: 'string', maxLength: 20 },
         since: { type: 'string', maxLength: 40 },
       },
       required: ['slug', 'metric'],
@@ -322,6 +323,33 @@ export function call(
             total: s.payload.polls.total,
           })),
         }
+      if (metric === 'seats' && election.ballot === 'chambers') {
+        const chamber = args.chamber != null ? String(args.chamber) : ''
+        if (!election.chambers.some((c) => c.key === chamber))
+          throw new InvalidParams(
+            `seats needs chamber: one of ${election.chambers.map((c) => c.key).join(', ')}`,
+          )
+        return {
+          slug: election.slug,
+          metric,
+          chamber,
+          rows: rows.map((s) => {
+            const tally = s.payload.chambers && s.payload.chambers[chamber]
+            const led: Record<string, number> = {}
+            const called: Record<string, number> = {}
+            for (const p of (tally && tally.parties) || []) {
+              led[p.key] = p.leading
+              called[p.key] = p.called || 0
+            }
+            return {
+              ...base(s),
+              reporting: tally ? tally.reporting : 0,
+              led,
+              called,
+            }
+          }),
+        }
+      }
       if (metric === 'seats') {
         if (election.ballot !== 'district')
           throw new InvalidParams('seats is for a riding election')

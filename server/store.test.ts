@@ -8,6 +8,9 @@ import {
   alberta,
   albertaPages,
   bc,
+  civicCounted,
+  civicSample,
+  tinyChambers,
   vancouver,
 } from '../scripts/fixtures/load.ts'
 import { payloadOf } from './db.ts'
@@ -233,6 +236,55 @@ describe('fetchTick', () => {
     expect(http.calls.length).toBe(10)
     expect(out[0]).toMatchObject({ ran: true, status: 201 })
     expect(out[0].error).toMatch(/some pages failed: Q9 500/)
+  })
+
+  it('fetches every chamber’s race document together, or not at all', () => {
+    const db = memoryDb()
+    const tiny = tinyChambers()
+    db.addElection(tiny, {
+      results_source: 'https://civicapi.org/api/v2/race/',
+    })
+    let races = civicSample().races
+    let down = ''
+    const http = fakeHttp((url) => {
+      const key = Object.entries(tiny.results.races).find(([, id]) =>
+        url.startsWith(`https://civicapi.org/api/v2/race/${id}?`),
+      )![0]
+      if (key === down) return { status: 500, text: '' }
+      return { status: 200, text: JSON.stringify(races[key]) }
+    })
+    const close = Date.parse(tiny.pollsClose)
+    const first = fetchTick(db, http, { now: close + 60000 })
+    expect(http.calls.length).toBe(3)
+    expect(first[0]).toMatchObject({ ran: true, status: 201 })
+    expect(db.results.length).toBe(1)
+    expect(db.results[0].get('format')).toBe('civicapi')
+    expect(db.results[0].get('polls_total')).toBe(8)
+
+    down = 'senate'
+    const failed = fetchTick(db, http, { now: close + 240000 })
+    expect(failed[0].error).toBe('race fetch failed: senate 500')
+    expect(db.results.length).toBe(1)
+    expect(db.elections[0].get('results_error')).toMatch(/senate 500/)
+
+    down = ''
+    const same = fetchTick(db, http, { now: close + 420000 })
+    expect(same[0]).toMatchObject({ status: 200, unchanged: true })
+    expect(db.elections[0].get('results_error')).toBe('')
+
+    races = civicCounted().races
+    const moved = fetchTick(db, http, { now: close + 600000 })
+    expect(moved[0]).toMatchObject({ status: 201 })
+    expect(db.results.length).toBe(2)
+    expect(db.results[1].get('polls_closed')).toBe(5)
+    const older = payloadOf(db.results[0])!
+    expect(older.contests).toEqual([])
+    expect(Object.keys(older.chambers!)).toEqual([
+      'house',
+      'senate',
+      'governor',
+    ])
+    expect(payloadOf(db.results[1])!.contests.length).toBe(8)
   })
 
   it('follows a retired Alberta dashboard version to the current one', () => {
