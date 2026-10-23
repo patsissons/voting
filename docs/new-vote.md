@@ -136,9 +136,9 @@ The hooks pull the CSV (`shared/parsers/early-vote.ts` reads the UF
 Election Lab's columns) into the row's `early_vote` column; the document
 only says where from. After the merge, prime it with
 `curl https://voting.lgtm.page/_voting/early-vote` and add a PocketHost
-webhook on that route, hourly, until the polls close. The panel, the
-markdown table and the MCP `earlyVoteTurnout` disappear by themselves once
-the first contests arrive. The data is CC BY-NC-ND 4.0: keep the credit
+webhook on that route, four times a day (`7 */6 * * *`), until the polls
+close. The panel, the markdown table and the MCP `earlyVoteTurnout`
+disappear by themselves once the first contests arrive. The data is CC BY-NC-ND 4.0: keep the credit
 link.
 
 ## 4. Try it locally
