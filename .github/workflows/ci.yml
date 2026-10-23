@@ -14,8 +14,10 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    # Normally ~2 minutes; fail a stalled mirror or registry fast.
-    timeout-minutes: 15
+    # Normally ~2 minutes. The headroom is for a cold apt cache on a slow
+    # mirror, which must finish once to seed the cache; it still stops a
+    # stalled run hours short of the 6h default.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
 
@@ -45,14 +47,22 @@ jobs:
       # stack) on every run, and the Azure apt mirror sometimes serves them at
       # dial-up speed (a 32-minute install on 2026-10-23). Keep apt's download
       # archive in a cached directory so it only fetches what changed since
-      # the runner image last moved. The *.deb glob skips apt's root-owned
-      # partial/ dir and lock file.
-      - name: Cache apt packages
-        uses: actions/cache@v4
+      # the runner image last moved. ImageOS and ImageVersion are runner
+      # environment variables, not workflow env, so a shell step reads them.
+      - name: Resolve apt cache key
+        id: apt
+        run: |
+          echo "prefix=apt-$ImageOS-" >> "$GITHUB_OUTPUT"
+          echo "key=apt-$ImageOS-$ImageVersion-playwright-${{ steps.playwright.outputs.version }}" >> "$GITHUB_OUTPUT"
+
+      # The *.deb glob skips apt's root-owned partial/ dir and lock file.
+      - name: Restore apt packages
+        id: apt-cache
+        uses: actions/cache/restore@v4
         with:
           path: ~/.cache/apt-archives/*.deb
-          key: apt-${{ env.ImageOS }}-${{ env.ImageVersion }}-playwright-${{ steps.playwright.outputs.version }}
-          restore-keys: apt-${{ env.ImageOS }}-
+          key: ${{ steps.apt.outputs.key }}
+          restore-keys: ${{ steps.apt.outputs.prefix }}
 
       - name: Point apt at the cached archive
         run: |
@@ -62,6 +72,15 @@ jobs:
 
       - name: Install Playwright system deps
         run: pnpm exec playwright install-deps webkit chromium
+
+      # Save as soon as the download lands, so a later test failure doesn't
+      # throw away a slow fetch.
+      - name: Save apt packages
+        if: steps.apt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/apt-archives/*.deb
+          key: ${{ steps.apt.outputs.key }}
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
