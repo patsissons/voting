@@ -218,7 +218,7 @@ export function CompassSection({
   you: string
   aria: string
   radius?: (n: number) => number
-  P: PartyLookup
+  P: PartyLookup<CompassElection>
 }) {
   if (!centre || !centre.centre) return null
   const r = radius || ((n: number) => Math.min(22, 6 + n * 2))

@@ -18,16 +18,6 @@ export const inState = (payload: Payload, state: string): Contest[] =>
 export const calledOf = (contest: Contest): Choice | null =>
   contest.choices.filter((c) => c.winner)[0] || null
 
-/** The votes per party key ('other' for the unaffiliated) in one contest. */
-export function partyVotes(contest: Contest): Record<string, number> {
-  const out: Record<string, number> = {}
-  for (const c of contest.choices) {
-    const key = c.party || 'other'
-    out[key] = (out[key] || 0) + c.votes
-  }
-  return out
-}
-
 export type BalanceRow = {
   key: string
   /** Called for the party. */

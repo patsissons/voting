@@ -12,8 +12,8 @@ import {
   closestIn,
   contestsOf,
   inState,
-  partyVotes,
 } from './chambers.ts'
+import { voteShares } from './results.ts'
 
 const tiny = tinyChambers()
 const empty = normalize(civicSample(), tiny)
@@ -33,11 +33,12 @@ describe('chamber stats', () => {
     ])
     expect(calledOf(counted.contests[0])!.name).toBe('Nick Begich III')
     expect(calledOf(counted.contests[1])).toBeNull()
-    expect(partyVotes(counted.contests[0])).toEqual({
-      gop: 120000,
-      dem: 80000,
-      other: 6000,
-    })
+    expect(voteShares(counted.contests[0]).map((s) => s.key)).toEqual([
+      'gop',
+      'dem',
+      'other',
+    ])
+    expect(voteShares(counted.contests[0])[0].share).toBeCloseTo(58.25, 1)
   })
 
   it('balances each chamber from calls, leads and holdovers', () => {

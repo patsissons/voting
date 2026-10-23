@@ -39,9 +39,10 @@ import {
   ridingsLed,
   ridingsOf,
   seatsTimeline,
+  voteShares,
 } from '../../../shared/stats/results.ts'
 import { RidingPicker } from '../compass/riding-card'
-import { Race, labelOf, type RaceContext } from './race'
+import { RaceBody, RaceRow, labelOf, type RaceContext } from './race'
 import {
   CompassSection,
   MomentumSection,
@@ -133,7 +134,7 @@ export function DistrictResults({
           }}
         />
         {own ? (
-          <RidingBody contest={own} ctx={ctx} />
+          <RaceBody contest={own} ctx={ctx} />
         ) : (
           <Note>
             Pick your riding to see its count here and first in the list below.
@@ -383,15 +384,6 @@ function SeatsSection({
   )
 }
 
-/** A riding's rows without the section frame (inside "Your riding" and the accordion). */
-function RidingBody({ contest, ctx }: { contest: Contest; ctx: RaceContext }) {
-  return (
-    <div className="[&>section]:border-0 [&>section]:p-0 [&>section]:shadow-none [&>section>div:first-child]:hidden">
-      <Race id={`riding-${contest.id}`} contest={contest} ctx={ctx} />
-    </div>
-  )
-}
-
 function EveryRiding({
   ridings,
   ctx,
@@ -467,7 +459,7 @@ function EveryRiding({
               </summary>
               <div className="divide-y border-t">
                 {hits.map((contest) => (
-                  <RidingRow key={contest.id} contest={contest} ctx={ctx} />
+                  <RaceRow key={contest.id} contest={contest} ctx={ctx} />
                 ))}
               </div>
             </details>
@@ -475,59 +467,6 @@ function EveryRiding({
         })}
       </div>
     </Section>
-  )
-}
-
-function RidingRow({ contest, ctx }: { contest: Contest; ctx: RaceContext }) {
-  const [open, setOpen] = useState(false)
-  const lead = contest.choices[0]
-  const second = contest.choices[1]
-  const gap = lead && second ? lead.pct - second.pct : 0
-  const boxes =
-    contest.boxes && contest.boxes.final
-      ? `${(contest.boxes.advance ? contest.boxes.advance[0] : 0) + contest.boxes.final[0]}/${(contest.boxes.advance ? contest.boxes.advance[1] : 0) + contest.boxes.final[1]}`
-      : ''
-  return (
-    <details
-      open={open}
-      onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
-    >
-      <summary className="nums grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 px-3 py-2 text-sm sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_3.5rem]">
-        <span className="truncate font-medium">{contest.label}</span>
-        <span
-          className="col-span-2 flex items-center gap-1.5 sm:col-span-1"
-          style={
-            {
-              '--party':
-                lead && lead.votes > 0
-                  ? partyColor(lead.party)
-                  : 'var(--party-other)',
-            } as React.CSSProperties
-          }
-        >
-          <Swatch party={lead && lead.votes > 0 ? lead.party : null} />
-          {lead && lead.votes > 0 ? (
-            <>
-              <span className="truncate">{lead.name}</span>
-              <small className="text-muted-foreground">
-                {labelOf(ctx.P, lead)}
-                {second ? ` +${gap.toFixed(1)}` : ''}
-              </small>
-            </>
-          ) : (
-            <small className="text-muted-foreground">no votes yet</small>
-          )}
-        </span>
-        <span className="text-muted-foreground col-start-2 row-start-1 text-right text-xs sm:col-start-3">
-          {boxes}
-        </span>
-      </summary>
-      {open ? (
-        <div className="px-3 pb-3">
-          <RidingBody contest={contest} ctx={ctx} />
-        </div>
-      ) : null}
-    </details>
   )
 }
 
@@ -676,17 +615,6 @@ function ChangingSection({
   )
 }
 
-/** Each party's share of a riding's votes, independents and others together. */
-function partyVotes(contest: Contest): { key: string; share: number }[] {
-  const votes = new Map<string, number>()
-  for (const c of contest.choices)
-    votes.set(keyOf(c), (votes.get(keyOf(c)) || 0) + c.votes)
-  const total = [...votes.values()].reduce((a, b) => a + b, 0)
-  return [...votes]
-    .map(([key, v]) => ({ key, share: total ? (v / total) * 100 : 0 }))
-    .sort((a, b) => b.share - a.share)
-}
-
 function MapSection({
   ridings,
   ctx,
@@ -702,7 +630,7 @@ function MapSection({
   const names = new Map(election.districts.map((d) => [d.code, d.name]))
   const fills: Record<string, string> = {}
   for (const c of ridings)
-    fills[c.id] = blendCss(blendWeights(partyVotes(c)), partyColor)
+    fills[c.id] = blendCss(blendWeights(voteShares(c)), partyColor)
   const hasOthers = ridings.some((c) => c.choices.some((ch) => !ch.party))
   return (
     <Section id="map" title="Map" sub="every riding by vote share">
@@ -725,7 +653,7 @@ function MapSection({
         describe={(code) => {
           const c = byCode.get(code)
           const title = `${c ? c.label : names.get(code) || code}${code === own ? ' (yours)' : ''}`
-          const shares = c ? partyVotes(c).filter((s) => s.share > 0) : []
+          const shares = c ? voteShares(c).filter((s) => s.share > 0) : []
           if (!c || !shares.length)
             return {
               title,
