@@ -142,8 +142,15 @@ After making changes from a prompt and BEFORE committing:
   webhook, `slug` only tells webhooks apart: every call pulls every election
   with an early vote source. us-2026's webhook is live (2026-10-23). At most one
   pull per election per 15 minutes; a failed pull keeps the last counts.
-  The waiting screen, the markdown page and the MCP tools show it until the
-  first contests arrive.
+  Each state keeps its ballots cast, the in-person/mail split and, where the
+  state registers by party, `party`, `partyMail` and `partyInPerson`
+  (dem/gop/other). The waiting screen, the markdown page and the MCP tools
+  show it until the first contests arrive: totals, a one-hue turnout map
+  (share of 2022), the party registration summed over the reporting states
+  (`partyTotals` in `shared/stats/early-vote.ts`, also in the markdown
+  paragraph and the MCP `earlyVoteTurnout.partyTotals`), and a diverging
+  margin map (`partyMargin`, `marginStep`: grey within 5 points, three bands
+  a side, hatched where a state does not register by party).
 - PocketHost rate-limits `/api`: 50 requests per 10 s per IP and 1,000 per
   hour. Scripts that write many rows pace themselves and honor `Retry-After`
   (`scripts/lib/pb-client.ts`).
