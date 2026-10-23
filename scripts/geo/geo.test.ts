@@ -59,7 +59,8 @@ describe('boundary sets', () => {
       }
     }
     for (const e of elections) {
-      if (e.ballot === 'at-large' || e.boundaries !== key) continue
+      if (e.ballot === 'at-large' || e.ballot === 'chambers') continue
+      if (e.boundaries !== key) continue
       const want =
         e.ballot === 'district'
           ? e.districts.map((d) => d.code)
@@ -72,7 +73,10 @@ describe('boundary sets', () => {
 
   it('names a set for each map election', () => {
     const named = elections
-      .filter((e) => e.ballot !== 'at-large' && e.boundaries)
+      .filter(
+        (e) =>
+          e.ballot !== 'at-large' && e.ballot !== 'chambers' && e.boundaries,
+      )
       .map((e) => e.slug)
       .sort()
     expect(named).toEqual(['alberta-2026', 'bc-2026'])

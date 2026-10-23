@@ -64,6 +64,7 @@ export function fixtureFeeds(election: Election, options: FixtureOptions = {}): 
   if (election.ballot === 'referendum') {
     return election.results.format === 'eab-ref' ? fixtureEabNight(election, options) : fixtureEabDashNight(election, options)
   }
+  if (election.ballot === 'chambers') return []
   return election.ballot === 'district' ? fixtureEnrPages(election, options) : fixtureVancouverFeeds(election, options)
 }
 

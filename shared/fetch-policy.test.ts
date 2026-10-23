@@ -3,6 +3,7 @@ import {
   alberta,
   albertaPages,
   bc,
+  tinyChambers,
   vancouver,
 } from '../scripts/fixtures/load.ts'
 import { THROTTLE_MS, checkSource, shouldFetch } from './fetch-policy.ts'
@@ -100,6 +101,14 @@ describe('checkSource', () => {
         'https://electionsbcenr.blob.core.windows.net/GE-2026-10-24',
       ),
     ).toMatch(/no server-side fetch/)
+  })
+
+  it('accepts the civicAPI base URL for a chambers election', () => {
+    const tiny = tinyChambers()
+    expect(checkSource(tiny, 'https://civicapi.org/api/v2/race/')).toBe('')
+    expect(checkSource(tiny, 'https://example.com/api/v2/race/')).toMatch(
+      /must be on https:\/\/civicapi\.org\//,
+    )
   })
 
   it('honours Alberta’s source prefix', () => {

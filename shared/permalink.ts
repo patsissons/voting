@@ -140,6 +140,8 @@ export type Imported = {
 export function parseImport(election: Election, hash: string): Imported | null {
   const raw = String(hash || '')
   if (!raw.startsWith(IMPORT)) return null
+  // A results-only page has nothing to import: land on the results.
+  if (election.ballot === 'chambers') return { hash: '#/results' }
   const [rest, query = ''] = raw.slice(IMPORT.length).split('?')
   const target = `${TAB}/${rest}`
   const valid =

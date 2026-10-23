@@ -40,7 +40,9 @@ export function ResultsView({
       ? referendumSections(election)
       : election.ballot === 'district'
         ? districtSections(election)
-        : atLargeSections(latest, election)
+        : election.ballot === 'chambers'
+          ? []
+          : atLargeSections(latest, election)
   return (
     <div className="space-y-6">
       <SectionNav sections={sections} />
@@ -58,7 +60,7 @@ export function ResultsView({
           live={live}
           matchParty={matchParty}
         />
-      ) : (
+      ) : election.ballot === 'chambers' ? null : (
         <AtLargeResults
           election={election}
           snapshots={snapshots}

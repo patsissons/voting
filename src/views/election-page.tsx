@@ -10,7 +10,7 @@ import { consumeImport, keys, readJson } from '@/lib/storage'
 import { useElection } from '@/lib/use-election'
 import { useHash } from '@/lib/use-hash'
 import { useResults } from '@/lib/use-results'
-import type { Election } from '../../shared/schema/election.ts'
+import type { CompassElection, Election } from '../../shared/schema/election.ts'
 import {
   blankState,
   score,
@@ -73,7 +73,8 @@ export function ElectionPage({ slug }: { slug: string }) {
 }
 
 function initialMatch(election: Election): string | null {
-  if (election.ballot === 'referendum') return null
+  if (election.ballot === 'referendum' || election.ballot === 'chambers')
+    return null
   const saved = readJson<Partial<CompassState> | null>(
     keys.compass(election.slug),
     null,
@@ -125,7 +126,7 @@ function ElectionView({ id, election }: { id: string; election: Election }) {
     (state: CompassState, next: string) => {
       setCompassHash(next || TAB)
       const scored = state.done
-        ? score(election as Exclude<Election, { ballot: 'referendum' }>, state)
+        ? score(election as CompassElection, state)
         : null
       setMatchParty(scored && scored.answered ? scored.rows[0].p : null)
     },
@@ -200,7 +201,7 @@ function ElectionView({ id, election }: { id: string; election: Election }) {
             latest={latest}
             onChange={onMarksChange}
           />
-        ) : (
+        ) : election.ballot === 'chambers' ? null : (
           <Compass election={election} hash={hash} onChange={onCompassChange} />
         )}
       </div>

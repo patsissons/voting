@@ -407,11 +407,13 @@ export function electionMarkdown(
           referendumResultsMarkdown(election, snapshot),
           referendumMarkdown(election, origin),
         ]
-      : [
-          datesMarkdown(election),
-          resultsMarkdown(election, snapshot),
-          compassMarkdown(election, origin),
-        ]
+      : election.ballot === 'chambers'
+        ? [datesMarkdown(election)]
+        : [
+            datesMarkdown(election),
+            resultsMarkdown(election, snapshot),
+            compassMarkdown(election, origin),
+          ]
   return `${[...head, ...body].filter(Boolean).join('\n\n').trimEnd()}\n`
 }
 

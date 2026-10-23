@@ -3,9 +3,16 @@
 // column, and what the views, the markdown pages and the MCP tools read. The
 // shape is unchanged from cubby.fyi so exported rows import byte for byte.
 
-export type Format = 'vancouver' | 'ebc-enr' | 'eab-ref' | 'eab-dash'
+export type Format =
+  'vancouver' | 'ebc-enr' | 'eab-ref' | 'eab-dash' | 'civicapi'
 
-export const FORMATS: Format[] = ['vancouver', 'ebc-enr', 'eab-ref', 'eab-dash']
+export const FORMATS: Format[] = [
+  'vancouver',
+  'ebc-enr',
+  'eab-ref',
+  'eab-dash',
+  'civicapi',
+]
 
 export const PAYLOAD_SCHEMA_VERSION = 1
 
@@ -45,16 +52,18 @@ export type Contest = {
   id: string
   name: string
   label: string
-  /** An office key (mayor, council...), 'district' or 'question'. */
+  /** An office key (mayor, council...), 'district', 'question' or a chamber key. */
   kind: string
   voteFor: number
   ballots: number
   acclaimed: boolean
   sort: number
   choices: Choice[]
-  /** kind 'district': the region key from the election's districts list. */
+  /** kind 'district': the region key from the election's districts list; a chamber contest: its state. */
   region?: string | null
   boxes?: Boxes
+  /** A chamber contest: the feed's percent of the expected vote reported (0-100). */
+  reporting?: number
   /** Referendum questions (eab-ref, eab-dash). */
   n?: number
   rejected?: number
@@ -66,9 +75,21 @@ export type Contest = {
 
 export type PartyTally = {
   key: string
+  /** Contests the party leads, called or not. */
   leading: number
   votes: number
   pct: number
+  /** Contests the feed has called for the party (civicapi); a subset of leading. */
+  called?: number
+}
+
+/** One chamber's tallies on a results-only page (civicapi). */
+export type ChamberTally = {
+  parties: PartyTally[]
+  /** The feed's percent of the expected vote reported for the chamber. */
+  reporting: number
+  /** Contests called so far. */
+  called: number
 }
 
 export type Payload = {
@@ -85,8 +106,10 @@ export type Payload = {
   polls: { closed: number; total: number }
   tabulators: { closed: number; total: number }
   groups: { name: string; closed: number; total: number }[]
-  /** Province-wide tallies per compass party (ebc-enr). */
+  /** Province-wide tallies per compass party (ebc-enr); the House for civicapi. */
   summary?: { parties: PartyTally[]; reporting: string }
+  /** Per-chamber tallies keyed by chamber (civicapi); kept when older rows drop their contests. */
+  chambers?: Record<string, ChamberTally>
   /** A fingerprint of the counts for feeds without an update stamp. */
   sig?: string
   contests: Contest[]
