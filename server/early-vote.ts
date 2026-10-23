@@ -75,7 +75,8 @@ export function earlyVoteTick(
       row.set('early_vote_error', '')
       db.save(row)
       const states = Object.keys(ev.states).length
-      if (same) out.push({ slug, ran: true, unchanged: true, asOf: prev.asOf })
+      if (same && prev)
+        out.push({ slug, ran: true, unchanged: true, asOf: prev.asOf })
       else {
         log(
           `${slug} early vote ${ev.asOf}: ${ev.total.voted} ballots, ${states} states`,
