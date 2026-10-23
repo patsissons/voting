@@ -24,9 +24,9 @@ import {
 import { Tile } from './results-header'
 
 const STEPS = 5
-/** Step i of the turnout scale: the brand hue over muted, lightest first. */
+/** Step i of the turnout scale: the brand hue over muted, 25% to full, so the lightest step still parts from a state with no figures. */
 const stepColor = (i: number) =>
-  `color-mix(in oklch, var(--brand) ${Math.round(((i + 1) / STEPS) * 100)}%, var(--muted))`
+  `color-mix(in oklab, var(--brand) ${Math.round(25 + (i * 75) / (STEPS - 1))}%, var(--muted))`
 const pct = (share: number) => pct1(share * 100)
 const whole = (share: number) => `${Math.round(share * 100)}%`
 

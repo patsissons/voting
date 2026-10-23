@@ -106,20 +106,23 @@ export function spanText(seconds: number): string {
       : `${Math.floor(m / 60)} h ${m % 60} min`
 }
 
-/** "Fri, Oct 23, 3:25 PM EDT" for an ISO instant, in a zone. */
+/** "Fri, Oct 23, 3:25 pm EDT" for an ISO instant, in a zone. */
 export function instantText(iso: string, timeZone?: string): string {
   const at = Date.parse(iso || '')
   if (!Number.isFinite(at)) return iso
   try {
-    return new Date(at).toLocaleString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZone: timeZone || 'UTC',
-      timeZoneName: 'short',
-    })
+    return new Date(at)
+      .toLocaleString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: timeZone || 'UTC',
+        timeZoneName: 'short',
+      })
+      .replace(/\s?AM\b/, ' am')
+      .replace(/\s?PM\b/, ' pm')
   } catch {
     return iso
   }

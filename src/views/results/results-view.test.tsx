@@ -166,7 +166,7 @@ describe('ResultsView', () => {
     mount(us(), [empty], null, ev)
     expect(
       screen.getByRole('heading', {
-        name: 'Ballots cast as of Fri, Oct 23, 3:25 PM EDT',
+        name: 'Ballots cast as of Fri, Oct 23, 3:25 pm EDT',
       }),
     ).toBeInTheDocument()
     expect(screen.getByText(/Early voting is under way/)).toBeInTheDocument()
@@ -179,7 +179,7 @@ describe('ResultsView', () => {
       (p) => p.getAttribute('fill') || '',
     )
     expect(
-      fills.filter((f) => f.startsWith('color-mix(in oklch')),
+      fills.filter((f) => f.startsWith('color-mix(in oklab, var(--brand)')),
     ).toHaveLength(5)
     expect(map.querySelector('path[data-ring="ga"]')).not.toBeNull()
     const party = document.getElementById('early-vote-party')!
