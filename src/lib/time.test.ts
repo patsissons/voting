@@ -1,7 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { atClock, spanText, stampToEpoch, timeTicks, todayIn } from './time'
+import {
+  atClock,
+  instantText,
+  spanText,
+  stampToEpoch,
+  timeTicks,
+  todayIn,
+} from './time'
 
 describe('time', () => {
+  it('writes an instant in a zone, and passes junk through', () => {
+    expect(instantText('2026-10-23T19:25:09.000Z', 'America/New_York')).toBe(
+      'Fri, Oct 23, 3:25 PM EDT',
+    )
+    expect(instantText('soon')).toBe('soon')
+  })
+
   it('turns Vancouver wall-clock stamps into instants across both offsets', () => {
     expect(
       new Date(

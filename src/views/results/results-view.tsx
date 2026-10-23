@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { ExternalLink, LinkList, Note } from '@/components/bits'
 import { closeTimeText, todayIn } from '@/lib/time'
 import { dayLong, dayShort } from '../../../shared/format.ts'
+import type { EarlyVote } from '../../../shared/early-vote.ts'
 import type { Snapshot } from '../../../shared/payload.ts'
 import type { BallotMarks } from '../../../shared/permalink.ts'
 import type { Election } from '../../../shared/schema/election.ts'
@@ -11,6 +12,7 @@ import { questionsReporting } from '../../../shared/stats/referendum.ts'
 import { AtLargeResults, atLargeSections } from './atlarge-results'
 import { ChambersResults, chambersSections } from './chambers-results'
 import { DistrictResults, districtSections } from './district-results'
+import { EarlyVotePanel } from './early-vote'
 import { ReferendumResults, referendumSections } from './referendum-results'
 
 export type SectionLink = { id: string; label: string }
@@ -18,12 +20,15 @@ export type SectionLink = { id: string; label: string }
 export function ResultsView({
   election,
   snapshots,
+  earlyVote = null,
   live,
   matchParty,
   marks,
 }: {
   election: Election
   snapshots: Snapshot[]
+  /** Turnout pulled before voting day, shown while there are no results. */
+  earlyVote?: EarlyVote | null
   live: boolean
   matchParty: string | null
   marks: BallotMarks
@@ -38,7 +43,8 @@ export function ResultsView({
       : election.ballot === 'chambers'
         ? snapshots.some((s) => s.payload.contests.length > 0)
         : true)
-  if (!latest || !started) return <Waiting election={election} />
+  if (!latest || !started)
+    return <Waiting election={election} earlyVote={earlyVote} />
   const sections =
     election.ballot === 'referendum'
       ? referendumSections(election)
@@ -128,7 +134,13 @@ function jump(e: React.MouseEvent, id: string) {
   el.scrollIntoView({ block: 'start', behavior: 'smooth' })
 }
 
-function Waiting({ election }: { election: Election }) {
+function Waiting({
+  election,
+  earlyVote,
+}: {
+  election: Election
+  earlyVote: EarlyVote | null
+}) {
   const today = todayIn(election.timeZone)
   const advance = election.dates.advance.filter(
     (d) => d >= today && d < election.dates.final,
@@ -161,6 +173,7 @@ function Waiting({ election }: { election: Election }) {
           {advance.length
             ? `You can still vote early: ${advance.length === 1 ? 'the last advance voting day is' : 'advance voting days left are'} ${advance.map(dayShort).join(', ')}. `
             : ''}
+          {earlyVote ? 'Early voting is under way in most states. ' : ''}
           {resultsOnly ? (
             <>
               Until then, follow{' '}
@@ -181,6 +194,9 @@ function Waiting({ election }: { election: Election }) {
           )}
         </p>
       </div>
+      {earlyVote ? (
+        <EarlyVotePanel election={election} earlyVote={earlyVote} />
+      ) : null}
       <LinkList eyebrow="Also follow" links={results.alternatives} />
       {results.unofficialNote ? <Note>{results.unofficialNote}</Note> : null}
     </div>
