@@ -88,6 +88,7 @@
       "seats": 435,
       "majority": 218,
       "holdovers": {},
+      "boundaries": "us-cd119",
       "divisions": {
         "ak-al": "Alaska at-large",
         "al-01": "Alabama 1",
@@ -533,6 +534,7 @@
       "seats": 100,
       "majority": 51,
       "holdovers": { "dem": 34, "gop": 31 },
+      "boundaries": "us-state",
       "divisions": {
         "ak": "Alaska",
         "al": "Alabama",
@@ -577,6 +579,7 @@
       "short": "Gov",
       "seats": 50,
       "holdovers": { "gop": 8, "dem": 6 },
+      "boundaries": "us-state",
       "divisions": {
         "ak": "Alaska",
         "al": "Alabama",

@@ -8,9 +8,14 @@
  *   pnpm geo --refresh  download the sources again first
  *
  * Projected coordinates go straight to the page: Alberta keeps the
- * shapefile's 10TM, BC is requested in BC Albers (EPSG:3005). BC's districts
- * run out to sea, so they are clipped to its land first. mapshaper simplifies
- * each frame at its own resolution, keeping shared borders shared.
+ * shapefile's 10TM, BC is requested in BC Albers (EPSG:3005), and the Census
+ * files for the US (long/lat) are projected here with mapshaper's Albers USA,
+ * which tucks Alaska and Hawaii under the lower 48. BC's districts run out to
+ * sea, so they are clipped to its land first. mapshaper simplifies each frame
+ * at its own resolution, keeping shared borders shared.
+ *
+ * Frame 0 is always keyed `province`: the whole area, whatever the
+ * jurisdiction calls itself. The insets follow.
  */
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
@@ -46,9 +51,67 @@ type SetSpec = {
   file: string
   /** A mapshaper -each expression that sets `code`. */
   code: string
+  /** A mapshaper -filter expression that keeps the divisions wanted. */
+  filter?: string
+  /** A mapshaper -proj argument for a source in long/lat ("albersusa"). */
+  proj?: string
   /** Land polygons to clip the divisions to, and the -filter that picks them. */
   land?: { source: string; file: string; filter: string }
   frames: FrameSpec[]
+}
+
+/** State FIPS codes to postal codes, for the Census district file. */
+const FIPS_POSTAL: Record<string, string> = {
+  '01': 'AL',
+  '02': 'AK',
+  '04': 'AZ',
+  '05': 'AR',
+  '06': 'CA',
+  '08': 'CO',
+  '09': 'CT',
+  '10': 'DE',
+  '12': 'FL',
+  '13': 'GA',
+  '15': 'HI',
+  '16': 'ID',
+  '17': 'IL',
+  '18': 'IN',
+  '19': 'IA',
+  '20': 'KS',
+  '21': 'KY',
+  '22': 'LA',
+  '23': 'ME',
+  '24': 'MD',
+  '25': 'MA',
+  '26': 'MI',
+  '27': 'MN',
+  '28': 'MS',
+  '29': 'MO',
+  '30': 'MT',
+  '31': 'NE',
+  '32': 'NV',
+  '33': 'NH',
+  '34': 'NJ',
+  '35': 'NM',
+  '36': 'NY',
+  '37': 'NC',
+  '38': 'ND',
+  '39': 'OH',
+  '40': 'OK',
+  '41': 'OR',
+  '42': 'PA',
+  '44': 'RI',
+  '45': 'SC',
+  '46': 'SD',
+  '47': 'TN',
+  '48': 'TX',
+  '49': 'UT',
+  '50': 'VT',
+  '51': 'VA',
+  '53': 'WA',
+  '54': 'WV',
+  '55': 'WI',
+  '56': 'WY',
 }
 
 const between = (lo: number, hi: number) => (code: string) =>
@@ -127,6 +190,105 @@ const SETS: SetSpec[] = [
       },
     ],
   },
+  {
+    key: 'us-state',
+    attribution:
+      'Boundaries: US Census Bureau cartographic boundary files, 2024 states (public domain; no licence needed).',
+    source:
+      'https://www2.census.gov/geo/tiger/GENZ2024/shp/cb_2024_us_state_20m.zip',
+    file: 'us-state.zip',
+    filter: "STUSPS != 'PR' && STUSPS != 'DC'",
+    proj: 'albersusa',
+    code: 'code = STUSPS.toLowerCase()',
+    frames: [
+      {
+        key: 'province',
+        label: 'United States',
+        interval: 3000,
+        minIsland: 50,
+      },
+      {
+        key: 'northeast',
+        label: 'Northeast',
+        interval: 600,
+        minIsland: 5,
+        codes: among('ct de ma md nh nj ri vt'),
+      },
+    ],
+  },
+  {
+    key: 'us-cd119',
+    attribution:
+      'Boundaries: US Census Bureau cartographic boundary files, the 435 districts of the 119th Congress (public domain; no licence needed).',
+    source:
+      'https://www2.census.gov/geo/tiger/GENZ2024/shp/cb_2024_us_cd119_500k.zip',
+    file: 'us-cd119.zip',
+    // 98 and ZZ are the non-voting delegates and the undefined areas.
+    filter: "CD119FP != '98' && CD119FP != 'ZZ'",
+    proj: 'albersusa',
+    // The expression travels inside double quotes, so the table uses single ones.
+    code: `code = ({${Object.entries(FIPS_POSTAL)
+      .map(([k, v]) => `'${k}':'${v}'`)
+      .join(
+        ',',
+      )}})[STATEFP].toLowerCase() + '-' + (CD119FP === '00' ? 'al' : CD119FP)`,
+    frames: [
+      {
+        key: 'province',
+        label: 'United States',
+        interval: 3000,
+        minIsland: 50,
+      },
+      {
+        key: 'nyc',
+        label: 'New York City and northern New Jersey',
+        interval: 150,
+        minIsland: 0.5,
+        codes: among(
+          'ny-03 ny-04 ny-05 ny-06 ny-07 ny-08 ny-09 ny-10 ny-11 ny-12 ny-13 ny-14 ny-15 ny-16 nj-05 nj-06 nj-07 nj-08 nj-09 nj-10 nj-11',
+        ),
+      },
+      {
+        key: 'la',
+        label: 'Los Angeles',
+        interval: 200,
+        minIsland: 1,
+        codes: among(
+          'ca-27 ca-28 ca-29 ca-30 ca-31 ca-32 ca-34 ca-35 ca-36 ca-37 ca-38 ca-42 ca-43 ca-44 ca-45 ca-46 ca-47',
+        ),
+      },
+      {
+        key: 'bay',
+        label: 'San Francisco Bay',
+        interval: 200,
+        minIsland: 1,
+        codes: among('ca-08 ca-10 ca-11 ca-12 ca-14 ca-15 ca-16 ca-17'),
+      },
+      {
+        key: 'chicago',
+        label: 'Chicago',
+        interval: 200,
+        minIsland: 1,
+        codes: among(
+          'il-01 il-02 il-03 il-04 il-05 il-06 il-07 il-08 il-09 il-10 il-11',
+        ),
+      },
+      {
+        key: 'dc',
+        label: 'Washington and Baltimore',
+        interval: 200,
+        minIsland: 1,
+        codes: among('md-02 md-03 md-04 md-05 md-07 md-08 va-08 va-10 va-11'),
+      },
+      {
+        key: 'sfl',
+        label: 'South Florida',
+        interval: 200,
+        minIsland: 1,
+        codes: among('fl-20 fl-22 fl-23 fl-24 fl-25 fl-26 fl-27 fl-28'),
+      },
+    ],
+  },
 ]
 
 type Geometry =
@@ -194,8 +356,10 @@ async function build(spec: SetSpec, refresh: boolean): Promise<BoundarySet> {
     )
     clip = ` -i ${spec.land.file} name=land -filter "${spec.land.filter}" target=land -clip land target=ed`
   }
+  const filter = spec.filter ? ` -filter "${spec.filter}" target=ed` : ''
+  const proj = spec.proj ? ` -proj ${spec.proj} target=ed` : ''
   const full = await run(
-    `-i ${spec.file} name=ed${clip} -each "${spec.code}" target=ed -filter-fields code target=ed -o out.json format=geojson target=ed`,
+    `-i ${spec.file} name=ed${clip}${filter}${proj} -each "${spec.code}" target=ed -filter-fields code target=ed -o out.json format=geojson target=ed`,
     input,
   )
   const frames: Frame[] = []

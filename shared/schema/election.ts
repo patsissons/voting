@@ -37,7 +37,12 @@ export const BALLOTS = [
 export type Ballot = (typeof BALLOTS)[number]
 
 /** The boundary sets the results maps draw (src/geo/<set>.json, `pnpm geo`). */
-export const BOUNDARY_SETS = ['ab-2017', 'bc-2023'] as const
+export const BOUNDARY_SETS = [
+  'ab-2017',
+  'bc-2023',
+  'us-state',
+  'us-cd119',
+] as const
 export type BoundarySetKey = (typeof BOUNDARY_SETS)[number]
 const boundaries = z.enum(BOUNDARY_SETS).optional()
 
