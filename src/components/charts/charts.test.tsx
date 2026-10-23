@@ -58,6 +58,40 @@ describe('chart kit', () => {
     expect(screen.getByText(/Elections Alberta/)).toBeInTheDocument()
   })
 
+  it('hatches the divisions it is told to, one pattern per frame', async () => {
+    const { container } = render(
+      <TipProvider>
+        <Choropleth
+          set="ab-2017"
+          fills={{ '04': 'red', '05': 'blue' }}
+          hatched={['05', '06']}
+          describe={(code) => ({ title: code, lines: [] })}
+          ariaLabel="map"
+        />
+      </TipProvider>,
+    )
+    const province = await screen.findByRole('img', { name: 'map' })
+    const pattern = province.querySelector('defs pattern')!
+    expect(pattern).not.toBeNull()
+    expect(province.querySelector('path[data-code="04"]')).toHaveAttribute(
+      'fill',
+      'red',
+    )
+    for (const code of ['05', '06']) {
+      const path = province.querySelector(`path[data-code="${code}"]`)!
+      expect(path).toHaveAttribute('fill', `url(#${pattern.id})`)
+      expect(path).toHaveAttribute('data-hatched')
+    }
+    // Every frame carries its own pattern, so the ids never collide.
+    const ids = [...container.querySelectorAll('defs pattern')].map((p) => p.id)
+    expect(ids.length).toBeGreaterThan(1)
+    expect(new Set(ids).size).toBe(ids.length)
+    const inset = container.querySelector(
+      '[data-frame=calgary] path[data-code="05"]',
+    )
+    if (inset) expect(inset.getAttribute('fill')).toMatch(/^url\(#.*-hatch\)$/)
+  })
+
   it('draws lines with a crosshair the keyboard can move', () => {
     withWidth(600)
     render(

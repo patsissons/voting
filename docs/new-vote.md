@@ -134,13 +134,19 @@ election with `regions` (US states):
 
 The hooks pull the CSV (`shared/parsers/early-vote.ts` reads the UF
 Election Lab's columns) into the row's `early_vote` column; the document
-only says where from. After the merge, prime it with
+only says where from. The panel shows the totals, a turnout map (ballots as
+a share of the 2022 count), and, for the states that register by party, the
+Dem/GOP/other totals (all ballots, by mail, in person where reported), a
+margin map of each state's lead and a bar per state. The margin map and the
+totals take their colours and names from the document's first two
+`parties`. After the merge, prime it with
 `curl https://voting.lgtm.page/_voting/early-vote` and add a PocketHost
 webhook on `GET https://voting.pockethost.io/_voting/early-vote?slug=<slug>`,
 four times a day (`7 */6 * * *`), until the polls close (`slug` only names
-the webhook; every call pulls every election with a source). The panel, the
-markdown table and the MCP `earlyVoteTurnout` disappear by themselves once
-the first contests arrive. The data is CC BY-NC-ND 4.0: keep the credit
+the webhook; every call pulls every election with a source). Once the first
+contests arrive the panel folds into an "Early vote" section under the
+results, and the markdown table moves after them; the MCP
+`earlyVoteTurnout` stays. The data is CC BY-NC-ND 4.0: keep the credit
 link.
 
 ## 4. Try it locally

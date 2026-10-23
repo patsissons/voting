@@ -1,5 +1,8 @@
 // The results tab: the waiting state before any count, or the view for the
-// ballot mode, with a sticky in-page nav over its sections.
+// ballot mode, with a sticky in-page nav over its sections. An early vote
+// pulled before voting day opens the waiting screen, then stays as a folded
+// section under the results.
+import { ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { ExternalLink, LinkList, Note } from '@/components/bits'
 import { closeTimeText, todayIn } from '@/lib/time'
@@ -27,7 +30,7 @@ export function ResultsView({
 }: {
   election: Election
   snapshots: Snapshot[]
-  /** Turnout pulled before voting day, shown while there are no results. */
+  /** Turnout pulled before voting day: the waiting screen, then a folded section under the results. */
   earlyVote?: EarlyVote | null
   live: boolean
   matchParty: string | null
@@ -45,14 +48,16 @@ export function ResultsView({
         : true)
   if (!latest || !started)
     return <Waiting election={election} earlyVote={earlyVote} />
-  const sections =
-    election.ballot === 'referendum'
+  const sections = [
+    ...(election.ballot === 'referendum'
       ? referendumSections(election)
       : election.ballot === 'district'
         ? districtSections(election)
         : election.ballot === 'chambers'
           ? chambersSections(election)
-          : atLargeSections(latest, election)
+          : atLargeSections(latest, election)),
+    ...(earlyVote ? [{ id: 'early-vote', label: 'Early vote' }] : []),
+  ]
   return (
     <div className="space-y-6">
       <SectionNav sections={sections} />
@@ -84,7 +89,42 @@ export function ResultsView({
           matchParty={matchParty}
         />
       )}
+      {earlyVote ? (
+        <EarlyVoteFolded election={election} earlyVote={earlyVote} />
+      ) : null}
     </div>
+  )
+}
+
+/** The early vote under the results: folded, since the count is the story now. */
+function EarlyVoteFolded({
+  election,
+  earlyVote,
+}: {
+  election: Election
+  earlyVote: EarlyVote
+}) {
+  return (
+    <details
+      id="early-vote"
+      className="group bg-card text-card-foreground scroll-mt-20 rounded-xl border p-4 sm:p-5"
+    >
+      <summary className="flex cursor-pointer list-none flex-wrap items-baseline justify-between gap-x-4 gap-y-1 [&::-webkit-details-marker]:hidden">
+        <span className="flex items-center gap-1.5">
+          <ChevronRight
+            className="text-muted-foreground size-4 shrink-0 transition-transform group-open:rotate-90"
+            aria-hidden="true"
+          />
+          <h2 className="text-lg font-semibold tracking-tight">Early vote</h2>
+        </span>
+        <span className="text-muted-foreground nums text-xs">
+          ballots cast before voting day
+        </span>
+      </summary>
+      <div className="mt-4">
+        <EarlyVotePanel election={election} earlyVote={earlyVote} />
+      </div>
+    </details>
   )
 }
 
@@ -131,6 +171,7 @@ function jump(e: React.MouseEvent, id: string) {
   const el = document.getElementById(id)
   if (!el) return
   e.preventDefault()
+  if (el instanceof HTMLDetailsElement) el.open = true
   el.scrollIntoView({ block: 'start', behavior: 'smooth' })
 }
 

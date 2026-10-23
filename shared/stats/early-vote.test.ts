@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { fixture, us } from '../../scripts/fixtures/load.ts'
 import { parseEarlyVote } from '../parsers/early-vote.ts'
 import {
+  MARGIN_CUTS,
+  marginStep,
+  partyMargin,
   partySplit,
+  partyTotals,
   shareCuts,
   shareOfPrior,
   stepOf,
@@ -46,5 +50,44 @@ describe('early vote stats', () => {
       ['other', 0.5],
     ])
     expect(partySplit({ dem: 0, gop: 0 }, ['dem', 'gop'])[0].share).toBe(0)
+  })
+
+  it('sums party registration over the states that report it', () => {
+    const t = partyTotals(turnoutByState(ev, us().regions))
+    expect(t.states).toBe(3)
+    expect(t.voted).toBe(2478771 + 1269920 + 759605)
+    expect(t.party).toEqual({
+      dem: 1237550 + 535973 + 293947,
+      gop: 719657 + 296478 + 292244,
+      other: 516609 + 437469 + 173414,
+    })
+    expect(t.mail).toEqual({
+      dem: 1237550 + 23245 + 293947,
+      gop: 719657 + 9810 + 292244,
+      other: 516609 + 21833 + 173414,
+    })
+    expect(t.inPerson).toEqual({ dem: 512728, gop: 286668, other: 415636 })
+    expect(partyTotals([])).toEqual({ states: 0, voted: 0, party: {} })
+  })
+
+  it('measures the margin between the first two parties', () => {
+    expect(
+      partyMargin({ dem: 60, gop: 20, other: 20 }, ['dem', 'gop']),
+    ).toBeCloseTo(0.4)
+    expect(
+      partyMargin({ dem: 20, gop: 60, other: 20 }, ['dem', 'gop']),
+    ).toBeCloseTo(-0.4)
+    expect(partyMargin({ dem: 0, gop: 0 }, ['dem', 'gop'])).toBeNull()
+    expect(partyMargin({ dem: 5 }, ['dem'])).toBeNull()
+  })
+
+  it('bands a margin, neutral inside the first cut', () => {
+    expect(MARGIN_CUTS).toEqual([0.05, 0.15, 0.3])
+    expect(
+      [0, 0.049, 0.05, 0.149, 0.15, 0.3, 0.6].map((m) => marginStep(m)),
+    ).toEqual([0, 0, 1, 1, 2, 3, 3])
+    expect([-0.049, -0.05, -0.2, -0.31].map((m) => marginStep(m))).toEqual([
+      0, -1, -2, -3,
+    ])
   })
 })

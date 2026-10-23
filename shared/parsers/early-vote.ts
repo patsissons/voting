@@ -2,7 +2,8 @@
 // tracker at election.lab.ufl.edu/early-vote draws from) to the EarlyVote
 // the hooks store. A 0 in a breakdown means the state does not report it,
 // not that nobody voted that way, so the in-person/mail split is kept only
-// when both halves are reported and the party split only when there is one.
+// when both halves are reported and each party split (all ballots, mail,
+// in person) only when there is one.
 // Rows outside the election's regions (DC) count toward the national total
 // and nothing else; a state with no ballots yet is left out.
 import type {
@@ -52,6 +53,16 @@ const isoDay = (text: string): string | undefined => {
   return `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`
 }
 
+/** The `<prefix>_dem/rep/none` columns as a party split, or undefined when the state reports neither party. */
+const partyOf = (
+  n: (name: string) => number,
+  prefix: string,
+): Record<string, number> | undefined => {
+  const dem = n(`${prefix}_dem`)
+  const gop = n(`${prefix}_rep`)
+  return dem + gop ? { dem, gop, other: n(`${prefix}_none`) } : undefined
+}
+
 /** The early vote in a CSV body, for the region keys an election has. */
 export function parseEarlyVote(
   raw: unknown,
@@ -95,9 +106,12 @@ export function parseEarlyVote(
     if (prior) state.prior = prior
     const updated = isoDay(cell('last_update'))
     if (updated) state.updated = updated
-    const dem = n('voted_dem')
-    const gop = n('voted_rep')
-    if (dem + gop) state.party = { dem, gop, other: n('voted_none') }
+    const party = partyOf(n, 'voted')
+    if (party) state.party = party
+    const mailParty = partyOf(n, 'accept')
+    if (mailParty) state.partyMail = mailParty
+    const inPersonParty = partyOf(n, 'inperson')
+    if (inPersonParty) state.partyInPerson = inPersonParty
     states[key] = state
   }
   if (!total.voted)

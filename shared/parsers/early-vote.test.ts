@@ -53,8 +53,30 @@ describe('parseEarlyVote', () => {
       prior: 2592313,
       updated: '2026-10-23',
       party: { dem: 293947, gop: 292244, other: 173414 },
+      partyMail: { dem: 293947, gop: 292244, other: 173414 },
     })
     expect(ev.states.ga.party).toBeUndefined()
+  })
+
+  it('keeps the mail and in-person party splits where a state reports them', () => {
+    expect(ev.states.nc.party).toEqual({
+      dem: 535973,
+      gop: 296478,
+      other: 437469,
+    })
+    expect(ev.states.nc.partyMail).toEqual({
+      dem: 23245,
+      gop: 9810,
+      other: 21833,
+    })
+    expect(ev.states.nc.partyInPerson).toEqual({
+      dem: 512728,
+      gop: 286668,
+      other: 415636,
+    })
+    expect(ev.states.az.partyInPerson).toBeUndefined()
+    expect(ev.states.ga.partyMail).toBeUndefined()
+    expect(ev.states.ga.partyInPerson).toBeUndefined()
   })
 
   it('fingerprints the counts, not the stamp', () => {
@@ -93,6 +115,15 @@ describe('asEarlyVote', () => {
     expect(asEarlyVote({ ...ev, states: { ak: { voted: -1 } } })).toBeNull()
     expect(
       asEarlyVote({ ...ev, states: { ak: { voted: 1, party: { dem: 'x' } } } }),
+    ).toBeNull()
+    expect(
+      asEarlyVote({ ...ev, states: { ak: { voted: 1, partyMail: 3 } } }),
+    ).toBeNull()
+    expect(
+      asEarlyVote({
+        ...ev,
+        states: { ak: { voted: 1, partyInPerson: { gop: -1 } } },
+      }),
     ).toBeNull()
   })
 })

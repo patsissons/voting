@@ -90,6 +90,13 @@ describe('voting tools', () => {
     const usCtx = { db, origin: 'https://voting.lgtm.page' }
     const doc = call('get_election', { slug: 'us-2026' }, usCtx) as any
     expect(doc.earlyVoteTurnout.total.voted).toBe(6071374)
+    expect(doc.earlyVoteTurnout.partyTotals).toEqual({
+      states: 3,
+      voted: 4508296,
+      party: { dem: 2067470, gop: 1308379, other: 1127492 },
+      mail: { dem: 1554742, gop: 1021711, other: 711856 },
+      inPerson: { dem: 512728, gop: 286668, other: 415636 },
+    })
     expect(
       (
         call(

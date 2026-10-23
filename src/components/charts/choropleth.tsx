@@ -3,7 +3,7 @@
 // geometry (src/geo/<set>.json, `pnpm geo`) loads on first use into its own
 // hashed chunk. Province paths take keyboard focus; the insets repeat the
 // same divisions for the pointer, so focus does not visit them twice.
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { BoundarySet, Frame } from '../../../shared/geo.ts'
 import type { BoundarySetKey } from '../../../shared/schema/election.ts'
@@ -33,6 +33,8 @@ type Props = {
   describe: (code: string) => TipContent
   /** The viewer's own division, outlined. */
   ring?: string
+  /** Divisions drawn with a hatched fill (a reading apart from every colour), such as no data of this kind. */
+  hatched?: readonly string[]
   ariaLabel: string
 }
 
@@ -87,6 +89,7 @@ function MapFrame({
   fills,
   describe,
   ring,
+  hatched,
   ariaLabel,
   focusable = false,
   inset = false,
@@ -100,6 +103,9 @@ function MapFrame({
   const tip = useTip()
   const [w, h] = frame.viewBox
   const codes = Object.keys(frame.paths)
+  // One pattern per frame: the province and its insets share the document.
+  const hatchId = `${useId()}-hatch`
+  const isHatched = new Set(hatched || [])
   return (
     <div className={`space-y-1 ${className}`} data-frame={frame.key}>
       <p className="text-muted-foreground text-xs font-medium">{frame.label}</p>
@@ -109,12 +115,39 @@ function MapFrame({
         role="img"
         aria-label={inset ? `${ariaLabel}: ${frame.label}` : ariaLabel}
       >
+        {isHatched.size ? (
+          <defs>
+            <pattern
+              id={hatchId}
+              width="4"
+              height="4"
+              patternUnits="userSpaceOnUse"
+              patternTransform="rotate(45)"
+            >
+              <rect width="4" height="4" fill="var(--muted)" />
+              <line
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="4"
+                stroke="var(--muted-foreground)"
+                strokeWidth="1.2"
+                strokeOpacity="0.45"
+              />
+            </pattern>
+          </defs>
+        ) : null}
         {codes.map((code) => (
           <path
             key={code}
             d={frame.paths[code]}
             data-code={code}
-            fill={fills[code] || 'var(--muted)'}
+            data-hatched={isHatched.has(code) ? '' : undefined}
+            fill={
+              isHatched.has(code)
+                ? `url(#${hatchId})`
+                : fills[code] || 'var(--muted)'
+            }
             stroke="var(--background)"
             strokeWidth={0.75}
             strokeLinejoin="round"

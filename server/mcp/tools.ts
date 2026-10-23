@@ -19,6 +19,7 @@ import {
   tally,
   type DivisionSort,
 } from '../../shared/stats/referendum.ts'
+import { partyTotals, turnoutByState } from '../../shared/stats/early-vote.ts'
 import { electionOf, snapshotOf } from '../db.ts'
 import type { Db } from '../db.ts'
 import { electionMarkdown } from '../markdown.ts'
@@ -56,7 +57,7 @@ export const tools: Tool[] = [
     name: 'get_election',
     title: 'Get an election',
     description:
-      'The election document (parties, offices or ridings, compass questions or referendum questions, dates, sources), plus earlyVoteTurnout (ballots cast so far by state, before voting day) when the election has it. Pass section to get one top-level section, e.g. "questions", "parties", "districts", "dates", "results", "earlyVoteTurnout".',
+      'The election document (parties, offices or ridings, compass questions or referendum questions, dates, sources), plus earlyVoteTurnout (ballots cast so far by state and, as partyTotals, by party registration summed over the states that report it, before voting day) when the election has it. Pass section to get one top-level section, e.g. "questions", "parties", "districts", "dates", "results", "earlyVoteTurnout".',
     inputSchema: {
       type: 'object',
       properties: { slug: slugArg, section: { type: 'string', maxLength: 40 } },
@@ -256,7 +257,18 @@ export function call(
     case 'get_election': {
       const { election, earlyVote } = load(db, args.slug)
       const doc: Record<string, unknown> = earlyVote
-        ? { ...election, earlyVoteTurnout: earlyVote }
+        ? {
+            ...election,
+            earlyVoteTurnout: {
+              ...earlyVote,
+              partyTotals: partyTotals(
+                turnoutByState(
+                  earlyVote,
+                  'regions' in election ? election.regions : [],
+                ),
+              ),
+            },
+          }
         : { ...election }
       if (args.section == null) return doc
       const section = doc[String(args.section)]
