@@ -41,10 +41,15 @@ export type Logger = (message: string) => void
 
 /** The outbound HTTP the fetch needs; the real one wraps $http.send. */
 export interface Http {
-  get(url: string, timeoutSeconds: number): { status: number; text: string }
+  get(
+    url: string,
+    timeoutSeconds: number,
+  ): { status: number; text: string; lastModified?: string }
 }
 
-const nowStamp = (ms: number) => new Date(ms).toISOString().replace('T', ' ')
+/** A PocketBase date field value for a time. */
+export const nowStamp = (ms: number) =>
+  new Date(ms).toISOString().replace('T', ' ')
 
 /** The election document for a row, or a reply explaining why not. */
 export function loadConfig(row: Row): { config: Election } | { error: Reply } {
@@ -145,7 +150,7 @@ export function storeSnapshot(
   })
 }
 
-const bust = (url: string, now: number) =>
+export const bust = (url: string, now: number) =>
   `${url}${url.includes('?') ? '&' : '?'}_=${now}`
 
 export type TickRow = {
