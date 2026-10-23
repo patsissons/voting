@@ -147,6 +147,48 @@ describe('election documents', () => {
     )
   })
 
+  it('take an early vote source and cross-check it', () => {
+    const page = { label: 'UF Election Lab', url: 'https://example.org/ev' }
+    const source = 'https://example.org/US.csv'
+    const tiny = tinyChambers()
+    const ok = ElectionSchema.parse({
+      ...tiny,
+      results: { ...tiny.results, earlyVote: { source, page } },
+    })
+    expect(electionProblems(ok)).toEqual([])
+    expect(
+      ElectionSchema.safeParse({
+        ...tiny,
+        results: {
+          ...tiny.results,
+          earlyVote: { source, page, boundaries: 'us-county' },
+        },
+      }).success,
+    ).toBe(false)
+    expect(
+      electionProblems(
+        ElectionSchema.parse({
+          ...tiny,
+          results: {
+            ...tiny.results,
+            earlyVote: { source: 'http://example.org/US.csv', page },
+          },
+        }),
+      ),
+    ).toContain('results.earlyVote: links must be https')
+    const van = vancouver()
+    expect(
+      electionProblems(
+        ElectionSchema.parse({
+          ...van,
+          results: { ...van.results, earlyVote: { source, page } },
+        }),
+      ),
+    ).toContain(
+      'results.earlyVote: the counts are by state, so it needs regions',
+    )
+  })
+
   it('round-trip through the elections row', () => {
     for (const e of elections) {
       const row = toRow(e)

@@ -104,6 +104,12 @@ const resultsBase = {
       label: z.string().optional(),
     })
     .optional(),
+  /**
+   * Early vote turnout to pull before voting day (server/early-vote.ts): the
+   * UF Election Lab's per-state CSV, the page to credit, and the map set its
+   * state codes draw on. The pulled counts live in the `early_vote` column.
+   */
+  earlyVote: z.strictObject({ source: url, page: link, boundaries }).optional(),
 }
 
 const vancouverResults = z.strictObject({
@@ -416,10 +422,22 @@ export function electionProblems(e: Election): string[] {
   if (e.dates.final !== e.votingDay)
     problems.push('dates.final must equal votingDay')
   if (e.slug.endsWith('.md')) problems.push('slug must not end in .md')
-  for (const s of [...e.sources, ...e.resources, ...e.results.alternatives]) {
+  const early = e.results.earlyVote
+  for (const s of [
+    ...e.sources,
+    ...e.resources,
+    ...e.results.alternatives,
+    ...(early
+      ? [early.page, { label: 'results.earlyVote', url: early.source }]
+      : []),
+  ]) {
     if (!/^https:\/\//.test(s.url))
       problems.push(`${s.label}: links must be https`)
   }
+  if (early && !('regions' in e && e.regions.length))
+    problems.push(
+      'results.earlyVote: the counts are by state, so it needs regions',
+    )
   if (
     e.results.source &&
     e.results.sourcePrefix &&
