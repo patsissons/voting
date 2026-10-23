@@ -6,9 +6,12 @@ import {
   bc,
   civicCounted,
   civicSample,
+  fixture,
   tinyChambers,
+  us,
   vancouver,
 } from '../../scripts/fixtures/load.ts'
+import { parseEarlyVote } from '../../shared/parsers/early-vote.ts'
 import { memoryDb } from '../db.memory.ts'
 import { storeSnapshot } from '../store.ts'
 import { describeServer, dispatch, validateModule } from './rpc.ts'
@@ -72,6 +75,35 @@ describe('voting tools', () => {
     ).toBe(7)
     expect(fails('get_election', { slug: 'bc-2026', section: 'nope' })).toMatch(
       /no section "nope"/,
+    )
+  })
+
+  it('adds the pulled early vote to the document and the summary', () => {
+    const db = memoryDb()
+    const e = us()
+    const ev = parseEarlyVote(
+      fixture('voting-2026-early-vote.csv'),
+      e.regions,
+      '2026-10-23T19:25:09.000Z',
+    )
+    db.addElection(e, { early_vote: ev })
+    const usCtx = { db, origin: 'https://voting.lgtm.page' }
+    const doc = call('get_election', { slug: 'us-2026' }, usCtx) as any
+    expect(doc.earlyVoteTurnout.total.voted).toBe(6071374)
+    expect(
+      (
+        call(
+          'get_election',
+          { slug: 'us-2026', section: 'earlyVoteTurnout' },
+          usCtx,
+        ) as any
+      ).value.states.ga.voted,
+    ).toBe(1497446)
+    expect(call('summary', { slug: 'us-2026' }, usCtx)).toContain(
+      '### Early vote so far',
+    )
+    expect(run('get_election', { slug: 'bc-2026' }).earlyVoteTurnout).toBe(
+      undefined,
     )
   })
 
