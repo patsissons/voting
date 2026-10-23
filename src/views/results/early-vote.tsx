@@ -1,13 +1,16 @@
-// The early vote panel on the waiting screen: ballots cast so far, by state
-// as a share of the 2022 midterm, and by party registration where a state
-// registers by party: summed, on a map, and per state. Turnout, never a
+// The early vote panel on the waiting screen, folded under the results once
+// they arrive. Two feeds share it (early-vote-copy.ts has the words): the UF
+// Election Lab's early vote by state (ballots cast so far as a share of the
+// 2022 midterm, and party registration where a state registers by party:
+// summed, on a map, and per state) and Elections BC's advance vote by
+// riding (ballots per day against the last election's, share of registered
+// voters, and a riding map against the last advance vote). Turnout, never a
 // result, so the turnout map is one neutral hue, the party map is a
 // diverging scale with a grey middle (a lean within five points reads as
-// none) and every label says who has voted, not how. The hooks pull the
-// counts (server/early-vote.ts); the panel goes with the waiting screen when
-// the first results arrive.
+// none) and every label says who has voted, not how.
 import { Note, Section } from '@/components/bits'
 import { Choropleth } from '@/components/charts/choropleth'
+import { Dumbbell } from '@/components/charts/dumbbell'
 import { Legend } from '@/components/charts/legend'
 import {
   tipHandlersFor,
@@ -18,19 +21,24 @@ import { partyColor } from '@/lib/party'
 import { keys as storageKeys, readString } from '@/lib/storage'
 import { instantText } from '@/lib/time'
 import type { EarlyVote } from '../../../shared/early-vote.ts'
-import { dayShort, fmt, pct1, signed } from '../../../shared/format.ts'
+import { compact, dayShort, fmt, pct1, signed } from '../../../shared/format.ts'
 import type { Election } from '../../../shared/schema/election.ts'
 import {
   MARGIN_CUTS,
+  changeFromPrior,
+  daySeries,
+  earlyVoteDivisions,
   marginStep,
   partyMargin,
   partySplit,
   partyTotals,
   shareCuts,
+  shareOfRegistered,
   stepOf,
   turnoutByState,
   type StateTurnout,
 } from '../../../shared/stats/early-vote.ts'
+import { earlyVoteCopy } from './early-vote-copy'
 import { Tile } from './results-header'
 
 const STEPS = 5
@@ -47,6 +55,11 @@ const HATCH =
 const pct = (share: number) => pct1(share * 100)
 const whole = (share: number) => `${Math.round(share * 100)}%`
 const pts = (share: number) => `${Math.round(share * 100)}`
+/** "-11.0%" for a change from the baseline, or '' without one. */
+const changeText = (x: { voted: number; prior?: number }) => {
+  const c = changeFromPrior(x)
+  return c == null ? '' : `${signed(c * 100)}%`
+}
 
 export function EarlyVotePanel({
   election,
@@ -56,9 +69,10 @@ export function EarlyVotePanel({
   earlyVote: EarlyVote
 }) {
   const early = election.results.earlyVote
-  const regions = 'regions' in election ? election.regions : []
+  const copy = earlyVoteCopy(election, ev)
+  const divisions = earlyVoteDivisions(election)
   const parties = 'parties' in election ? election.parties : []
-  const rows = turnoutByState(ev, regions)
+  const rows = turnoutByState(ev, divisions)
   const byKey = new Map(rows.map((r) => [r.key, r]))
   const cuts = shareCuts(
     rows.map((r) => r.share || 0),
@@ -77,7 +91,11 @@ export function EarlyVotePanel({
   const totals = partyTotals(rows)
   const margin = partyMargin(totals.party, order)
   const labelOf = (code: string) =>
-    regions.find((x) => x.key === code)?.label || code
+    divisions.find((x) => x.key === code)?.label || code
+  const days = copy.advance ? daySeries(total.days, total.priorDays) : []
+  const registered = shareOfRegistered(total)
+  const lines = (r: StateTurnout) =>
+    copy.advance ? ridingLines(r, copy.priorYear) : stateLines(r)
   /** "Dem +18.9" for a margin, the leader named. */
   const marginText = (m: number) =>
     m === 0
@@ -120,16 +138,36 @@ export function EarlyVotePanel({
           id="early-vote-title"
           className="text-xl font-semibold tracking-tight"
         >
-          Ballots cast as of {instantText(ev.asOf, election.timeZone)}
+          {copy.advance
+            ? `Advance voting${copy.span ? `, ${copy.span}` : ''}`
+            : `Ballots cast as of ${instantText(ev.asOf, election.timeZone)}`}
         </h2>
         <p className="text-muted-foreground max-w-prose text-sm">
-          Early in-person votes and returned mail ballots: who has voted so far,
-          not how. No state releases vote counts before its polls close.
+          {copy.advance
+            ? `Voters at advance voting places, counted in the riding where they voted, not where they live. Turnout only: no ballots are counted before final voting day. Figures as of ${instantText(ev.asOf, election.timeZone)}, preliminary.`
+            : 'Early in-person votes and returned mail ballots: who has voted so far, not how. No state releases vote counts before its polls close.'}
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
-        <Tile label="Ballots cast" value={fmt(total.voted)} />
-        {total.inPerson != null && total.mail != null ? (
+        <Tile
+          label={copy.advance ? 'Advance ballots' : 'Ballots cast'}
+          value={fmt(total.voted)}
+        />
+        {copy.advance && registered != null ? (
+          <Tile
+            label="Of registered voters"
+            value={pct(registered)}
+            sub={`${fmt(total.registered)} registered`}
+          />
+        ) : null}
+        {copy.advance && total.prior ? (
+          <Tile
+            label={`vs ${copy.priorYear}`}
+            value={changeText(total)}
+            sub={`${fmt(total.prior)} in ${copy.priorYear}`}
+          />
+        ) : null}
+        {!copy.advance && total.inPerson != null && total.mail != null ? (
           <>
             <Tile
               label="In person"
@@ -145,11 +183,59 @@ export function EarlyVotePanel({
         ) : null}
       </div>
 
+      {days.length ? (
+        <Section
+          id="early-vote-days"
+          title="By day"
+          sub={
+            total.priorDays
+              ? `advance ballots each day, against the same day of ${copy.priorYear}`
+              : 'advance ballots each day'
+          }
+        >
+          <Dumbbell
+            rows={days.map((d, i) => ({
+              label: dayShort(d.day),
+              color: 'var(--brand)',
+              a: d.prior == null ? d.n : d.prior,
+              b: d.n,
+              describe: () => ({
+                title: dayShort(d.day),
+                lines: [
+                  { label: 'Advance ballots', value: fmt(d.n) },
+                  ...(d.prior != null
+                    ? [
+                        {
+                          label: `${copy.priorYear}, day ${i + 1}`,
+                          value: fmt(d.prior),
+                        },
+                        {
+                          label: 'Change',
+                          value: changeText({ voted: d.n, prior: d.prior }),
+                        },
+                      ]
+                    : []),
+                ],
+              }),
+            }))}
+            aLabel={`${copy.priorYear}, same day`}
+            bLabel={days[0].day.slice(0, 4)}
+            xFormat={compact}
+            ariaLabel={`Advance ballots by day: ${days
+              .map(
+                (d) =>
+                  `${dayShort(d.day)} ${fmt(d.n)}${d.prior != null ? ` (${copy.priorYear}: ${fmt(d.prior)})` : ''}`,
+              )
+              .join(', ')}`}
+          />
+        </Section>
+      ) : null}
+
       {early && early.boundaries ? (
         <Section
           id="early-vote-map"
-          title="By state"
-          sub="ballots cast as a share of the 2022 midterm"
+          title={copy.advance ? 'By riding' : 'By state'}
+          sub={`${copy.advance ? 'advance ballots' : 'ballots cast'} as a share of ${copy.baseline}`}
         >
           <Legend
             items={[
@@ -162,14 +248,17 @@ export function EarlyVotePanel({
                       : `${whole(cuts[i - 1])}–${whole(cuts[i])}`,
                 color: stepColor(i),
               })),
-              { label: 'no figures yet', color: 'var(--muted)' },
+              {
+                label: copy.advance ? 'no figures' : 'no figures yet',
+                color: 'var(--muted)',
+              },
             ]}
           />
           <Choropleth
             set={early.boundaries}
             fills={fills}
             ring={byKey.has(mine) ? mine : undefined}
-            ariaLabel={`Ballots cast by state as a share of the 2022 midterm: ${rows
+            ariaLabel={`${copy.advance ? 'Advance ballots by riding' : 'Ballots cast by state'} as a share of ${copy.baseline}: ${rows
               .filter((r) => r.share != null)
               .map((r) => `${r.label} ${whole(r.share as number)}`)
               .join(', ')}`}
@@ -179,11 +268,25 @@ export function EarlyVotePanel({
               if (!r)
                 return {
                   title: label,
-                  lines: [{ label: 'No early vote figures yet', value: '' }],
+                  lines: [
+                    {
+                      label: copy.advance
+                        ? 'No advance vote figures'
+                        : 'No early vote figures yet',
+                      value: '',
+                    },
+                  ],
                 }
-              return { title: label, lines: stateLines(r) }
+              return { title: label, lines: lines(r) }
             }}
           />
+          {copy.advance ? (
+            <Note>
+              Each riding is coloured by its advance ballots as a share of its
+              count in {copy.baseline}; the boundaries are unchanged since then.
+              {byKey.has(mine) ? ' Your riding is outlined.' : ''}
+            </Note>
+          ) : null}
         </Section>
       ) : null}
 
@@ -368,21 +471,69 @@ export function EarlyVotePanel({
         </Section>
       ) : null}
 
-      <Note>
-        Counts of ballots cast from{' '}
-        <a
-          href={early ? early.page.url : 'https://election.lab.ufl.edu/'}
-          target="_blank"
-          rel="noreferrer"
-          className="underline underline-offset-2"
-        >
-          {early ? early.page.label : 'the UF Election Lab'}
-        </a>{' '}
-        (CC BY-NC-ND 4.0); states report on their own schedules, so some figures
-        are a day or more older than others.
-      </Note>
+      {copy.advance ? (
+        <Note>
+          Advance voting turnout from{' '}
+          <a
+            href={early ? early.page.url : 'https://elections.bc.ca/'}
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-2"
+          >
+            {early ? early.page.label : 'Elections BC'}
+          </a>
+          {early ? (
+            <>
+              {' '}
+              (
+              <a
+                href={early.source}
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-2"
+              >
+                the daily table
+              </a>
+              )
+            </>
+          ) : null}
+          , preliminary and subject to change. Vote-by-mail packages are not
+          counted here: Elections BC counts them after final voting day.
+        </Note>
+      ) : (
+        <Note>
+          Counts of ballots cast from{' '}
+          <a
+            href={early ? early.page.url : 'https://election.lab.ufl.edu/'}
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-2"
+          >
+            {early ? early.page.label : 'the UF Election Lab'}
+          </a>{' '}
+          (CC BY-NC-ND 4.0); states report on their own schedules, so some
+          figures are a day or more older than others.
+        </Note>
+      )}
     </section>
   )
+}
+
+/** The tooltip for a riding: advance ballots, the share of registered voters and the change from the last advance vote. */
+function ridingLines(r: StateTurnout, priorYear: string) {
+  const lines = [{ label: 'Advance ballots', value: fmt(r.voted) }]
+  const share = shareOfRegistered(r)
+  if (share != null)
+    lines.push({
+      label: 'Of registered voters',
+      value: `${pct(share)} of ${fmt(r.registered)}`,
+    })
+  if (r.prior)
+    lines.push({
+      label: `vs ${priorYear}`,
+      value: `${changeText(r)} (${fmt(r.prior)})`,
+    })
+  return lines
 }
 
 function stateLines(r: StateTurnout) {

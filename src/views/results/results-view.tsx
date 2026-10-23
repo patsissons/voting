@@ -16,6 +16,7 @@ import { AtLargeResults, atLargeSections } from './atlarge-results'
 import { ChambersResults, chambersSections } from './chambers-results'
 import { DistrictResults, districtSections } from './district-results'
 import { EarlyVotePanel } from './early-vote'
+import { earlyVoteCopy, type EarlyVoteCopy } from './early-vote-copy'
 import { ReferendumResults, referendumSections } from './referendum-results'
 
 export type SectionLink = { id: string; label: string }
@@ -48,6 +49,7 @@ export function ResultsView({
         : true)
   if (!latest || !started)
     return <Waiting election={election} earlyVote={earlyVote} />
+  const copy = earlyVote ? earlyVoteCopy(election, earlyVote) : null
   const sections = [
     ...(election.ballot === 'referendum'
       ? referendumSections(election)
@@ -56,7 +58,7 @@ export function ResultsView({
         : election.ballot === 'chambers'
           ? chambersSections(election)
           : atLargeSections(latest, election)),
-    ...(earlyVote ? [{ id: 'early-vote', label: 'Early vote' }] : []),
+    ...(copy ? [{ id: 'early-vote', label: copy.title }] : []),
   ]
   return (
     <div className="space-y-6">
@@ -89,8 +91,12 @@ export function ResultsView({
           matchParty={matchParty}
         />
       )}
-      {earlyVote ? (
-        <EarlyVoteFolded election={election} earlyVote={earlyVote} />
+      {earlyVote && copy ? (
+        <EarlyVoteFolded
+          election={election}
+          earlyVote={earlyVote}
+          copy={copy}
+        />
       ) : null}
     </div>
   )
@@ -100,9 +106,11 @@ export function ResultsView({
 function EarlyVoteFolded({
   election,
   earlyVote,
+  copy,
 }: {
   election: Election
   earlyVote: EarlyVote
+  copy: EarlyVoteCopy
 }) {
   return (
     <details
@@ -115,10 +123,10 @@ function EarlyVoteFolded({
             className="text-muted-foreground size-4 shrink-0 transition-transform group-open:rotate-90"
             aria-hidden="true"
           />
-          <h2 className="text-lg font-semibold tracking-tight">Early vote</h2>
+          <h2 className="text-lg font-semibold tracking-tight">{copy.title}</h2>
         </span>
         <span className="text-muted-foreground nums text-xs">
-          ballots cast before voting day
+          {copy.caption}
         </span>
       </summary>
       <div className="mt-4">
@@ -214,7 +222,9 @@ function Waiting({
           {advance.length
             ? `You can still vote early: ${advance.length === 1 ? 'the last advance voting day is' : 'advance voting days left are'} ${advance.map(dayShort).join(', ')}. `
             : ''}
-          {earlyVote ? 'Early voting is under way in most states. ' : ''}
+          {earlyVote
+            ? `${earlyVoteCopy(election, earlyVote, today).waiting} `
+            : ''}
           {resultsOnly ? (
             <>
               Until then, follow{' '}
