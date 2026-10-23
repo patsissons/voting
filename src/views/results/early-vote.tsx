@@ -83,10 +83,13 @@ export function EarlyVotePanel({
     m === 0
       ? 'even'
       : `${nameOf(order[m > 0 ? 0 : 1])} ${signed(Math.abs(m) * 100)}`
-  /** "Dem 50% · GOP 29% · Unaffiliated or other 21%" */
+  /** "Dem 50% · GOP 29% · Other 21%", short enough for one tooltip line. */
   const splitText = (party: Record<string, number>) =>
     partySplit(party, order)
-      .map((s) => `${nameOf(s.key)} ${whole(s.share)}`)
+      .map(
+        (s) =>
+          `${s.key === 'other' ? 'Other' : nameOf(s.key)} ${whole(s.share)}`,
+      )
       .join(' · ')
   const bandColor = (step: number) =>
     step === 0

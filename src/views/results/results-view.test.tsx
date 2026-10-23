@@ -246,7 +246,7 @@ describe('ResultsView', () => {
     expect(lean.querySelector('path[data-ring="ga"]')).not.toBeNull()
     fireEvent.focus(lean.querySelector('path[data-code="nc"]')!)
     expect(screen.getByRole('status')).toHaveTextContent(
-      'North CarolinaDem535,973 (42.2%)GOP296,478 (23.3%)Unaffiliated or other437,469 (34.4%)MarginDem +18.9 ptsBy mailDem 42% · GOP 18% · Unaffiliated or other 40%In personDem 42% · GOP 24% · Unaffiliated or other 34%UpdatedFri Oct 23',
+      'North CarolinaDem535,973 (42.2%)GOP296,478 (23.3%)Unaffiliated or other437,469 (34.4%)MarginDem +18.9 ptsBy mailDem 42% · GOP 18% · Other 40%In personDem 42% · GOP 24% · Other 34%UpdatedFri Oct 23',
     )
     fireEvent.focus(lean.querySelector('path[data-code="ga"]')!)
     expect(screen.getByRole('status')).toHaveTextContent(
