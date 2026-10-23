@@ -18,6 +18,10 @@ test('the index lists the elections and the theme toggle persists', async ({
     page.getByRole('heading', { name: 'Vancouver Votes 2026' }),
   ).toBeVisible()
   await expect(
+    page.getByRole('heading', { name: 'US Midterms 2026' }),
+  ).toBeVisible()
+  await expect(page.getByText('Live results', { exact: true })).toBeVisible()
+  await expect(
     page.getByRole('link', { name: /BC Votes 2026/ }),
   ).toHaveAttribute('href', '/bc-2026')
 

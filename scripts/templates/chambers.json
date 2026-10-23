@@ -1,0 +1,78 @@
+{
+  "slug": "TODO",
+  "title": "TODO",
+  "description": "TODO: one or two sentences for the index card and link previews.",
+  "ballot": "chambers",
+  "votingDay": "2026-01-01",
+  "published": false,
+  "place": "TODO",
+  "eyebrow": "TODO",
+  "pollsClose": "2026-01-01T18:00:00-05:00",
+  "timeZone": "America/New_York",
+  "dates": {
+    "advance": [],
+    "final": "2026-01-01",
+    "hours": "TODO: when the polls close",
+    "url": "https://example.com/TODO-where-to-vote"
+  },
+  "lede": "TODO: the one-paragraph pitch shown above the results.",
+  "intro": "TODO: what is being decided, and that this page carries results only.",
+  "sources": [
+    { "label": "TODO: the results feed", "url": "https://example.com/TODO" }
+  ],
+  "resources": [
+    { "label": "TODO: where to vote", "url": "https://example.com/TODO" }
+  ],
+  "note": {
+    "text": "TODO or remove: where the counts and race calls come from."
+  },
+  "parties": [
+    {
+      "key": "alpha",
+      "name": "TODO Alpha Party",
+      "short": "Alpha",
+      "color": "#2b6cb0",
+      "colorDark": "#6aa6e6"
+    },
+    {
+      "key": "beta",
+      "name": "TODO Beta Party",
+      "short": "Beta",
+      "color": "#c0392b",
+      "colorDark": "#e9705e"
+    }
+  ],
+  "affiliations": { "Alpha": "alpha", "Beta": "beta" },
+  "regions": [
+    { "key": "aa", "label": "TODO State A" },
+    { "key": "bb", "label": "TODO State B" }
+  ],
+  "chambers": [
+    {
+      "key": "house",
+      "label": "TODO Lower House",
+      "short": "House",
+      "seats": 2,
+      "majority": 2,
+      "holdovers": {},
+      "divisions": {
+        "aa-01": "TODO State A 1",
+        "bb-al": "TODO State B at-large"
+      }
+    }
+  ],
+  "results": {
+    "format": "civicapi",
+    "source": "https://civicapi.org/api/v2/race/",
+    "races": { "house": 1 },
+    "official": "https://civicapi.org/results",
+    "label": "civicAPI",
+    "unit": "races called",
+    "unofficialNote": "Unofficial: the counts and race calls are the feed's own.",
+    "alternatives": [],
+    "serverFetch": true,
+    "fetchHours": 96,
+    "throttleSeconds": 120,
+    "sourcePrefix": "https://civicapi.org/"
+  }
+}

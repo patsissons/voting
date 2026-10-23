@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alberta, bc, vancouver } from './fixtures/load.ts'
+import { alberta, bc, us, vancouver } from './fixtures/load.ts'
 import { buildDocument, zoneOffset } from './new-vote.ts'
 import { documentText } from './lib/json.ts'
 import { parseElection } from '../shared/schema/election.ts'
@@ -14,7 +14,12 @@ describe('new-vote', () => {
   it('builds a valid draft for each ballot mode with the header filled in', () => {
     // A day before November 2026: newer tzdata keeps BC on daylight time
     // year-round from then, so later dates differ between machines.
-    for (const ballot of ['at-large', 'district', 'referendum'] as const) {
+    for (const ballot of [
+      'at-large',
+      'district',
+      'referendum',
+      'chambers',
+    ] as const) {
       const doc = buildDocument({
         slug: `test-${ballot}`,
         ballot,
@@ -41,7 +46,7 @@ describe('new-vote', () => {
   it('regenerates each existing election’s shape from its template', () => {
     // The same top-level keys and results format as the committed documents:
     // only the editorial content (TODOs) differs.
-    for (const real of [vancouver(), bc(), alberta()]) {
+    for (const real of [vancouver(), bc(), alberta(), us()]) {
       const draft = buildDocument({
         slug: real.slug,
         ballot: real.ballot,

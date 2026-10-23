@@ -3,9 +3,10 @@
 Vote compasses and live election results, served from a single
 [PocketHost](https://pockethost.io/) instance at https://voting.lgtm.page.
 It is the standalone successor of the voting app inside
-[cubby.fyi](https://cubby.fyi): three elections so far (Vancouver 2026, BC
-2026, the Alberta 2026 referendum), four results-feed parsers, a two-axis
-compass, election-night charts, and a markdown and MCP surface for agents.
+[cubby.fyi](https://cubby.fyi): four elections so far (Vancouver 2026, BC
+2026, the Alberta 2026 referendum, and live results for the US midterms),
+five results-feed parsers, a two-axis compass, election-night charts, and a
+markdown and MCP surface for agents.
 
 - Frontend: Vite + React + Tailwind CSS + shadcn/ui, built into `pb_public/`
 - Backend: PocketBase (JS hooks + migrations) on PocketHost; the hook logic
@@ -43,16 +44,16 @@ instance does.
 
 ## URLs
 
-| URL                                | What it serves                                                             |
-| ---------------------------------- | -------------------------------------------------------------------------- |
-| `/`                                | the index of published elections                                           |
-| `/<slug>`                          | an election; `#/compass`, `#/compass/<code>` and `#/results` name the view |
-| `/<slug>.md`                       | the election as markdown (also `Accept: text/markdown` on `/<slug>`)       |
-| `/llms.txt`                        | the agent index                                                            |
-| `POST /mcp`                        | a public, read-only MCP server (streamable HTTP, JSON-RPC)                 |
-| `POST /_voting/ingest/{slug}`      | push a raw results document (bearer `VOTING_INGEST_TOKEN`; `?official=1`)  |
-| `POST /_voting/source/{slug}?url=` | set or clear the page the server-side fetch pulls (bearer token)           |
-| `GET /_voting/fetch`               | run one fetch tick (public; the election-night webhook target)             |
+| URL                                | What it serves                                                                                                            |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `/`                                | the index of published elections                                                                                          |
+| `/<slug>`                          | an election; `#/compass`, `#/compass/<code>` and `#/results` name the view (a results-only election has only `#/results`) |
+| `/<slug>.md`                       | the election as markdown (also `Accept: text/markdown` on `/<slug>`)                                                      |
+| `/llms.txt`                        | the agent index                                                                                                           |
+| `POST /mcp`                        | a public, read-only MCP server (streamable HTTP, JSON-RPC)                                                                |
+| `POST /_voting/ingest/{slug}`      | push a raw results document (bearer `VOTING_INGEST_TOKEN`; `?official=1`)                                                 |
+| `POST /_voting/source/{slug}?url=` | set or clear the page the server-side fetch pulls (bearer token)                                                          |
+| `GET /_voting/fetch`               | run one fetch tick (public; the election-night webhook target)                                                            |
 
 The hash grammar is frozen because cubby.fyi links redirect here:
 `#/compass/<code>` is one character per question (`-` skipped, `0`-`9` the
