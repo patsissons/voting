@@ -14,6 +14,7 @@ const BALLOT_LABEL = {
   'at-large': 'City-wide ballot',
   district: 'Riding by riding',
   referendum: 'Referendum',
+  chambers: 'Live results',
 } as const
 
 export function IndexPage() {

@@ -6,6 +6,7 @@
 import { fmt, pct1 } from '../shared/format.ts'
 import type { Payload, Snapshot } from '../shared/payload.ts'
 import type {
+  ChambersElection,
   CompassElection,
   Election,
   Link,
@@ -13,6 +14,7 @@ import type {
 } from '../shared/schema/election.ts'
 import { changingHands, complete, leaderOf } from '../shared/stats/results.ts'
 import { ballotWide, contestOf } from '../shared/stats/referendum.ts'
+import { balanceOf, calledOf, contestsOf } from '../shared/stats/chambers.ts'
 
 export const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/
 
@@ -21,6 +23,7 @@ const ZONES: Record<string, string> = {
   'America/Vancouver': 'Pacific time',
   'America/Edmonton': 'Mountain time',
   'America/Toronto': 'Eastern time',
+  'America/New_York': 'Eastern time',
 }
 const zoneName = (election: Election) =>
   ZONES[election.timeZone] || election.timeZone || 'local time'
@@ -407,12 +410,107 @@ export function electionMarkdown(
           referendumResultsMarkdown(election, snapshot),
           referendumMarkdown(election, origin),
         ]
-      : [
-          datesMarkdown(election),
-          resultsMarkdown(election, snapshot),
-          compassMarkdown(election, origin),
-        ]
+      : election.ballot === 'chambers'
+        ? [
+            datesMarkdown(election),
+            chambersResultsMarkdown(election, snapshot),
+            chambersMarkdown(election),
+          ]
+        : [
+            datesMarkdown(election),
+            resultsMarkdown(election, snapshot),
+            compassMarkdown(election, origin),
+          ]
   return `${[...head, ...body].filter(Boolean).join('\n\n').trimEnd()}\n`
+}
+
+/** What a results-only election covers: its chambers, seats and holdovers. */
+export function chambersMarkdown(election: ChambersElection): string {
+  const lines = ['## What is being decided', '', election.intro, '']
+  for (const c of election.chambers) {
+    const up = Object.keys(c.divisions).length
+    const held = Object.entries(c.holdovers || {})
+      .filter(([, n]) => n > 0)
+      .map(([k, n]) => `${partyShort(election, k)} ${n}`)
+      .join(', ')
+    lines.push(
+      `- ${c.label}: ${up} of ${c.seats} seats up${c.majority != null ? `, ${c.majority} for a majority` : ''}${held ? ` (not up: ${held})` : ''}.`,
+    )
+  }
+  lines.push(
+    '',
+    `Parties: ${election.parties.map((p) => `${p.name} (${p.short})`).join(', ')}; everyone else is listed under their own label.`,
+  )
+  if (election.sources.length)
+    lines.push('', '### Background', '', links(election.sources))
+  return lines.join('\n')
+}
+
+const partyShort = (election: ChambersElection, key: string) => {
+  const p = election.parties.filter((x) => x.key === key)[0]
+  return key === 'other' || !p ? 'Others' : p.short
+}
+
+/** The balance of every chamber and each race by state. */
+export function chambersResultsMarkdown(
+  election: ChambersElection,
+  snapshot: Snapshot | null,
+): string {
+  const results = election.results
+  const follow = results.alternatives.length
+    ? `\n\nAlso follow:\n\n${links(results.alternatives)}`
+    : ''
+  const source = results.label || 'the results feed'
+  if (!snapshot)
+    return `## Results\n\nNo results yet. They appear after the first polls close on voting day, from [${source}](${results.official}).${follow}`
+  const r = snapshot.payload
+  const short = (key: string | null) => (key ? partyShort(election, key) : '')
+  const lines = [
+    `## Results (${r.official ? 'official' : 'unofficial'}, as of ${r.asOf} ${zoneName(election)})`,
+    '',
+    `${fmt(r.polls.closed)} of ${fmt(r.polls.total)} races called; ${fmt(r.ballots)} votes counted in House races${r.turnout != null ? `; turnout ${pct1(r.turnout * 100)} of registered voters` : ''}. Race calls are ${source}'s.`,
+    '',
+  ]
+  for (const chamber of election.chambers) {
+    const b = balanceOf(r, chamber, election)
+    lines.push(
+      `### ${chamber.label}${b.majority != null ? ` (${b.majority} of ${b.seats} for a majority)` : ` (${b.seats})`}`,
+      '',
+    )
+    for (const row of b.rows) {
+      const total = row.called + row.leading + row.holdover
+      if (!total) continue
+      lines.push(
+        `- ${partyShort(election, row.key)}: ${total} (${row.called} called, ${row.leading} leading, ${row.holdover} not up)`,
+      )
+    }
+    if (b.undecided) lines.push(`- Not yet leading anyone: ${b.undecided}`)
+    lines.push('')
+  }
+  lines.push('### Races by state', '')
+  for (const region of election.regions) {
+    const races = r.contests.filter((c) => c.region === region.key)
+    if (!races.length) continue
+    lines.push(`#### ${region.label}`, '')
+    for (const c of races) {
+      const chamber = election.chambers.filter((x) => x.key === c.kind)[0]
+      const called = calledOf(c)
+      const top = c.choices
+        .slice(0, 3)
+        .map(
+          (x) =>
+            `${x.name}${x.party || x.partyName ? ` (${short(x.party) || x.partyName})` : ''} ${pct1(x.pct)}`,
+        )
+        .join(', ')
+      lines.push(
+        `- ${c.label} (${chamber ? chamber.short : c.kind}): ${top || 'no count yet'}; ${pct1(c.reporting || 0)} of the expected vote in${called ? `; called for ${called.name}` : ''}.`,
+      )
+    }
+    lines.push('')
+  }
+  const house = contestsOf(r, election.chambers[0].key)
+  if (!house.length) lines.push('No races reported yet.', '')
+  return lines.join('\n').trimEnd() + follow
 }
 
 export type IndexEntry = { election: Election; latest: Payload | null }
@@ -422,7 +520,7 @@ export function llmsText(entries: IndexEntry[], origin: string): string {
   const lines = [
     '# Voting',
     '',
-    '> Vote compasses that match your answers to the parties and candidates on your ballot, and live election-night results.',
+    '> Vote compasses that match your answers to the parties and candidates on your ballot, and live election-night results (some elections carry results alone).',
     '',
     `Pages render in the browser; every election is also a markdown page at ${origin}/<slug>.md (or GET ${origin}/<slug> with Accept: text/markdown). Compass results and marked ballots are permalinks in the page hash (#/compass/<code>); live results are at #/results.`,
     '',

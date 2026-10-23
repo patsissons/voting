@@ -9,6 +9,7 @@ import type { BallotMarks } from '../../../shared/permalink.ts'
 import type { Election } from '../../../shared/schema/election.ts'
 import { questionsReporting } from '../../../shared/stats/referendum.ts'
 import { AtLargeResults, atLargeSections } from './atlarge-results'
+import { ChambersResults, chambersSections } from './chambers-results'
 import { DistrictResults, districtSections } from './district-results'
 import { ReferendumResults, referendumSections } from './referendum-results'
 
@@ -32,15 +33,20 @@ export function ResultsView({
     : null
   const started =
     latest &&
-    (election.ballot !== 'referendum' ||
-      questionsReporting(latest, election) > 0)
+    (election.ballot === 'referendum'
+      ? questionsReporting(latest, election) > 0
+      : election.ballot === 'chambers'
+        ? snapshots.some((s) => s.payload.contests.length > 0)
+        : true)
   if (!latest || !started) return <Waiting election={election} />
   const sections =
     election.ballot === 'referendum'
       ? referendumSections(election)
       : election.ballot === 'district'
         ? districtSections(election)
-        : atLargeSections(latest, election)
+        : election.ballot === 'chambers'
+          ? chambersSections(election)
+          : atLargeSections(latest, election)
   return (
     <div className="space-y-6">
       <SectionNav sections={sections} />
@@ -57,6 +63,12 @@ export function ResultsView({
           snapshots={snapshots}
           live={live}
           matchParty={matchParty}
+        />
+      ) : election.ballot === 'chambers' ? (
+        <ChambersResults
+          election={election}
+          snapshots={snapshots}
+          live={live}
         />
       ) : (
         <AtLargeResults
@@ -126,6 +138,7 @@ function Waiting({ election }: { election: Election }) {
     ? `${results.label}'s results page`
     : 'the official results page'
   const referendum = election.ballot === 'referendum'
+  const resultsOnly = election.ballot === 'chambers'
   return (
     <div className="space-y-6">
       <div className="space-y-3">
@@ -134,8 +147,10 @@ function Waiting({ election }: { election: Election }) {
         </h2>
         <p className="max-w-prose text-lg">
           Results appear here as {results.label || 'the City'}{' '}
-          {referendum ? 'posts' : 'counts'} them, starting after voting closes
-          at {closeTimeText(election.pollsClose, election.timeZone)} on{' '}
+          {referendum ? 'posts' : resultsOnly ? 'reports' : 'counts'} them,
+          starting after{' '}
+          {resultsOnly ? 'the first polls close' : 'voting closes'} at{' '}
+          {closeTimeText(election.pollsClose, election.timeZone)} on{' '}
           {dayLong(election.votingDay)}.
           {referendum
             ? ` Ballots are counted by hand, Question ${election.questions[0].n} first, so the later questions start reporting hours after the first.`
@@ -146,15 +161,24 @@ function Waiting({ election }: { election: Election }) {
           {advance.length
             ? `You can still vote early: ${advance.length === 1 ? 'the last advance voting day is' : 'advance voting days left are'} ${advance.map(dayShort).join(', ')}. `
             : ''}
-          Until then, {referendum ? 'mark ' : 'try '}
-          <a
-            href={`/${election.slug}#/compass`}
-            className="text-foreground underline underline-offset-4"
-          >
-            {referendum ? 'your own ballot' : 'the ballot compass'}
-          </a>
-          , or follow{' '}
-          <ExternalLink href={results.official}>{source}</ExternalLink>.
+          {resultsOnly ? (
+            <>
+              Until then, follow{' '}
+              <ExternalLink href={results.official}>{source}</ExternalLink>.
+            </>
+          ) : (
+            <>
+              Until then, {referendum ? 'mark ' : 'try '}
+              <a
+                href={`/${election.slug}#/compass`}
+                className="text-foreground underline underline-offset-4"
+              >
+                {referendum ? 'your own ballot' : 'the ballot compass'}
+              </a>
+              , or follow{' '}
+              <ExternalLink href={results.official}>{source}</ExternalLink>.
+            </>
+          )}
         </p>
       </div>
       <LinkList eyebrow="Also follow" links={results.alternatives} />

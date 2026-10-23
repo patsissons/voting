@@ -18,6 +18,7 @@ pnpm new-vote toronto-2026 --ballot at-large --title "Toronto Votes 2026" \
 | `at-large`   | one city-wide ballot; parties run slates     | compass + ballot card | `vancouver`            |
 | `district`   | one vote for one seat in the voter's riding  | compass + riding card | `ebc-enr`              |
 | `referendum` | yes/no (or two-option) questions, no parties | the voter's ballot    | `eab-dash`             |
+| `chambers`   | one seat per division, grouped by chamber    | none: results only    | `civicapi`             |
 
 The scaffold fills the header (slug, title, voting day, polls-close time
 with the zone's offset, eyebrow) and leaves `TODO` wherever the editorial
@@ -52,17 +53,34 @@ What each ballot mode needs:
   `short`, the official `q`, two `options` with `match` patterns the parser
   uses to find the columns, `context`, `polls`; `pollNote`; optional
   `optionColors`.
+- **chambers** (results only, no compass): `parties` with `color`/`colorDark`
+  (no axis), `affiliations` (the feed's party labels to party keys; anything
+  else stays under its own label), `regions` (the states: division codes are
+  `<key>` or `<key>-<n>`), and `chambers`, each with `seats`, `majority`
+  (omit for offices with no control line, like governors), `holdovers`
+  (seats not up this year, per party), an optional `boundaries` set and
+  `divisions` (the feed's region keys to short names; divisions plus
+  holdovers equal `seats`). `us-2026`'s divisions were derived once from the
+  three civicAPI documents with a throwaway script (House `<State> <n>` or
+  `<State> at-large`, Senate and governors the state name); the keys do not
+  change during a cycle.
 
 Party colours are per election (`color`, `colorDark`), so a new election
 never needs a stylesheet change.
 
 District and referendum elections draw a results map when `boundaries`
-names a set in `src/geo/` (`ab-2017`, `bc-2023`). The templates start with
-their province's set; delete the key for a place without one. The set's division codes
-must be the results' codes: `districts[].code` for a district election, the
-`results.divisions` keys for Alberta's dashboard feed (a test checks both).
+names a set in `src/geo/` (`ab-2017`, `bc-2023`); a chambers election names
+one per chamber (`us-cd119` for the House, `us-state` for the Senate and
+the governors). The templates start with their province's set; delete the
+key for a place without one. The set's division codes must be the results'
+codes: `districts[].code` for a district election, the `results.divisions`
+keys for Alberta's dashboard feed, and a chamber's `divisions` keys, which
+may be a subset of the set (the state map serves 35 Senate races); a test
+checks all three. Frame 0 of every set is keyed `province`, the whole area,
+whatever the jurisdiction calls itself.
 A new boundary set is an entry in `scripts/geo/build.ts` (its source, the
-field that becomes the code, the province frame and the city insets), a
+field that becomes the code, an optional `filter` and `proj` for a long/lat
+source such as the Census files, the province frame and the city insets), a
 key in `BOUNDARY_SETS` in `shared/schema/election.ts`, then `pnpm geo`;
 commit the generated `src/geo/<set>.json`, never edit it by hand.
 
@@ -76,6 +94,7 @@ commit the generated `src/geo/<set>.json`, never edit it by hand.
 | `ebc-enr`   | Elections BC election-night HTML page                                                  | yes          |
 | `eab-ref`   | Elections Alberta per-question result pages                                            | yes          |
 | `eab-dash`  | Elections Alberta results dashboard JSON                                               | yes          |
+| `civicapi`  | civicAPI race documents, `https://civicapi.org/api/v2/race/<id>`, one per chamber      | yes          |
 
 A new source needs a new parser: add `shared/parsers/<name>.ts` producing
 the `Payload` shape in `shared/payload.ts`, a format in the schema's
@@ -85,7 +104,10 @@ read the payload, not the feed.
 
 `serverFetch: true` lets the hooks pull the source themselves inside
 `fetchHours` after `pollsClose` (every minute, throttled to
-`throttleSeconds`), once `results_source` is set on the row:
+`throttleSeconds`), once `results_source` is set on the row. For a
+`civicapi` election the source is the base URL
+(`https://civicapi.org/api/v2/race/`) and the fetch appends each id in
+`results.races`, storing the chambers together or not at all:
 
 ```sh
 curl -X POST -H "Authorization: Bearer $VOTING_INGEST_TOKEN" \
@@ -130,4 +152,7 @@ read the row.
    (the route is public and idempotent), and delete it afterwards.
 3. Watch `phio logs`; every stored snapshot logs one line.
 4. After the official count: `pnpm relay --election <slug> --source <url> --official --once`,
-   which marks winners (or referendum majorities) and stops the fetch.
+   which marks winners (or referendum majorities) and stops the fetch. A
+   `civicapi` election has no official step: its winners are the feed's race
+   calls, so either leave it unofficial or run the same command once every
+   race is called (it only sets the flag).

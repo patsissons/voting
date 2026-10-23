@@ -17,7 +17,7 @@ import { documentText } from './lib/json.ts'
 
 export type NewVoteOptions = {
   slug: string
-  ballot: 'at-large' | 'district' | 'referendum'
+  ballot: 'at-large' | 'district' | 'referendum' | 'chambers'
   title: string
   day: string
   timeZone?: string
@@ -78,7 +78,7 @@ export function buildDocument(opts: NewVoteOptions): Election {
 export function nextSteps(slug: string): string {
   return [
     `Wrote elections/${slug}.json (published: false). Next:`,
-    `  1. Replace every TODO: parties or questions, slates or ridings, dates, sources, results source.`,
+    `  1. Replace every TODO: parties or questions, slates, ridings or chambers, dates, sources, results source.`,
     `  2. pnpm elections:check            validates the document (and --write reformats it)`,
     `  3. pnpm dev -- --seed              or pnpm elections:push --local to load it locally`,
     `  4. pnpm relay --fixture --election ${slug} --target http://127.0.0.1:8090   a synthetic night (VOTING_INGEST_TOKEN=local-ingest-token)`,
@@ -97,7 +97,7 @@ if (
   const day = args.flag('day')
   if (!slug || !ballot || !title || !day) {
     console.error(
-      'usage: pnpm new-vote <slug> --ballot at-large|district|referendum --title "..." --day YYYY-MM-DD [--tz zone] [--place "..."] [--format ...] [--close HH:MM] [--force]',
+      'usage: pnpm new-vote <slug> --ballot at-large|district|referendum|chambers --title "..." --day YYYY-MM-DD [--tz zone] [--place "..."] [--format ...] [--close HH:MM] [--force]',
     )
     process.exit(1)
   }

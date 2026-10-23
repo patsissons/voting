@@ -2,7 +2,7 @@
 // (BC) elections: what the results page, the markdown page and the MCP tools
 // all compute the same way. Nothing here touches the DOM or Intl.
 import type { Choice, Contest, Payload, Snapshot } from '../payload.ts'
-import type { CompassElection } from '../schema/election.ts'
+import type { CompassElection, PartyElection } from '../schema/election.ts'
 
 export type PayloadRow = Pick<Snapshot, 'payload'> & Partial<Snapshot>
 
@@ -52,7 +52,7 @@ export const officeContests = (
   (election.offices || [])
     .map((o) => payload.contests.find((c) => c.kind === o.key))
     .filter((c): c is Contest => !!c)
-export const partyOrder = (election: CompassElection): string[] => [
+export const partyOrder = (election: PartyElection): string[] => [
   ...election.parties.map((p) => p.key),
   'other',
 ]
@@ -160,7 +160,7 @@ export const mayorSeries: Series = (payload) => {
 
 /** Province-wide popular vote as momentum series. */
 export const popularSeries =
-  (election: CompassElection): Series =>
+  (election: PartyElection): Series =>
   (payload) => {
     const rows = (payload.summary && payload.summary.parties) || null
     if (!rows) return null
@@ -353,7 +353,7 @@ export function leaderOf(contest: Contest): Choice | null {
 /** Ridings led by party, compass order then others. */
 export function ridingsLed(
   ridings: Contest[],
-  election: CompassElection,
+  election: PartyElection,
 ): [string, number][] {
   const counts = new Map<string, number>()
   for (const c of ridings) {
@@ -462,6 +462,20 @@ export function changingHands(
   )
   for (const pair of byPair) pair.ridings.sort((a, b) => a.margin - b.margin)
   return { flips, byPair }
+}
+
+/** Each party's share of a contest's votes, the unaffiliated together under 'other', largest first. */
+export function voteShares(contest: Contest): { key: string; share: number }[] {
+  const votes = new Map<string, number>()
+  for (const c of contest.choices)
+    votes.set(keyOf(c), (votes.get(keyOf(c)) || 0) + c.votes)
+  let total = 0
+  votes.forEach((v) => (total += v))
+  const out: { key: string; share: number }[] = []
+  votes.forEach((v, key) =>
+    out.push({ key, share: total ? (v / total) * 100 : 0 }),
+  )
+  return out.sort((a, b) => b.share - a.share)
 }
 
 export type CloseRiding = {
@@ -590,7 +604,7 @@ export function mayorTimeline(
 /** Ridings led by the top four parties at every snapshot with polls, against the share of boxes reported. */
 export function seatsTimeline(
   snapshots: PayloadRow[],
-  election: CompassElection,
+  election: PartyElection,
 ): Timeline | null {
   const points = snapshots.filter((r) => r.payload && r.payload.polls.total)
   if (points.length < 2) return null

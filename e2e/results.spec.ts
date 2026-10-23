@@ -112,3 +112,57 @@ test('the referendum map follows the question picked', async ({ page }) => {
   await page.getByRole('option', { name: 'Edmonton-McClung' }).click()
   await expect(map.locator('path[data-ring="36"]')).toHaveCount(2)
 })
+
+test('the results-only election has no tabs and shows every chamber', async ({
+  page,
+}) => {
+  await page.goto('/us-2026')
+  await expect(
+    page.getByRole('heading', { name: 'House of Representatives', level: 2 }),
+  ).toBeVisible()
+  expect(await page.getByRole('tab').count()).toBe(0)
+  expect(await page.evaluate(() => window.location.hash)).toBe('#/results')
+  for (const name of ['Your state', 'Senate', 'Governors']) {
+    await expect(
+      page.getByRole('heading', { name, exact: true, level: 2 }),
+    ).toBeVisible()
+  }
+  await expect(page.getByText('Races called', { exact: true })).toBeVisible()
+  const house = page.locator('#house-balance')
+  await expect(
+    house.getByRole('img', { name: /218 for a majority/ }),
+  ).toBeVisible()
+  await expect(house.getByText(/^(Dem|GOP) \d+ · (Dem|GOP) \d+/)).toBeVisible()
+
+  await page.getByRole('combobox', { name: 'Your state' }).click()
+  await page.getByRole('option', { name: 'Alaska' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Your state: Alaska', level: 2 }),
+  ).toBeVisible()
+  await expect(
+    page.locator('#mine').getByRole('heading', {
+      name: 'House of Representatives: Alaska at-large',
+    }),
+  ).toBeVisible()
+  await page.reload()
+  await expect(
+    page.getByRole('heading', { name: 'Your state: Alaska', level: 2 }),
+  ).toBeVisible()
+})
+
+test('the US maps draw every district and every state', async ({ page }) => {
+  await page.goto('/us-2026')
+  const house = page.locator('#house-map')
+  await house.scrollIntoViewIfNeeded()
+  const districts = house.locator('[data-frame=province]')
+  await expect(districts.locator('path[data-code]')).toHaveCount(435)
+  await expect(house.locator('[data-frame=nyc]')).toBeVisible()
+  const called = districts.locator('path[data-code][fill^="var(--party-"]')
+  expect(await called.count()).toBeGreaterThan(100)
+  const senate = page.locator('#senate-map')
+  await senate.scrollIntoViewIfNeeded()
+  const states = senate.locator('[data-frame=province]')
+  await expect(states.locator('path[data-code]')).toHaveCount(50)
+  await states.locator('path[data-code="ak"]').focus()
+  await expect(page.getByRole('status')).toContainText('Alaska')
+})

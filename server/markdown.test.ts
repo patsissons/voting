@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { feedText, fixtureFeeds } from '../scripts/fixtures/fixture.ts'
-import { alberta, bc, vancouver } from '../scripts/fixtures/load.ts'
+import {
+  alberta,
+  bc,
+  civicCounted,
+  tinyChambers,
+  vancouver,
+} from '../scripts/fixtures/load.ts'
 import { normalize } from '../shared/parsers/index.ts'
 import type { Election } from '../shared/schema/election.ts'
 import { electionMarkdown, llmsText } from './markdown.ts'
@@ -78,6 +84,48 @@ describe('electionMarkdown', () => {
       'Polls: The Writ average (2026-10-18): Remain 69%, Begin process 26%.',
     )
     expect(md).toContain(`${origin}/alberta-2026#/compass/<code>`)
+  })
+
+  it('writes the chambers page with every balance and race, and no compass', () => {
+    const e = tinyChambers()
+    const payload = normalize(civicCounted(), e)
+    const md = electionMarkdown(
+      e,
+      {
+        id: 'r1',
+        source_ts: payload.asOf,
+        official: false,
+        polls_closed: payload.polls.closed,
+        polls_total: payload.polls.total,
+        payload,
+      },
+      origin,
+    )
+    expect(md).toMatch(/^# Tiny Midterms 2026\n/)
+    expect(md).toContain(
+      '## Results (unofficial, as of 2026-11-03 22:30:00 Eastern time)',
+    )
+    expect(md).toContain(
+      '5 of 8 races called; 606,000 votes counted in House races',
+    )
+    expect(md).toContain('### House of Representatives (3 of 4 for a majority)')
+    expect(md).toContain('- Dem: 3 (2 called, 1 leading, 0 not up)')
+    expect(md).toContain('### Senate (3 of 4 for a majority)')
+    expect(md).toContain('- GOP: 2 (0 called, 1 leading, 1 not up)')
+    expect(md).toContain('### Governors (3)')
+    expect(md).toContain('#### Alaska')
+    expect(md).toMatch(
+      /- Alaska at-large \(House\): Nick Begich III \(GOP\) 58\.3%, Eric Hafner \(Dem\) 38\.8%, James C\. “Jim” McDermott \(Libertarian\) 2\.4%; 99\.0% of the expected vote in; called for Nick Begich III\./,
+    )
+    expect(md).toContain('- California (Gov): Xavier Becerra (Dem) 57.1%')
+    expect(md).toContain('## What is being decided')
+    expect(md).toContain(
+      '- Senate: 2 of 4 seats up, 3 for a majority (not up: Dem 1, GOP 1).',
+    )
+    expect(md).not.toMatch(/compass/i)
+    const waiting = electionMarkdown(e, null, origin)
+    expect(waiting).toContain('No results yet')
+    expect(waiting).toContain('[civicAPI](https://civicapi.org/)')
   })
 
   it('says when there are no results', () => {

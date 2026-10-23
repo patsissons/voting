@@ -1,7 +1,9 @@
 // One contest: candidates ranked with vote bars, the seat line for
-// multi-seat offices, the margin line for single seats, and the seats bar.
+// multi-seat offices, the margin line for single seats, and the seats bar;
+// plus the one-line row (leader and margin, opening to the contest) the
+// riding and chamber lists are made of.
 import { useState } from 'react'
-import { PartyChip, Section } from '@/components/bits'
+import { PartyChip, Section, Swatch } from '@/components/bits'
 import { SegmentBar } from '@/components/charts/bars'
 import { useTip, tipHandlersFor } from '@/components/charts/tooltip'
 import { Button } from '@/components/ui/button'
@@ -13,11 +15,11 @@ import {
 } from '@/lib/party'
 import { fmt, pct1 } from '../../../shared/format.ts'
 import type { Choice, Contest } from '../../../shared/payload.ts'
-import type { CompassElection } from '../../../shared/schema/election.ts'
+import type { PartyElection } from '../../../shared/schema/election.ts'
 import { keyOf, partyOrder } from '../../../shared/stats/results.ts'
 
 export type RaceContext = {
-  election: CompassElection
+  election: PartyElection
   P: PartyLookup
   matchParty: string | null
 }
@@ -67,7 +69,7 @@ export function CandidateRow({
         <span className="truncate font-medium">{c.name}</span>
         {c.winner ? (
           <span className="bg-foreground text-background rounded px-1 text-[10px] font-semibold uppercase">
-            elected
+            {ctx.election.ballot === 'chambers' ? 'called' : 'elected'}
           </span>
         ) : null}
         {c.incumbent ? (
@@ -131,7 +133,9 @@ export function Race({
   const sub =
     contest.kind === 'district'
       ? `${boxes || 'no boxes yet'} · ${fmt(contest.ballots)} votes${d && d.last && d.last.party && P[d.last.party] ? ` · last time: ${P[d.last.party].short} by ${d.last.margin} points` : ''}`
-      : `${contest.voteFor === 1 ? 'vote for 1' : `top ${contest.voteFor} elected`} · ${fmt(contest.ballots)} ballots`
+      : contest.reporting != null
+        ? `${pct1(contest.reporting)} of the expected vote in · ${fmt(contest.ballots)} votes`
+        : `${contest.voteFor === 1 ? 'vote for 1' : `top ${contest.voteFor} elected`} · ${fmt(contest.ballots)} ballots`
   const shown =
     contest.voteFor === 1
       ? top.length
@@ -208,6 +212,88 @@ export function Race({
         </div>
       ) : null}
     </Section>
+  )
+}
+
+/** A contest's rows without the section frame (inside "Your riding" and the lists). */
+export function RaceBody({
+  contest,
+  ctx,
+}: {
+  contest: Contest
+  ctx: RaceContext
+}) {
+  return (
+    <div className="[&>section]:border-0 [&>section]:p-0 [&>section]:shadow-none [&>section>div:first-child]:hidden">
+      <Race id={`race-${contest.id}`} contest={contest} ctx={ctx} />
+    </div>
+  )
+}
+
+/** One line per contest: the leader, their margin and a note on the right (ballot boxes, or the share reported), opening to the whole contest. */
+export function RaceRow({
+  contest,
+  ctx,
+  meta,
+}: {
+  contest: Contest
+  ctx: RaceContext
+  meta?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const lead = contest.choices[0]
+  const second = contest.choices[1]
+  const gap = lead && second ? lead.pct - second.pct : 0
+  const note =
+    meta != null
+      ? meta
+      : contest.boxes && contest.boxes.final
+        ? `${(contest.boxes.advance ? contest.boxes.advance[0] : 0) + contest.boxes.final[0]}/${(contest.boxes.advance ? contest.boxes.advance[1] : 0) + contest.boxes.final[1]}`
+        : ''
+  return (
+    <details
+      open={open}
+      onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
+    >
+      <summary className="nums grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 px-3 py-2 text-sm sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_3.5rem]">
+        <span className="truncate font-medium">{contest.label}</span>
+        <span
+          className="col-span-2 flex items-center gap-1.5 sm:col-span-1"
+          style={
+            {
+              '--party':
+                lead && lead.votes > 0
+                  ? partyColor(lead.party)
+                  : 'var(--party-other)',
+            } as React.CSSProperties
+          }
+        >
+          <Swatch party={lead && lead.votes > 0 ? lead.party : null} />
+          {lead && lead.votes > 0 ? (
+            <>
+              <span className="truncate">{lead.name}</span>
+              <small className="text-muted-foreground">
+                {labelOf(ctx.P, lead)}
+                {second ? ` +${gap.toFixed(1)}` : ''}
+                {lead.winner && ctx.election.ballot === 'chambers'
+                  ? ' · called'
+                  : ''}
+              </small>
+            </>
+          ) : (
+            <small className="text-muted-foreground">no votes yet</small>
+          )}
+        </span>
+        <span className="text-muted-foreground col-start-2 row-start-1 text-right text-xs sm:col-start-3">
+          {note}
+        </span>
+      </summary>
+      {open ? (
+        <div className="px-3 pb-3">
+          <RaceBody contest={contest} ctx={ctx} />
+        </div>
+      ) : null}
+    </details>
   )
 }
 

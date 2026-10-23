@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { loadElections } from '../../scripts/lib/elections.ts'
-import { alberta, bc, vancouver } from '../../scripts/fixtures/load.ts'
+import {
+  alberta,
+  bc,
+  tinyChambers,
+  vancouver,
+} from '../../scripts/fixtures/load.ts'
 import { fromRow, toRow } from '../election-row.ts'
 import { configProblems } from '../config-guard.ts'
 import { ElectionSchema, electionProblems, parseElection } from './election.ts'
@@ -13,6 +18,7 @@ describe('election documents', () => {
     expect(elections.map((e) => e.slug)).toEqual([
       'alberta-2026',
       'bc-2026',
+      'us-2026',
       'vancouver-2026',
     ])
     for (const e of elections) expect(electionProblems(e), e.slug).toEqual([])
@@ -62,6 +68,83 @@ describe('election documents', () => {
       for (const p of e.parties)
         expect(p.color, `${e.slug} ${p.key}`).toMatch(/^#/)
     }
+  })
+
+  it('accept a results-only chambers document and cross-check it', () => {
+    const tiny = tinyChambers()
+    expect(tiny.ballot).toBe('chambers')
+    expect(tiny.chambers.map((c) => c.key)).toEqual([
+      'house',
+      'senate',
+      'governor',
+    ])
+    expect(tiny.chambers[0].holdovers).toEqual({})
+    expect(electionProblems(tiny)).toEqual([])
+    expect(configProblems(fromRow(toRow(tiny)))).toEqual([])
+    expect(ElectionSchema.safeParse({ ...tiny, questions: [] }).success).toBe(
+      false,
+    )
+    const problems = (patch: (e: typeof tiny) => unknown) =>
+      electionProblems(
+        ElectionSchema.parse(patch(JSON.parse(JSON.stringify(tiny)))),
+      )
+    expect(
+      problems((e) => ({ ...e, chambers: [e.chambers[0], e.chambers[0]] })),
+    ).toContain('chamber keys must be unique')
+    expect(
+      problems((e) => ({
+        ...e,
+        results: { ...e.results, races: { house: 1 } },
+      })),
+    ).toContain('results.races: a race id per chamber')
+    expect(
+      problems((e) => ({
+        ...e,
+        chambers: [
+          { ...e.chambers[0], divisions: { 'ak-al': 'Alaska at-large' } },
+          ...e.chambers.slice(1),
+        ],
+      })),
+    ).toContain('house: 1 divisions for 4 seats less 0 holdovers')
+    expect(
+      problems((e) => ({
+        ...e,
+        chambers: [
+          {
+            ...e.chambers[0],
+            divisions: { ...e.chambers[0].divisions, 'zz-01': 'Nowhere 1' },
+          },
+          ...e.chambers.slice(1),
+        ],
+      })),
+    ).toContain('house: division zz-01 is in no region')
+    expect(
+      problems((e) => ({
+        ...e,
+        chambers: [
+          e.chambers[0],
+          { ...e.chambers[1], holdovers: { dem: 1, lib: 1 } },
+          e.chambers[2],
+        ],
+      })),
+    ).toContain('senate: holdover party "lib" is unknown')
+    expect(
+      problems((e) => ({
+        ...e,
+        chambers: [{ ...e.chambers[0], majority: 9 }, ...e.chambers.slice(1)],
+      })),
+    ).toContain('house: majority exceeds seats')
+    expect(
+      problems((e) => ({
+        ...e,
+        affiliations: { Democratic: 'dem', Whig: 'whig' },
+      })),
+    ).toEqual(
+      expect.arrayContaining([
+        'affiliations: unknown party "whig"',
+        'gop: no feed affiliation maps to it',
+      ]),
+    )
   })
 
   it('round-trip through the elections row', () => {

@@ -59,15 +59,17 @@ After making changes from a prompt and BEFORE committing:
   `pnpm elections:push` upserts by slug; CI runs it against production after
   the deploy when a merge to main changes `elections/`, so merging a document
   change makes it live. New elections: `docs/new-vote.md`.
-- **Shared code** (`shared/`): parsers (one per feed format, deep-equal to
-  cubby's output: `scripts/fixtures/golden/payloads.json`), stats for the
-  three ballot modes, the compass scoring and ballot/riding cards, the
+- **Shared code** (`shared/`): parsers (one per feed format; the cubby-era
+  ones deep-equal cubby's output: `scripts/fixtures/golden/payloads.json`),
+  stats for the four ballot modes, the compass scoring and ballot/riding cards, the
   frozen hash grammar (`permalink.ts`), the fetch policy, hand-rolled
   formatting. No DOM, no Node, no Intl: `tsconfig.server.json` typechecks it
   without the DOM lib and eslint restricts the globals.
 - **Hooks** (`server/`): one `Db` interface (`db.ts`) with a PocketBase
   implementation and an in-memory one for tests. `store.ts` is the only
-  writer of `results`. `routes.ts` (ingest, source, fetch), `pages.ts`
+  writer of `results`; a new row strips the previous one's detail
+  (`stripDetail` is format-aware: referendum division rows, every contest
+  of a civicapi row) so the history the page loads stays small. `routes.ts` (ingest, source, fetch), `pages.ts`
   (`GET /{slug}`, markdown, `llms.txt`), `mcp/` (rpc core, tools, serve).
   `scripts/build-hooks.ts` bundles `server/lib.ts` into
   `pb_hooks/lib/voting.js`; the committed `pb_hooks/*.pb.js` are one-line
@@ -75,14 +77,18 @@ After making changes from a prompt and BEFORE committing:
 - **Frontend** (`src/`): no router. `App.tsx` reads the slug from the path;
   `src/lib/use-hash.ts` tracks the hash. `views/election-page.tsx` owns the
   tabs and the compass/ballot state the results view needs; the compass
-  (`views/compass/`), the referendum ballot (`views/ballot/`) and the three
-  results views (`views/results/`) sit on the shared stats. Charts are
-  `components/charts/` (one tooltip context, `useMeasure` for width).
+  (`views/compass/`), the referendum ballot (`views/ballot/`) and the four
+  results views (`views/results/`) sit on the shared stats. A `chambers`
+  election (results only, e.g. `us-2026`) shows no tabs and always carries
+  `#/results`. Charts are `components/charts/` (one tooltip context,
+  `useMeasure` for width).
 - **Results maps**: `pnpm geo` (`scripts/geo/build.ts`, mapshaper) turns the
   official boundary files into `src/geo/<set>.json` (generated and
   committed; never edit by hand; sources cached in the ignored
-  `.geo-cache/`): a province frame plus city insets, one projected SVG path
-  per division code. An election opts in with `boundaries`. The geometry
+  `.geo-cache/`): a `province` frame (the whole area) plus city insets, one
+  projected SVG path per division code (the Census files are projected with
+  Albers USA on the way). An election opts in with `boundaries`, a
+  chambers election per chamber. The geometry
   loads lazily into its own hashed chunk (`components/charts/choropleth.tsx`).
   Fills blend the choice colours with nested CSS `color-mix` over the page
   tokens (`src/lib/blend.ts`) using `shared/stats/blend.ts`, which cubes the
@@ -144,6 +150,12 @@ After making changes from a prompt and BEFORE committing:
    fetch keeps failing, `pnpm relay --election <slug> --source <url>` pushes
    from a laptop instead.
 4. Official count: `pnpm relay --election <slug> --source <url> --official --once`.
+   `us-2026` (civicAPI, three race documents per fetch) has no official
+   step: the winners are civicAPI's calls. Its source is the base URL,
+   `POST /_voting/source/us-2026?url=https://civicapi.org/api/v2/race/`;
+   the fetch starts at pollsClose (23:00 UTC Nov 3) and runs 96 hours, so
+   the webhook `GET /_voting/fetch?slug=us-2026` should cover at least
+   23:00 UTC Nov 3 to 06:00 UTC Nov 4 (Alaska closes), ideally the window.
 5. This instance is the system of record for every election; cubby.fyi
    ingests nothing. Alberta moved here on 2026-10-20 (cubby's source
    cleared, then a last sync) and BC night runs only here. The one-off

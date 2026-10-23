@@ -5,12 +5,14 @@
 import type { Payload } from '../payload.ts'
 import { FeedError } from '../payload.ts'
 import type { Election } from '../schema/election.ts'
+import { normalizeCivicapi } from './civicapi.ts'
 import { normalizeEabDash } from './eab-dash.ts'
 import { normalizeEabRef } from './eab-ref.ts'
 import { normalizeEnr } from './enr.ts'
 import { normalizeVancouver } from './vancouver.ts'
 
 export { FeedError }
+export { contestId, normalizeCivicapi } from './civicapi.ts'
 export { dashSource, normalizeEabDash } from './eab-dash.ts'
 export { normalizeEabRef, parseLocations } from './eab-ref.ts'
 export { normalizeEnr, parseAsOf } from './enr.ts'
@@ -27,22 +29,27 @@ export function normalize(raw: unknown, election: Election): Payload {
     return normalizeEabRef(raw, election)
   if (election.ballot === 'referendum' && format === 'eab-dash')
     return normalizeEabDash(raw, election)
+  if (election.ballot === 'chambers' && format === 'civicapi')
+    return normalizeCivicapi(raw, election)
   throw new FeedError(
     'bad_config',
     `unknown results format "${format}" for a ${election.ballot} ballot`,
   )
 }
 
-/** The payload without its per-division rows: what an older snapshot keeps once a newer one carries them. */
+/**
+ * The payload without its detail: what an older snapshot keeps once a newer
+ * one carries it, or null when there is nothing to drop. A referendum row
+ * loses its per-division rows (eds); a civicapi row loses its contests and
+ * keeps the per-chamber tallies the timelines read.
+ */
 export function stripDetail(
   payload: Payload | null | undefined,
 ): Payload | null {
-  if (
-    !payload ||
-    !Array.isArray(payload.contests) ||
-    !payload.contests.some((c) => c.eds && c.eds.length)
-  )
-    return null
+  if (!payload || !Array.isArray(payload.contests)) return null
+  if (payload.format === 'civicapi')
+    return payload.contests.length ? { ...payload, contests: [] } : null
+  if (!payload.contests.some((c) => c.eds && c.eds.length)) return null
   return {
     ...payload,
     contests: payload.contests.map((c) => ({ ...c, eds: [] })),

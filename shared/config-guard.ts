@@ -4,8 +4,8 @@
 // catches a row written some other way before the parsers trip over it.
 import type { Election } from './schema/election.ts'
 
-const BALLOTS = ['at-large', 'district', 'referendum']
-const FORMATS = ['vancouver', 'ebc-enr', 'eab-ref', 'eab-dash']
+const BALLOTS = ['at-large', 'district', 'referendum', 'chambers']
+const FORMATS = ['vancouver', 'ebc-enr', 'eab-ref', 'eab-dash', 'civicapi']
 
 /** Problems with a document's shape, or [] when it looks like an election. */
 export function configProblems(doc: unknown): string[] {
@@ -21,7 +21,10 @@ export function configProblems(doc: unknown): string[] {
     !Number.isFinite(Date.parse(d.pollsClose))
   )
     problems.push('pollsClose')
-  if (!Array.isArray(d.questions) || !d.questions.length)
+  if (
+    d.ballot !== 'chambers' &&
+    (!Array.isArray(d.questions) || !d.questions.length)
+  )
     problems.push('questions')
   const results = d.results as Record<string, unknown> | undefined
   if (!results || typeof results !== 'object') problems.push('results')
@@ -31,6 +34,8 @@ export function configProblems(doc: unknown): string[] {
     problems.push('parties')
   if (d.ballot === 'district' && !Array.isArray(d.districts))
     problems.push('districts')
+  if (d.ballot === 'chambers' && !Array.isArray(d.chambers))
+    problems.push('chambers')
   return problems
 }
 

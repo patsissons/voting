@@ -2,7 +2,7 @@
 // scoped to the election page, so a new election brings its own palette in
 // its document instead of a stylesheet edit.
 import type { CSSProperties } from 'react'
-import type { CompassElection, Election } from '../../shared/schema/election.ts'
+import type { Election, PartyElection } from '../../shared/schema/election.ts'
 
 /** The CSS var reference for a party key ('other' and null fall back to the grey). */
 export const partyColor = (key: string | null | undefined): string =>
@@ -29,12 +29,12 @@ export function partyCss(election: Election): string {
   return `.election-scope{${light}}.dark .election-scope{${dark}}`
 }
 
-export type PartyLookup<E extends CompassElection = CompassElection> = Record<
+export type PartyLookup<E extends PartyElection = PartyElection> = Record<
   string,
   E['parties'][number]
 >
 
-export function partyLookup<E extends CompassElection>(
+export function partyLookup<E extends PartyElection>(
   election: E,
 ): PartyLookup<E> {
   const out: PartyLookup<E> = {}
@@ -43,11 +43,11 @@ export function partyLookup<E extends CompassElection>(
 }
 
 export const partyName = (
-  P: PartyLookup,
+  P: PartyLookup<PartyElection>,
   key: string | null | undefined,
 ): string => (key && key !== 'other' && P[key] ? P[key].name : 'Others')
 export const partyShort = (
-  P: PartyLookup,
+  P: PartyLookup<PartyElection>,
   key: string | null | undefined,
 ): string => (key && key !== 'other' && P[key] ? P[key].short : 'Others')
 

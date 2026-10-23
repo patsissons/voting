@@ -39,7 +39,7 @@ const check = async (name: string, fn: () => Promise<void>) => {
 
 if (local) {
   const admin = await clientFor({ flag: () => undefined, has: () => true })
-  for (const slug of ['vancouver-2026', 'bc-2026', 'alberta-2026'])
+  for (const slug of ['vancouver-2026', 'bc-2026', 'alberta-2026', 'us-2026'])
     await admin.upsertElection(loadElection(slug))
 }
 

@@ -11,6 +11,14 @@ const rows = [
     ballot: 'district',
   },
   {
+    id: 'c',
+    slug: 'us-2026',
+    title: 'US Midterms 2026',
+    description: 'Live results.',
+    voting_day: '2026-11-03 12:00:00.000Z',
+    ballot: 'chambers',
+  },
+  {
     id: 'b',
     slug: 'vancouver-2026',
     title: 'Vancouver Votes 2026',
@@ -39,6 +47,7 @@ describe('IndexPage', () => {
       screen.getByRole('link', { name: /Vancouver Votes 2026/ }),
     ).toHaveAttribute('href', '/vancouver-2026')
     expect(screen.getByText('Riding by riding')).toBeInTheDocument()
+    expect(screen.getByText('Live results')).toBeInTheDocument()
     expect(screen.getByText('Saturday, October 24')).toBeInTheDocument()
   })
 

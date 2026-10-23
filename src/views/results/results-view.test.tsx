@@ -1,8 +1,8 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { TipProvider } from '@/components/charts/tooltip'
 import { feedText, fixtureFeeds } from '../../../scripts/fixtures/fixture.ts'
-import { alberta, bc, vancouver } from '../../../scripts/fixtures/load.ts'
+import { alberta, bc, us, vancouver } from '../../../scripts/fixtures/load.ts'
 import { normalize } from '../../../shared/parsers/index.ts'
 import type { Election } from '../../../shared/schema/election.ts'
 import { ResultsView } from './results-view'
@@ -131,6 +131,89 @@ describe('ResultsView', () => {
     const fills = paths.map((p) => p.getAttribute('fill') || '')
     expect(fills.every((f) => f.includes('var(--party-'))).toBe(true)
     expect(fills.some((f) => f.startsWith('color-mix(in oklab'))).toBe(true)
+  })
+
+  it('waits without a compass link for a results-only election', () => {
+    mount(us(), [])
+    expect(
+      screen.getByRole('heading', { name: 'No results yet' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: 'the ballot compass' }),
+    ).toBeNull()
+    expect(screen.getByText(/as civicAPI reports them/)).toBeInTheDocument()
+  })
+
+  it('renders every chamber with its balance, races and the state picker', async () => {
+    mount(us())
+    for (const name of [
+      'Your state',
+      'House of Representatives',
+      'Senate',
+      'Governors',
+    ])
+      expect(screen.getByRole('heading', { name })).toBeInTheDocument()
+    expect(
+      screen.getAllByRole('heading', { name: 'Balance of power' }),
+    ).toHaveLength(3)
+    expect(screen.getAllByRole('heading', { name: 'Every race' })).toHaveLength(
+      3,
+    )
+    const house = document.getElementById('house-balance')!
+    const bar = within(house).getByRole('img', { name: /218 for a majority/ })
+    expect(bar.getAttribute('aria-label')).toMatch(/Dem \d+ \(\d+ called/)
+    expect(within(house).getByText(/for a majority/)).toBeInTheDocument()
+    expect(screen.getByText('Races called')).toBeInTheDocument()
+    expect(
+      screen.getByRole('combobox', { name: 'Your state' }),
+    ).toHaveTextContent('Choose a state')
+    const [map] = await screen.findAllByRole('img', {
+      name: /^House of Representatives: each district coloured/,
+    })
+    const fills = [...map.querySelectorAll('path[data-code]')].map(
+      (p) => p.getAttribute('fill') || '',
+    )
+    expect(fills).toHaveLength(435)
+    expect(fills.some((f) => f.startsWith('color-mix(in oklab'))).toBe(true)
+    expect(fills.some((f) => /^var\(--party-(dem|gop)/.test(f))).toBe(true)
+    const [states] = await screen.findAllByRole('img', {
+      name: /^Senate: each state coloured/,
+    })
+    expect(states.querySelectorAll('path[data-code]')).toHaveLength(50)
+  })
+
+  it('shows the chosen state’s races first', () => {
+    localStorage.setItem('voting:us-2026:district', 'ak')
+    mount(us())
+    expect(
+      screen.getByRole('heading', { name: 'Your state: Alaska' }),
+    ).toBeInTheDocument()
+    const mine = document.getElementById('mine')!
+    expect(
+      within(mine).getByRole('heading', {
+        name: 'House of Representatives: Alaska at-large',
+      }),
+    ).toBeInTheDocument()
+    expect(
+      within(mine).getByRole('heading', { name: 'Senate' }),
+    ).toBeInTheDocument()
+    expect(
+      within(mine).getByRole('heading', { name: 'Governors' }),
+    ).toBeInTheDocument()
+    const races = document.getElementById('senate-races')!
+    const groups = () =>
+      [...races.querySelectorAll('details.rounded-lg')].map((d) => ({
+        state: d.querySelector('summary span')!.textContent!,
+        open: d.hasAttribute('open'),
+      }))
+    expect(groups().find((g) => g.state.startsWith('Alaska'))!.open).toBe(true)
+    expect(groups().find((g) => g.state.startsWith('Georgia'))!.open).toBe(
+      false,
+    )
+    fireEvent.change(within(races).getByRole('searchbox'), {
+      target: { value: 'georgia' },
+    })
+    expect(groups().map((g) => g.state)).toEqual(['Georgia'])
   })
 
   it('maps the first question with division rows on the Alberta map', async () => {

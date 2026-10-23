@@ -2,11 +2,13 @@
 // rows, authored as elections/<slug>.json and stored in the `config` column
 // of its `elections` row (see shared/election-row.ts for the split). Strict
 // schemas, so a typo in a document fails `pnpm elections:check` instead of
-// silently rendering nothing. Three ballot modes share the header fields:
+// silently rendering nothing. Four ballot modes share the header fields:
 //
 //   at-large    one city-wide ballot, parties run slates (Vancouver)
 //   district    one vote for one seat in the voter's riding (BC)
 //   referendum  yes/no (or two-option) questions, no parties (Alberta)
+//   chambers    one seat per division, grouped by chamber; results only,
+//               no compass (the US midterms)
 //
 // The results block names the feed format the parsers read and what the
 // server-side fetch may touch. zod runs in Node and the browser; the hooks
@@ -26,11 +28,21 @@ const axis = z.strictObject({
 const color = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'a #rrggbb colour')
 const cssColor = z.string().min(1)
 
-export const BALLOTS = ['at-large', 'district', 'referendum'] as const
+export const BALLOTS = [
+  'at-large',
+  'district',
+  'referendum',
+  'chambers',
+] as const
 export type Ballot = (typeof BALLOTS)[number]
 
 /** The boundary sets the results maps draw (src/geo/<set>.json, `pnpm geo`). */
-export const BOUNDARY_SETS = ['ab-2017', 'bc-2023'] as const
+export const BOUNDARY_SETS = [
+  'ab-2017',
+  'bc-2023',
+  'us-state',
+  'us-cd119',
+] as const
 export type BoundarySetKey = (typeof BOUNDARY_SETS)[number]
 const boundaries = z.enum(BOUNDARY_SETS).optional()
 
@@ -136,11 +148,24 @@ const eabDashResults = z.strictObject({
   ...resultsBase,
 })
 
+/**
+ * civicAPI's aggregate race documents, one per chamber: `source` is the base
+ * URL (https://civicapi.org/api/v2/race/) and `races` maps each chamber key
+ * to the race id the fetch appends to it.
+ */
+const civicapiResults = z.strictObject({
+  format: z.literal('civicapi'),
+  source: url.nullable(),
+  races: z.record(z.string().min(1), z.number().int().positive()),
+  ...resultsBase,
+})
+
 export const ResultsSchema = z.discriminatedUnion('format', [
   vancouverResults,
   enrResults,
   eabRefResults,
   eabDashResults,
+  civicapiResults,
 ])
 
 // ---- compass questions (at-large and district) ------------------------------
@@ -308,21 +333,71 @@ export const ReferendumSchema = z.strictObject({
   results: z.discriminatedUnion('format', [eabRefResults, eabDashResults]),
 })
 
+// ---- chambers (results only) -------------------------------------------------
+
+/** A party on a results-only page: a name and colours, no compass position. */
+const chamberParty = z.strictObject({
+  key: partyBase.key,
+  name: z.string().min(1),
+  short: z.string().min(1),
+  url: url.optional(),
+  color,
+  colorDark: color.optional(),
+})
+
+/**
+ * One chamber (or a set of offices, like the governors): `seats` is the whole
+ * body, `holdovers` the seats not up this time per party, and `divisions`
+ * the contests the feed reports (code -> short name), so divisions + holdovers
+ * = seats. `boundaries` names the map set whose codes are the division codes.
+ */
+const chamber = z.strictObject({
+  key: z.string().regex(/^[a-z][a-z0-9]*$/),
+  label: z.string().min(1),
+  short: z.string().min(1),
+  seats: z.number().int().positive(),
+  majority: z.number().int().positive().optional(),
+  holdovers: z.record(z.string(), z.number().int().nonnegative()).default({}),
+  boundaries,
+  divisions: z.record(z.string().min(1), z.string().min(1)),
+})
+
+export const ChambersSchema = z.strictObject({
+  ...head,
+  ballot: z.literal('chambers'),
+  ...header,
+  parties: z.array(chamberParty).min(1),
+  /** The feed's party labels to party keys; anything else stays unaffiliated. */
+  affiliations: z.record(z.string(), z.string()),
+  /** The states (or provinces): division codes are `<key>` or `<key>-<n>`. */
+  regions: z
+    .array(z.strictObject({ key: z.string().min(1), label: z.string().min(1) }))
+    .min(1),
+  chambers: z.array(chamber).min(1),
+  results: civicapiResults,
+})
+
 export const ElectionSchema = z.discriminatedUnion('ballot', [
   AtLargeSchema,
   DistrictSchema,
   ReferendumSchema,
+  ChambersSchema,
 ])
 
 export type AtLargeElection = z.infer<typeof AtLargeSchema>
 export type DistrictElection = z.infer<typeof DistrictSchema>
 export type ReferendumElection = z.infer<typeof ReferendumSchema>
+export type ChambersElection = z.infer<typeof ChambersSchema>
 export type Election = z.infer<typeof ElectionSchema>
 export type CompassElection = AtLargeElection | DistrictElection
+/** Every mode with a parties list (everything but a referendum). */
+export type PartyElection = CompassElection | ChambersElection
 export type Results = z.infer<typeof ResultsSchema>
 export type AtLargeParty = z.infer<typeof atLargeParty>
 export type DistrictParty = z.infer<typeof districtParty>
-export type Party = AtLargeParty | DistrictParty
+export type ChamberParty = z.infer<typeof chamberParty>
+export type Chamber = z.infer<typeof chamber>
+export type Party = AtLargeParty | DistrictParty | ChamberParty
 export type CompassQuestion = z.infer<typeof compassQuestion>
 export type CompassOption = z.infer<typeof compassOption>
 export type ReferendumQuestion = z.infer<typeof referendumQuestion>
@@ -387,6 +462,41 @@ export function electionProblems(e: Election): string[] {
   }
   const keys = new Set(e.parties.map((p) => p.key))
   if (keys.size !== e.parties.length) problems.push('party keys must be unique')
+  if (e.ballot === 'chambers') {
+    const chamberKeys = e.chambers.map((c) => c.key)
+    if (new Set(chamberKeys).size !== chamberKeys.length)
+      problems.push('chamber keys must be unique')
+    const raceKeys = Object.keys(e.results.races).sort()
+    if (raceKeys.join() !== [...chamberKeys].sort().join())
+      problems.push('results.races: a race id per chamber')
+    for (const key of Object.values(e.affiliations))
+      if (!keys.has(key)) problems.push(`affiliations: unknown party "${key}"`)
+    for (const p of e.parties) {
+      if (!Object.values(e.affiliations).includes(p.key))
+        problems.push(`${p.key}: no feed affiliation maps to it`)
+    }
+    const regions = new Set(e.regions.map((r) => r.key))
+    for (const c of e.chambers) {
+      let held = 0
+      for (const [key, n] of Object.entries(c.holdovers)) {
+        if (!keys.has(key))
+          problems.push(`${c.key}: holdover party "${key}" is unknown`)
+        held += n
+      }
+      const divisions = Object.keys(c.divisions)
+      if (divisions.length !== c.seats - held)
+        problems.push(
+          `${c.key}: ${divisions.length} divisions for ${c.seats} seats less ${held} holdovers`,
+        )
+      if (c.majority != null && c.majority > c.seats)
+        problems.push(`${c.key}: majority exceeds seats`)
+      for (const code of divisions) {
+        if (!regions.has(code.split('-')[0]))
+          problems.push(`${c.key}: division ${code} is in no region`)
+      }
+    }
+    return problems
+  }
   let withAxis = 0
   for (const q of e.questions) {
     for (const o of q.opts) {

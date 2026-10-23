@@ -1,6 +1,6 @@
 // Election-night relay: polls an election's results source and pushes each
 // new snapshot to the ingest route (POST /_voting/ingest/<slug>), which
-// normalizes and stores it. Four sources, chosen by results.format in
+// normalizes and stores it. Five sources, chosen by results.format in
 // elections/<slug>.json:
 //   vancouver  results.vancouver.ca/data/arearesults.json, fetched through
 //              headless Chrome over the DevTools protocol: the City answers
@@ -14,6 +14,8 @@
 //              posted as one JSON document { fetchedAt, pages }.
 //   eab-dash   the JSON behind Elections Alberta's results dashboard, posted
 //              as is; a retired feed version is followed to the current one.
+//   civicapi   civicAPI's race documents, one per chamber (results.races),
+//              fetched together and posted as { fetchedAt, races }.
 //
 //   VOTING_INGEST_TOKEN=... pnpm relay --election bc-2026 --source <url>
 //     [--target https://voting.lgtm.page] [--match <regex>] [--interval 60]
@@ -181,6 +183,28 @@ if (format === 'eab-ref') {
     return doc.pages.length
       ? { status: 200, text: JSON.stringify(doc) }
       : { status: 0, text: 'every page failed' }
+  }
+} else if (format === 'civicapi') {
+  const races =
+    election.results.format === 'civicapi' ? election.results.races : {}
+  fetchFeed = async () => {
+    const doc: { fetchedAt: string; races: Record<string, unknown> } = {
+      fetchedAt: new Date().toISOString(),
+      races: {},
+    }
+    for (const [key, id] of Object.entries(races)) {
+      try {
+        const res = await fetch(bust(`${source}${id}`), {
+          cache: 'no-store',
+          headers: { accept: 'application/json,*/*' },
+        })
+        if (!res.ok) return { status: res.status, text: `${key} ${res.status}` }
+        doc.races[key] = await res.json()
+      } catch (err) {
+        return { status: 0, text: `${key} ${(err as Error).message || err}` }
+      }
+    }
+    return { status: 200, text: JSON.stringify(doc) }
   }
 } else if (format === 'ebc-enr' || format === 'eab-dash') {
   const get = async (url: string) => {
