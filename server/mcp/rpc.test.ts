@@ -205,8 +205,17 @@ describe('rpc core', () => {
     })
     expect(shapeResult(null)).toEqual({ content: [{ type: 'text', text: '' }] })
     expect(
-      shapeResult('x'.repeat(200001)).content[0].text!.endsWith('[truncated]'),
+      shapeResult('x'.repeat(200001)).content[0].text!.endsWith(
+        '\n[truncated at 200000 characters]',
+      ),
     ).toBe(true)
+    const wide = shapeResult({ text: 'x'.repeat(200001) })
+    expect(
+      wide.content[0].text!.endsWith(
+        '\n[truncated at 200000 characters; the full result is in structuredContent]',
+      ),
+    ).toBe(true)
+    expect(wide.structuredContent).toEqual({ text: 'x'.repeat(200001) })
     expect(validateModule(module)).toEqual([])
     expect(validateModule({ tools: [{ name: 'Bad Name' }], call: 1 })).toEqual([
       'tools[0].name must match /^[a-z][a-z0-9_]{0,63}$/',
