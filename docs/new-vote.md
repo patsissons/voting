@@ -104,7 +104,13 @@ read the payload, not the feed.
 
 `serverFetch: true` lets the hooks pull the source themselves inside
 `fetchHours` after `pollsClose` (every minute, throttled to
-`throttleSeconds`), once `results_source` is set on the row. For a
+`throttleSeconds`), once `results_source` is set on the row. Size
+`fetchHours` for the whole count, with room to spare: a hand count can run
+days past the authority's estimate (Alberta's 2026 referendum said 48 hours
+and was still reporting polls five days on), and once the window closes the
+page freezes on its last snapshot, still saying "Counting". Extending it
+later is a document change; the next fetch catches up to the feed's current
+state, not the steps in between. For a
 `civicapi` election the source is the base URL
 (`https://civicapi.org/api/v2/race/`) and the fetch appends each id in
 `results.races`, storing the chambers together or not at all:
