@@ -569,7 +569,9 @@ export function llmsText(entries: IndexEntry[], origin: string): string {
     `- Elections: ${origin}/api/collections/elections/records (published rows; the election document is the config column)`,
     `- Results: ${origin}/api/collections/results/records?filter=election="<id>"&sort=source_ts (one normalized snapshot per row, newest last; realtime at /api/realtime)`,
     `- MCP (Model Context Protocol, streamable HTTP, JSON-RPC over POST, no auth): ${origin}/mcp`,
-    '  - list_elections, get_election(slug, section?), latest_results(slug, contest?|district?|question?), results_series(slug, metric, contest?, since?), closest_districts(slug, n?), changing_hands(slug), question_divisions(slug, question, n?, sort?), summary(slug)',
+    '  - list_elections, get_election(slug, section?), latest_results(slug, contest?|district?|question?), results_series(slug, metric, contest?, since?, limit?), closest_districts(slug, n?), changing_hands(slug), question_divisions(slug, question, n?, sort?), summary(slug)',
+    '  - results_series pages: at most limit rows (default 500) oldest first, and next, when present, is the since for the following page',
+    "  - the host's edge refuses some default HTTP User-Agents (Python's urllib) with a 403; send any other User-Agent",
     `- Source: https://github.com/patsissons/voting`,
     '',
   )
