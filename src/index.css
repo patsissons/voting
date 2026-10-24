@@ -229,6 +229,26 @@
   stroke-width: 3;
   stroke-linecap: round;
 }
+.viz .viz-fit {
+  stroke: var(--muted-foreground);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.viz .viz-leader {
+  stroke: var(--muted-foreground);
+  stroke-width: 1;
+}
+.viz .viz-range-bar {
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+.viz .viz-range-tick {
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.viz .viz-range-value {
+  font-weight: 600;
+}
 
 /* The split-flap clock. */
 .flip {
