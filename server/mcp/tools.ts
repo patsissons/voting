@@ -27,7 +27,7 @@ import {
 import { electionOf, snapshotOf } from '../db.ts'
 import type { Db } from '../db.ts'
 import { electionMarkdown } from '../markdown.ts'
-import { InvalidParams } from './rpc.ts'
+import { InvalidParams, MAX_TEXT } from './rpc.ts'
 import type { Tool, ToolModule } from './rpc.ts'
 
 export type ToolContext = { db: Db; origin: string }
@@ -42,6 +42,35 @@ const readOnly = {
   readOnlyHint: true,
   idempotentHint: true,
   openWorldHint: false,
+}
+
+// results_series pages: rows per call by default and at most, and the text
+// budget a page must fit (shapeResult truncates past MAX_TEXT).
+export const SERIES_LIMIT = 500
+export const SERIES_MAX = 1000
+const SERIES_BUDGET = MAX_TEXT - 1000
+
+/**
+ * Cut a series page's rows until its pretty-printed JSON (the text
+ * shapeResult sends) fits the budget. next, the last kept row's stamp, is set
+ * whenever rows were cut or more follow, so since=next continues the series.
+ */
+export function fitRows<T extends { rows: { asOf: string }[] }>(
+  out: T,
+  more: boolean,
+  budget = SERIES_BUDGET,
+): T & { next?: string } {
+  let rows = out.rows
+  let size = JSON.stringify(out, null, 2).length
+  while (rows.length > 1 && size > budget) {
+    rows = rows.slice(0, Math.max(1, Math.floor((rows.length * budget) / size)))
+    size = JSON.stringify({ ...out, rows }, null, 2).length
+  }
+  const next =
+    rows.length && (more || rows.length < out.rows.length)
+      ? rows[rows.length - 1].asOf
+      : undefined
+  return next ? { ...out, rows, next } : { ...out, rows }
 }
 
 export const tools: Tool[] = [
@@ -92,7 +121,7 @@ export const tools: Tool[] = [
     name: 'results_series',
     title: 'Results over time',
     description:
-      'One row per stored snapshot: as-of stamp, polls reported and the metric. metric "ballots" (ballots counted), "polls" (polls reported), "seats" (ridings led per party in a riding election; in a chambers election pass chamber, a chamber key, for seats led and called per party), "share" (vote share per choice of a contest: pass contest, an office kind, a riding code, a chamber race id, or "q<n>" for a referendum question), "votes" (votes per choice of a contest). since narrows to stamps after an as-of value.',
+      'One row per stored snapshot: as-of stamp, polls reported and the metric. metric "ballots" (ballots counted), "polls" (polls reported), "seats" (ridings led per party in a riding election; in a chambers election pass chamber, a chamber key, for seats led and called per party), "share" (vote share per choice of a contest: pass contest, an office kind, a riding code, a chamber race id, or "q<n>" for a referendum question), "votes" (votes per choice of a contest). Rows come oldest first, at most limit per call (default 500, and fewer when wide rows would pass the response size); when more remain the result carries next: pass it as since for the following page. since narrows to stamps after an as-of value.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -104,6 +133,7 @@ export const tools: Tool[] = [
         contest: { type: 'string', maxLength: 60 },
         chamber: { type: 'string', maxLength: 20 },
         since: { type: 'string', maxLength: 40 },
+        limit: { type: 'integer', minimum: 1, maximum: SERIES_MAX },
       },
       required: ['slug', 'metric'],
       additionalProperties: false,
@@ -230,6 +260,98 @@ function findContest(
   )
 }
 
+/** The rows a results_series page returns, one per snapshot. */
+function seriesOf(
+  db: Db,
+  id: string,
+  election: Election,
+  rows: Snapshot[],
+  args: Record<string, unknown>,
+) {
+  const metric = String(args.metric)
+  const base = (s: Snapshot) => ({
+    asOf: s.source_ts,
+    polls: s.payload.polls,
+  })
+  if (metric === 'ballots')
+    return {
+      slug: election.slug,
+      metric,
+      rows: rows.map((s) => ({ ...base(s), ballots: s.payload.ballots })),
+    }
+  if (metric === 'polls')
+    return {
+      slug: election.slug,
+      metric,
+      rows: rows.map((s) => ({
+        ...base(s),
+        closed: s.payload.polls.closed,
+        total: s.payload.polls.total,
+      })),
+    }
+  if (metric === 'seats' && election.ballot === 'chambers') {
+    const chamber = args.chamber != null ? String(args.chamber) : ''
+    if (!election.chambers.some((c) => c.key === chamber))
+      throw new InvalidParams(
+        `seats needs chamber: one of ${election.chambers.map((c) => c.key).join(', ')}`,
+      )
+    return {
+      slug: election.slug,
+      metric,
+      chamber,
+      rows: rows.map((s) => {
+        const tally = s.payload.chambers && s.payload.chambers[chamber]
+        const led: Record<string, number> = {}
+        const called: Record<string, number> = {}
+        for (const p of (tally && tally.parties) || []) {
+          led[p.key] = p.leading
+          called[p.key] = p.called || 0
+        }
+        return {
+          ...base(s),
+          reporting: tally ? tally.reporting : 0,
+          led,
+          called,
+        }
+      }),
+    }
+  }
+  if (metric === 'seats') {
+    if (election.ballot !== 'district')
+      throw new InvalidParams('seats is for a riding election')
+    return {
+      slug: election.slug,
+      metric,
+      rows: rows.map((s) => ({
+        ...base(s),
+        led: Object.fromEntries(ridingsLed(ridingsOf(s.payload), election)),
+      })),
+    }
+  }
+  if (args.contest == null)
+    throw new InvalidParams(`metric "${metric}" needs contest`)
+  const key = String(args.contest)
+  const pick = (p: Payload) => findContest(p, election, { contest: key })
+  // an empty page (since at or past the end) still names the contest
+  const newest = rows.length ? rows[rows.length - 1] : latestOf(db, id)
+  const last = newest ? pick(newest.payload) : null
+  if (!last)
+    throw new InvalidParams(`no contest matching "${key}" in ${election.slug}`)
+  return {
+    slug: election.slug,
+    metric,
+    contest: { id: last.id, label: last.label, kind: last.kind },
+    choices: last.choices.map((c) => c.name),
+    rows: rows.map((s) => {
+      const c = pick(s.payload)
+      const values: Record<string, number> = {}
+      for (const ch of c ? c.choices : [])
+        values[ch.name] = metric === 'share' ? ch.pct : ch.votes
+      return { ...base(s), ballots: c ? c.ballots : 0, values }
+    }),
+  }
+}
+
 export function call(
   name: string,
   args: Record<string, unknown>,
@@ -320,90 +442,16 @@ export function call(
     }
     case 'results_series': {
       const { id, election } = load(db, args.slug)
-      const metric = String(args.metric)
       const since = args.since != null ? String(args.since) : ''
-      const rows = db.resultsFor(id, since || undefined).map(snapshotOf)
-      const base = (s: Snapshot) => ({
-        asOf: s.source_ts,
-        polls: s.payload.polls,
-      })
-      if (metric === 'ballots')
-        return {
-          slug: election.slug,
-          metric,
-          rows: rows.map((s) => ({ ...base(s), ballots: s.payload.ballots })),
-        }
-      if (metric === 'polls')
-        return {
-          slug: election.slug,
-          metric,
-          rows: rows.map((s) => ({
-            ...base(s),
-            closed: s.payload.polls.closed,
-            total: s.payload.polls.total,
-          })),
-        }
-      if (metric === 'seats' && election.ballot === 'chambers') {
-        const chamber = args.chamber != null ? String(args.chamber) : ''
-        if (!election.chambers.some((c) => c.key === chamber))
-          throw new InvalidParams(
-            `seats needs chamber: one of ${election.chambers.map((c) => c.key).join(', ')}`,
-          )
-        return {
-          slug: election.slug,
-          metric,
-          chamber,
-          rows: rows.map((s) => {
-            const tally = s.payload.chambers && s.payload.chambers[chamber]
-            const led: Record<string, number> = {}
-            const called: Record<string, number> = {}
-            for (const p of (tally && tally.parties) || []) {
-              led[p.key] = p.leading
-              called[p.key] = p.called || 0
-            }
-            return {
-              ...base(s),
-              reporting: tally ? tally.reporting : 0,
-              led,
-              called,
-            }
-          }),
-        }
-      }
-      if (metric === 'seats') {
-        if (election.ballot !== 'district')
-          throw new InvalidParams('seats is for a riding election')
-        return {
-          slug: election.slug,
-          metric,
-          rows: rows.map((s) => ({
-            ...base(s),
-            led: Object.fromEntries(ridingsLed(ridingsOf(s.payload), election)),
-          })),
-        }
-      }
-      if (args.contest == null)
-        throw new InvalidParams(`metric "${metric}" needs contest`)
-      const key = String(args.contest)
-      const pick = (p: Payload) => findContest(p, election, { contest: key })
-      const last = rows.length ? pick(rows[rows.length - 1].payload) : null
-      if (!last)
-        throw new InvalidParams(
-          `no contest matching "${key}" in ${election.slug}`,
-        )
-      return {
-        slug: election.slug,
-        metric,
-        contest: { id: last.id, label: last.label, kind: last.kind },
-        choices: last.choices.map((c) => c.name),
-        rows: rows.map((s) => {
-          const c = pick(s.payload)
-          const values: Record<string, number> = {}
-          for (const ch of c ? c.choices : [])
-            values[ch.name] = metric === 'share' ? ch.pct : ch.votes
-          return { ...base(s), ballots: c ? c.ballots : 0, values }
-        }),
-      }
+      const limit = args.limit != null ? Number(args.limit) : SERIES_LIMIT
+      // one row past the page says whether another page follows
+      const page = db
+        .resultsFor(id, since || undefined, limit + 1)
+        .map(snapshotOf)
+      return fitRows(
+        seriesOf(db, id, election, page.slice(0, limit), args),
+        page.length > limit,
+      )
     }
     case 'closest_districts': {
       const { id, election } = load(db, args.slug)

@@ -81,7 +81,7 @@ export function memoryDb(): MemoryDb {
     },
     hasOfficialResult: (id) =>
       results.some((r) => r.get('election') === id && !!r.get('official')),
-    resultsFor: (id, afterTs) =>
+    resultsFor: (id, afterTs, limit) =>
       results
         .filter(
           (r) =>
@@ -90,7 +90,8 @@ export function memoryDb(): MemoryDb {
         )
         .sort((a, b) =>
           a.getString('source_ts').localeCompare(b.getString('source_ts')),
-        ),
+        )
+        .slice(0, limit || undefined),
     newResult: () => new MemoryRow('results', '', {}),
     save(row) {
       const r = row as MemoryRow

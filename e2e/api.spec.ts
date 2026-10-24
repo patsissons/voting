@@ -126,6 +126,21 @@ test.describe('agent surface', () => {
       })
     ).json()
     expect(series.result.structuredContent.rows.length).toBe(10)
+    const paged = await (
+      await rpc({
+        jsonrpc: '2.0',
+        id: 6,
+        method: 'tools/call',
+        params: {
+          name: 'results_series',
+          arguments: { slug: 'alberta-2026', metric: 'ballots', limit: 4 },
+        },
+      })
+    ).json()
+    expect(paged.result.structuredContent.rows.length).toBe(4)
+    expect(paged.result.structuredContent.next).toBe(
+      paged.result.structuredContent.rows[3].asOf,
+    )
     const bad = await (
       await rpc({
         jsonrpc: '2.0',
