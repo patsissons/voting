@@ -354,7 +354,7 @@
       { "label": "The Tyee", "url": "https://thetyee.ca/" }
     ],
     "serverFetch": true,
-    "fetchHours": 12,
+    "fetchHours": 48,
     "baseline": { "year": 2024, "ballots": 2038787, "label": "initial count" },
     "earlyVote": { "format": "ebc-advance", "source": "https://elections.bc.ca/2026election/2026-advance-voting-turnout.pdf", "prior": { "source": "https://elections.bc.ca/2024election/2024-advance-voting-turnout.pdf", "label": "2024 advance voting" }, "page": { "label": "Elections BC, advance voting turnout", "url": "https://elections.bc.ca/2026-provincial-election/" }, "boundaries": "bc-2023" }
   }

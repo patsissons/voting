@@ -30,6 +30,8 @@ describe('shouldFetch', () => {
         close + bcDoc.results.fetchHours! * 3600000 + 1,
       ),
     ).toBe('window_closed')
+    // A count that runs into the next day stays inside the window.
+    expect(shouldFetch(bcDoc, state, close + 24 * 3600000)).toBe('')
     expect(shouldFetch(bcDoc, { ...state, source: '' }, close + 60000)).toBe(
       'no_source',
     )
