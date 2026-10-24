@@ -118,7 +118,8 @@ After making changes from a prompt and BEFORE committing:
   `src/lib/storage.ts`), which stores them and becomes the plain permalink.
 - **OG tags**: `index.html` carries absolute `og:*` tags for the site;
   `pnpm og` regenerates `public/og.png` and `public/apple-touch-icon.png` from
-  `scripts/og/render.ts` (never edit the PNGs by hand). `server/pages.ts`
+  `scripts/og/render.ts` (never edit the PNGs by hand; the icon keeps the
+  favicon's transparent corners, `scripts/og/icon.test.ts`). `server/pages.ts`
   rewrites the tags per election on `GET /<slug>`; `server/pages.test.ts`
   pins the tags the rewrite targets.
 - The PocketBase client singleton is `src/lib/pocketbase.ts`
