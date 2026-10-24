@@ -224,3 +224,10 @@ read the row.
    `civicapi` election has no official step: its winners are the feed's race
    calls, so either leave it unofficial or run the same command once every
    race is called (it only sets the flag).
+
+## Afterwards: an analysis (optional)
+
+An Analysis tab is never part of setting up a vote. Once the count is in,
+one can be written by hand for the election: a module under
+`src/views/analysis/<slug>/` registered in `src/views/analysis/index.tsx`
+(see the Analysis tabs note in `AGENTS.md`; `alberta-2026` is the first).

@@ -93,6 +93,17 @@ After making changes from a prompt and BEFORE committing:
   Fills blend the choice colours with nested CSS `color-mix` over the page
   tokens (`src/lib/blend.ts`) using `shared/stats/blend.ts`, which cubes the
   shares and holds a sole leader at 75% or more so it reads first.
+- **Analysis tabs**: an election gets an Analysis tab (`#/analysis`, after
+  Results) only when one is written for it by hand. Each is a bespoke module
+  under `src/views/analysis/<slug>/` (its own layout, charts and findings),
+  registered in `src/views/analysis/index.tsx` and loaded lazily into its own
+  chunk; an unregistered election ignores the hash. Reusable parts:
+  `Scatter` and `RangeDots` (`components/charts/`), `Lines` with `yMin` to
+  zoom, `linearFit` (`shared/stats/fit.ts`) and `SectionNav`. Only the newest
+  snapshot keeps division rows, so anything by division reads it alone;
+  over-time pieces can read every snapshot. A chambers election has no tabs,
+  so giving one an analysis means revisiting `resultsOnly` in
+  `election-page.tsx`.
 - **Theme**: `src/lib/theme.ts` + `src/components/theme-toggle.tsx`; the
   visitor's choice is `localStorage` `voting:theme`, otherwise the system
   setting. `public/theme-init.js` applies it before first paint and mirrors the
