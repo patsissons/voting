@@ -1,5 +1,6 @@
-// The top of the results page: official/unofficial, live, how old the newest
-// count is (a split-flap clock while counting), and the headline tiles.
+// The top of the results page: official/unofficial, live (until the count is
+// done), how old the newest count is (a split-flap clock while counting), and
+// the headline tiles.
 import type { ReactNode } from 'react'
 import { useCallback } from 'react'
 import { Note } from '@/components/bits'
@@ -44,7 +45,7 @@ export function StatusLine({
       <Badge variant={latest.official ? 'default' : 'outline'}>
         {latest.official ? 'Official' : 'Unofficial'}
       </Badge>
-      {live ? (
+      {live && !done ? (
         <span className="inline-flex items-center gap-1.5 text-xs font-medium">
           <i
             className="bg-brand inline-block size-1.5 animate-pulse rounded-full"

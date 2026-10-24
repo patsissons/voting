@@ -251,7 +251,7 @@
       { "label": "Wikipedia, 2026 Alberta referendums", "url": "https://en.wikipedia.org/wiki/2026_Alberta_referendums" }
     ],
     "serverFetch": true,
-    "fetchHours": 60,
+    "fetchHours": 336,
     "throttleSeconds": 90,
     "sourcePrefix": "https://results.elections.ab.ca/data/8400"
   }
