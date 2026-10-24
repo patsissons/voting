@@ -137,7 +137,13 @@ function EarlyVoteFolded({
 }
 
 /** Links to the page's sections; the one in view is marked. */
-function SectionNav({ sections }: { sections: SectionLink[] }) {
+export function SectionNav({
+  sections,
+  label = 'Results sections',
+}: {
+  sections: SectionLink[]
+  label?: string
+}) {
   const [active, setActive] = useState('')
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -154,7 +160,7 @@ function SectionNav({ sections }: { sections: SectionLink[] }) {
   }, [sections])
   return (
     <nav
-      aria-label="Results sections"
+      aria-label={label}
       className="bg-background/90 sticky top-14 z-30 -mx-4 overflow-x-auto px-4 py-2 backdrop-blur"
     >
       <ul className="flex gap-1 text-sm whitespace-nowrap">

@@ -27,6 +27,8 @@ export type LinesProps = {
   xMax?: number
   xTicks?: number[]
   yTicks?: number[]
+  /** The bottom of the y scale (0 unless a chart zooms in, e.g. on 40-56%). */
+  yMin?: number
   rules?: { y: number; label?: string }[]
 }
 
@@ -63,10 +65,21 @@ export function Lines(props: LinesProps) {
     const xMax = props.xMax != null ? props.xMax : Math.max(...xs)
     const x = (v: number) =>
       pad.l + (xMax > xMin ? ((v - xMin) / (xMax - xMin)) * plotW : plotW / 2)
-    const y = (v: number) => pad.t + plotH - (Math.max(0, v) / yMax) * plotH
+    const yMin = props.yMin || 0
+    const y = (v: number) =>
+      pad.t + plotH - ((Math.max(yMin, v) - yMin) / (yMax - yMin)) * plotH
     return { plotW, plotH, ticks, xMin, xMax, x, y }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [width, height, props.lines, props.yTicks, props.xMin, props.xMax, xs])
+  }, [
+    width,
+    height,
+    props.lines,
+    props.yTicks,
+    props.yMin,
+    props.xMin,
+    props.xMax,
+    xs,
+  ])
 
   if (!width)
     return (

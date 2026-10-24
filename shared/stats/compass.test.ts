@@ -128,6 +128,7 @@ describe('compass permalinks', () => {
   it('names the tab', () => {
     expect(tabOf('#/compass/2/q4')).toBe('compass')
     expect(tabOf('#/results')).toBe('results')
+    expect(tabOf('#/analysis')).toBe('analysis')
     expect(tabOf('#/about')).toBe('')
     expect(tabOf('')).toBe('')
   })

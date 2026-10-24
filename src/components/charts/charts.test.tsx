@@ -7,6 +7,8 @@ import { FlipClock } from './flip-clock'
 import { Legend } from './legend'
 import { Lines } from './lines'
 import { Plane } from './plane'
+import { RangeDots } from './range-dots'
+import { Scatter } from './scatter'
 import { Strip } from './strip'
 import { TipProvider } from './tooltip'
 
@@ -118,6 +120,129 @@ describe('chart kit', () => {
     expect(screen.getByRole('status')).toHaveTextContent('point 1')
     expect(screen.getByRole('status')).toHaveTextContent('A')
     expect(screen.getByRole('status')).toHaveTextContent('20')
+  })
+
+  it('zooms lines onto a y range from yMin', () => {
+    withWidth(600)
+    const { container } = render(
+      <TipProvider>
+        <Lines
+          points={[0, 1]}
+          lines={[{ label: 'A', color: 'red', values: [40, 60] }]}
+          xFormat={String}
+          yFormat={(v) => `${v}%`}
+          title={(i) => `point ${i}`}
+          ariaLabel="zoomed"
+          yMin={40}
+          yTicks={[40, 50, 60]}
+        />
+      </TipProvider>,
+    )
+    // 220 tall with 10 above and 24 below the plot: 40 sits on the floor
+    // (196) and 60 on the ceiling (10).
+    const d = container.querySelector('path.viz-line')!.getAttribute('d')!
+    expect(d).toMatch(/^M[\d.]+,196\.0L[\d.]+,10\.0$/)
+  })
+
+  it('scatters points with a fit, a rule and labels that stay apart', () => {
+    withWidth(600)
+    const { container } = render(
+      <TipProvider>
+        <Scatter
+          points={[
+            {
+              key: 'a',
+              x: 10,
+              y: 40,
+              color: 'red',
+              describe: () => ({ title: 'Alpha', lines: [] }),
+            },
+            {
+              key: 'b',
+              x: 11,
+              y: 41,
+              color: 'red',
+              describe: () => ({ title: 'Beta', lines: [] }),
+            },
+            {
+              key: 'c',
+              x: 40,
+              y: 70,
+              color: 'blue',
+              describe: () => ({
+                title: 'Gamma',
+                lines: [{ label: 'Yes', value: '70%' }],
+              }),
+            },
+          ]}
+          fit={{ a: 30, b: 1 }}
+          rule={{ y: 50 }}
+          xDomain={[0, 60]}
+          yDomain={[10, 90]}
+          xTicks={[0, 30, 60]}
+          yTicks={[10, 50, 90]}
+          xFormat={(v) => `${v}%`}
+          yFormat={(v) => `${v}%`}
+          xLabel="Begin"
+          yLabel="Yes"
+          labels={[
+            { key: 'a', text: 'Alpha division' },
+            { key: 'b', text: 'Beta division' },
+          ]}
+          ariaLabel="scatter"
+        />
+      </TipProvider>,
+    )
+    expect(screen.getByRole('img', { name: 'scatter' })).toBeInTheDocument()
+    expect(container.querySelectorAll('.viz-scatter-dot')).toHaveLength(3)
+    expect(container.querySelector('.viz-fit')).not.toBeNull()
+    const labels = [...container.querySelectorAll('.viz-scatter-label')]
+    expect(labels.map((l) => l.textContent)).toEqual([
+      'Alpha division',
+      'Beta division',
+    ])
+    // Two neighbouring points: the second label steps off the first.
+    const ys = labels.map((l) => Number(l.getAttribute('y')))
+    expect(Math.abs(ys[0] - ys[1])).toBeGreaterThanOrEqual(13)
+    fireEvent.focus(container.querySelector('[data-key="c"]')!)
+    expect(screen.getByRole('status')).toHaveTextContent('Gamma')
+    expect(screen.getByRole('status')).toHaveTextContent('70%')
+  })
+
+  it('sets results against poll ranges', () => {
+    withWidth(600)
+    const { container } = render(
+      <TipProvider>
+        <RangeDots
+          rows={[
+            {
+              label: 'Q1',
+              value: 54.8,
+              range: { lo: 60, hi: 65, latest: 60 },
+              describe: () => ({ title: 'Question 1', lines: [] }),
+            },
+            {
+              label: 'Q2',
+              value: 49,
+              describe: () => ({ title: 'Question 2', lines: [] }),
+            },
+          ]}
+          xDomain={[30, 80]}
+          xTicks={[30, 50, 80]}
+          xFormat={(v) => `${v}%`}
+          valueFormat={(v) => `${v.toFixed(1)}%`}
+          rule={50}
+          dotColor="blue"
+          rangeColor="orange"
+          ariaLabel="polls"
+        />
+      </TipProvider>,
+    )
+    expect(container.querySelectorAll('.viz-range-row')).toHaveLength(2)
+    expect(container.querySelectorAll('.viz-range-bar')).toHaveLength(1)
+    expect(screen.getByText('54.8%').getAttribute('text-anchor')).toBe('end')
+    fireEvent.focus(container.querySelectorAll('.viz-range-row')[1])
+    expect(screen.getByRole('status')).toHaveTextContent('Question 2')
   })
 
   it('places parties and the viewer on the plane', () => {

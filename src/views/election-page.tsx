@@ -1,5 +1,6 @@
-// One election: the header, the hash-driven tabs (compass or ballot, and
-// results), and the view for the tab. The path names the election and the
+// One election: the header, the hash-driven tabs (compass or ballot,
+// results, and analysis when one was written for it), and the view for the
+// tab. The path names the election and the
 // hash names the view, so shared cubby.fyi links land on the same state.
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Shell } from '@/components/shell'
@@ -18,6 +19,7 @@ import {
   type CompassState,
 } from '../../shared/stats/compass.ts'
 import { TAB, tabOf, type BallotMarks } from '../../shared/permalink.ts'
+import { AnalysisView, hasAnalysis } from './analysis'
 import { ElectionHeader } from './election-header'
 import { Compass } from './compass/compass'
 import { ReferendumBallot } from './ballot/referendum-ballot'
@@ -122,7 +124,10 @@ function ElectionView({
   const latest = results.snapshots.length
     ? results.snapshots[results.snapshots.length - 1].payload
     : null
-  const named = tabOf(hash)
+  // Only a hand-written analysis gives an election the analysis tab.
+  const analysis = hasAnalysis(election.slug)
+  const head = tabOf(hash)
+  const named = head === 'analysis' && !analysis ? '' : head
   const tab = resultsOnly
     ? 'results'
     : named || (results.snapshots.length ? 'results' : 'compass')
@@ -164,11 +169,15 @@ function ElectionView({
   }, [])
 
   const switchTab = (value: string) => {
-    const next = value === 'results' ? '#/results' : compassHash || TAB
+    const next =
+      value === 'results' || value === 'analysis'
+        ? `#/${value}`
+        : compassHash || TAB
     if (window.location.hash !== next) window.location.hash = next
   }
   const css = useMemo(() => partyCss(election), [election])
-  const shareHash = tab === 'results' ? '#/results' : compassHash
+  const shareHash =
+    tab === 'results' || tab === 'analysis' ? `#/${tab}` : compassHash
   const waiting = resultsOnly ? !results.loaded : !named && !results.loaded
 
   return (
@@ -209,6 +218,14 @@ function ElectionView({
                 ) : null}
                 Results
               </TabsTrigger>
+              {analysis ? (
+                <TabsTrigger
+                  value="analysis"
+                  className="flex-1 sm:flex-none sm:px-5"
+                >
+                  Analysis
+                </TabsTrigger>
+              ) : null}
             </TabsList>
           </Tabs>
         )}
@@ -223,6 +240,16 @@ function ElectionView({
             matchParty={matchParty}
             marks={marks}
           />
+        ) : tab === 'analysis' && analysis ? (
+          results.loaded ? (
+            <AnalysisView
+              election={election}
+              snapshots={results.snapshots}
+              live={results.live}
+            />
+          ) : (
+            <Skeleton className="h-64 w-full" />
+          )
         ) : referendum ? (
           <ReferendumBallot
             election={election}

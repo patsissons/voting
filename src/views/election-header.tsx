@@ -64,7 +64,9 @@ export function ElectionHeader({
             title={
               shareHash === '#/results'
                 ? `${election.title}: live results`
-                : election.title
+                : shareHash === '#/analysis'
+                  ? `${election.title}: analysis`
+                  : election.title
             }
           />
         </div>

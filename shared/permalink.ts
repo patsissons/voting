@@ -10,6 +10,9 @@
 //   #/compass/<code>/q<i>       question i mid-quiz (code may be "-")
 //   #/compass/<code>/r<i>       question i while reviewing finished answers
 //   #/results                   the results tab
+//   #/analysis                  the analysis tab, only for an election with a
+//                               hand-written analysis (added after the freeze;
+//                               the heads above parse as they always did)
 //
 // plus one form that is never shared, only followed once: the move from
 // cubby.fyi, whose localStorage this origin cannot read.
@@ -29,14 +32,16 @@ import type { CompassState } from './stats/compass.ts'
 
 export const TAB = '#/compass'
 export const IMPORT = `${TAB}/import/`
-export type Tab = 'compass' | 'results'
+export type Tab = 'compass' | 'results' | 'analysis'
 
 /** The tab a hash names, or '' when it names none. */
 export function tabOf(hash: string): Tab | '' {
   const head = String(hash || '')
     .replace(/^#\/?/, '')
     .split('/')[0]
-  return head === 'compass' || head === 'results' ? head : ''
+  return head === 'compass' || head === 'results' || head === 'analysis'
+    ? head
+    : ''
 }
 
 /** The hash for a compass state: '' for the intro (nothing to link to yet). */
