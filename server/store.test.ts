@@ -16,7 +16,7 @@ import {
 import { payloadOf } from './db.ts'
 import { memoryDb } from './db.memory.ts'
 import type { MemoryRow } from './db.memory.ts'
-import { fetchTick, setSource, storeSnapshot } from './store.ts'
+import { fetchTick, scopeProblem, setSource, storeSnapshot } from './store.ts'
 import type { Http } from './store.ts'
 
 const feeds = fixtureFeeds(vancouver())
@@ -140,6 +140,20 @@ describe('setSource', () => {
   })
 })
 
+describe('scopeProblem', () => {
+  it('lets an empty or known slug through and refuses the rest', () => {
+    const db = memoryDb()
+    db.addElection(bc())
+    expect(scopeProblem(db, '')).toBeNull()
+    expect(scopeProblem(db, 'bc-2026')).toBeNull()
+    expect(scopeProblem(db, 'Bad!')?.status).toBe(400)
+    expect(scopeProblem(db, 'nope-2026')).toMatchObject({
+      status: 404,
+      body: { code: 'not_found' },
+    })
+  })
+})
+
 describe('fetchTick', () => {
   const fakeHttp = (
     answer: (url: string) => { status: number; text: string },
@@ -181,6 +195,25 @@ describe('fetchTick', () => {
     )
     const later = fetchTick(db, http, { now: close + 180000 })
     expect(later[1]).toMatchObject({ ran: true, status: 200, unchanged: true })
+  })
+
+  it('fetches only the election a webhook names', () => {
+    const db = memoryDb()
+    const bcDoc = bc()
+    db.addElection(alberta(), {
+      results_source: 'https://example.invalid/never-fetched',
+    })
+    db.addElection(bcDoc, {
+      results_source:
+        'https://electionsbcenr.blob.core.windows.net/x_GE-2026-10-24_Candidate.html',
+    })
+    const pages = fixtureFeeds(bcDoc) as string[]
+    const http = fakeHttp(() => ({ status: 200, text: pages[0] }))
+    const now = Date.parse(bcDoc.pollsClose) + 60000
+    const out = fetchTick(db, http, { now, only: 'bc-2026' })
+    expect(out).toMatchObject([{ slug: 'bc-2026', ran: true, status: 201 }])
+    expect(http.calls.length).toBe(1)
+    expect(db.elections[0].getString('results_checked')).toBe('')
   })
 
   it('records a failing source and clears the error on the next success', () => {

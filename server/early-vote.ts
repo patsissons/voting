@@ -6,9 +6,10 @@
 // /_voting/early-vote for a PocketHost webhook. Each election is pulled at
 // most once per EARLY_VOTE_THROTTLE_MS whatever hits the route, a pull that
 // fails keeps the last good counts, and nothing is pulled once its polls
-// close (the results page has moved on by then). A feed the hooks cannot
-// read (Elections BC's PDF, format ebc-advance) is pushed into the same
-// column by `pnpm early-vote:push` and skipped here.
+// close (the results page has moved on by then). A webhook's ?slug= limits
+// a pass to that election. A feed the hooks cannot read (Elections BC's PDF,
+// format ebc-advance) is pushed into the same column by
+// `pnpm early-vote:push` and skipped here.
 import { asEarlyVote } from '../shared/early-vote.ts'
 import { parseEarlyVote } from '../shared/parsers/early-vote.ts'
 import {
@@ -32,11 +33,11 @@ export type EarlyVoteRow = {
   error?: string
 }
 
-/** One pass over the published elections with an early vote source. */
+/** One pass over the published elections with an early vote source (or only `opts.only`). */
 export function earlyVoteTick(
   db: Db,
   http: Http,
-  opts: { now?: number; log?: Logger } = {},
+  opts: { now?: number; log?: Logger; only?: string } = {},
 ): EarlyVoteRow[] {
   const now = opts.now != null ? opts.now : Date.now()
   const log = opts.log || (() => {})
@@ -48,6 +49,7 @@ export function earlyVoteTick(
     const early = config.results.earlyVote
     if (!early) continue
     const slug = config.slug
+    if (opts.only && slug !== opts.only) continue
     if (earlyVoteFormat(config) !== 'ufel-csv') {
       out.push({ slug, ran: false, skipped: 'push_only' })
       continue

@@ -8,18 +8,19 @@
 //        Chrome and posts each new snapshot here.
 //   POST /_voting/source/{slug}?url=<page>      bearer token; sets (or, with
 //        an empty url, clears) the page the server-side fetch pulls.
-//   GET|POST /_voting/fetch                     public: runs one fetch tick
+//   GET|POST /_voting/fetch[?slug=<slug>]       public: runs one fetch tick
 //        and answers with per-election outcomes. A PocketHost webhook hits it
 //        on election nights because the instance hibernates and misses cron
-//        ticks; it only does what the next tick would do anyway.
-//   GET|POST /_voting/early-vote                public: pulls each election's
+//        ticks; it only does what the next tick would do anyway. ?slug=
+//        limits the tick to that election (404 when there is none).
+//   GET|POST /_voting/early-vote[?slug=<slug>]  public: pulls each election's
 //        early vote turnout before its polls close (server/early-vote.ts),
 //        for a PocketHost webhook; throttled per election, so extra hits
-//        cost nothing.
+//        cost nothing. ?slug= scopes it as it does the fetch.
 import { pocketbaseDb } from './db.ts'
 import { earlyVoteTick } from './early-vote.ts'
 import { SLUG_RE, log, pocketbaseHttp, readBody, tokenProblem } from './http.ts'
-import { fetchTick, setSource, storeSnapshot } from './store.ts'
+import { fetchTick, scopeProblem, setSource, storeSnapshot } from './store.ts'
 
 export function handleIngest(e: RequestEvent): void {
   const problem = tokenProblem(e)
@@ -59,8 +60,12 @@ export function handleSource(e: RequestEvent): void {
 
 export function handleFetch(e: RequestEvent): void {
   try {
+    const db = pocketbaseDb(e.app)
+    const only = String(e.request.url.query().get('slug') || '').trim()
+    const problem = scopeProblem(db, only)
+    if (problem) return e.json(problem.status, problem.body)
     return e.json(200, {
-      elections: fetchTick(pocketbaseDb(e.app), pocketbaseHttp, { log }),
+      elections: fetchTick(db, pocketbaseHttp, { log, only }),
     })
   } catch (err) {
     return e.json(500, {
@@ -84,8 +89,12 @@ export function cronFetch(): void {
 
 export function handleEarlyVote(e: RequestEvent): void {
   try {
+    const db = pocketbaseDb(e.app)
+    const only = String(e.request.url.query().get('slug') || '').trim()
+    const problem = scopeProblem(db, only)
+    if (problem) return e.json(problem.status, problem.body)
     return e.json(200, {
-      elections: earlyVoteTick(pocketbaseDb(e.app), pocketbaseHttp, { log }),
+      elections: earlyVoteTick(db, pocketbaseHttp, { log, only }),
     })
   } catch (err) {
     return e.json(500, {

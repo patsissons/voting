@@ -138,4 +138,22 @@ describe('earlyVoteTick with a pushed feed', () => {
     ])
     expect(http.calls).toEqual([])
   })
+
+  it('pulls only the election a webhook names', () => {
+    const db = memoryDb()
+    db.addElection(bc())
+    db.addElection(us())
+    const http = fakeHttp(() => ({
+      status: 200,
+      text: csv,
+      lastModified: modified,
+    }))
+    expect(
+      earlyVoteTick(db, http, { now, only: 'bc-2026' }).map((r) => r.slug),
+    ).toEqual(['bc-2026'])
+    expect(http.calls).toEqual([])
+    const us26 = earlyVoteTick(db, http, { now, only: 'us-2026' })
+    expect(us26).toMatchObject([{ slug: 'us-2026', ran: true, stored: true }])
+    expect(http.calls.length).toBe(1)
+  })
 })

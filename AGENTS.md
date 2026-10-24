@@ -146,8 +146,9 @@ After making changes from a prompt and BEFORE committing:
   four times a day (`7 */6 * * *`) and a PocketHost webhook on
   `GET /_voting/early-vote?slug=<slug>` (on the same schedule, from when
   early voting opens until polls close; delete it after). As with the fetch
-  webhook, `slug` only tells webhooks apart: every call pulls every election
-  with an early vote source. us-2026's webhook is live (2026-10-23). At most one
+  webhook, `slug` limits the call to that election (an unknown one is a 404;
+  without it every election with an early vote source is pulled, as the
+  cron does). us-2026's webhook is live (2026-10-23). At most one
   pull per election per 15 minutes; a failed pull keeps the last counts.
   Each state keeps its ballots cast, the in-person/mail split and, where the
   state registers by party, `party`, `partyMail` and `partyInPerson`
@@ -175,9 +176,10 @@ After making changes from a prompt and BEFORE committing:
    `sourcePrefix` and `eventMatch` gate it). Vancouver has no server fetch:
    run `pnpm relay --election vancouver-2026` (drives Chrome) instead.
 2. Add the PocketHost webhook on `GET /_voting/fetch?slug=<slug>` for the
-   night; delete it after. PocketHost allows one webhook per route, so the
-   `slug` param only tells them apart: every call checks every election
-   with a source.
+   night; delete it after. `slug` limits the call to that election, so
+   each night's webhook only fetches its own (an unknown slug answers 404;
+   without one, the call checks every election with a source, as the cron
+   does).
 3. `phio logs`: every stored snapshot logs `[voting] <slug> snapshot ...`;
    `GET /_voting/fetch` answers with per-election outcomes. If the server
    fetch keeps failing, `pnpm relay --election <slug> --source <url>` pushes
