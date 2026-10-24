@@ -7,7 +7,9 @@ test('the index lists the elections and the theme toggle persists', async ({
   await expect(
     page.getByRole('heading', { name: 'Know your ballot. Watch the count.' }),
   ).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Voting' })).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Voting', exact: true }),
+  ).toBeVisible()
   await expect(
     page.getByRole('heading', { name: 'BC Votes 2026' }),
   ).toBeVisible()

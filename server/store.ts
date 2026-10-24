@@ -12,7 +12,8 @@
 // storing a new one strips it from the row before.
 //
 // fetchTick runs shouldFetch (shared/fetch-policy) over every election with
-// a results source and fetches the ones due: one page per question for an
+// a results source (or just the one a webhook's ?slug= names, which
+// scopeProblem checks) and fetches the ones due: one page per question for an
 // eab-ref election, one race document per chamber for a civicapi election
 // (all or nothing: a chamber that fails fails the tick), else the source
 // itself, following a retired Alberta dashboard version to the current one.
@@ -30,6 +31,7 @@ import { configProblems } from '../shared/config-guard.ts'
 import type { Election } from '../shared/schema/election.ts'
 import { electionOf, payloadOf, UniqueError } from './db.ts'
 import type { Db, Row } from './db.ts'
+import { SLUG_RE } from './http.ts'
 
 export type Reply = { status: number; body: Record<string, unknown> }
 const reply = (status: number, body: Record<string, unknown>): Reply => ({
@@ -162,17 +164,18 @@ export type TickRow = {
   source?: string
 } & Record<string, unknown>
 
-/** One pass over every election with a results source: fetch the ones due and store what changed. */
+/** One pass over every election with a results source (or only `opts.only`): fetch the ones due and store what changed. */
 export function fetchTick(
   db: Db,
   http: Http,
-  opts: { now?: number; log?: Logger } = {},
+  opts: { now?: number; log?: Logger; only?: string } = {},
 ): TickRow[] {
   const now = opts.now != null ? opts.now : Date.now()
   const log = opts.log || (() => {})
   const out: TickRow[] = []
   for (const election of db.electionsWithSource()) {
     const slug = election.getString('slug')
+    if (opts.only && slug !== opts.only) continue
     const loaded = loadConfig(election)
     if ('error' in loaded) {
       out.push({ slug, ran: false, skipped: 'no_config' })
@@ -324,4 +327,18 @@ export function setSource(db: Db, slug: string, url: string): Reply {
   election.set('results_checked', '')
   db.save(election)
   return reply(200, { ok: true, slug, source: url })
+}
+
+/**
+ * Why a webhook's `?slug=` can't scope a tick, or null when it can (an empty
+ * slug means every election). An unknown slug is a 404 so a mistyped webhook
+ * shows up in its responses instead of quietly fetching nothing.
+ */
+export function scopeProblem(db: Db, slug: string): Reply | null {
+  if (!slug) return null
+  if (!SLUG_RE.test(slug))
+    return reply(400, { code: 'bad_request', message: 'bad election slug' })
+  if (!db.electionBySlug(slug))
+    return reply(404, { code: 'not_found', message: `no election "${slug}"` })
+  return null
 }
