@@ -90,6 +90,7 @@ async function render(
   html: string,
   width: number,
   height: number,
+  transparent = false,
 ): Promise<void> {
   const page = await browser.newPage({
     viewport: { width, height },
@@ -97,7 +98,10 @@ async function render(
   })
   await page.setContent(html)
   await page.evaluate(() => document.fonts.ready)
-  const png = await page.screenshot({ type: 'png' })
+  const png = await page.screenshot({
+    type: 'png',
+    omitBackground: transparent,
+  })
   const out = path.join(ROOT, file)
   await writeFile(out, png)
   console.log(`wrote ${file} (${png.byteLength} bytes)`)
@@ -107,7 +111,14 @@ async function render(
 const browser = await chromium.launch()
 try {
   await render('public/og.png', await ogHtml(), WIDTH, HEIGHT)
-  await render('public/apple-touch-icon.png', await iconHtml(180), 180, 180)
+  // Transparent so the favicon's rounded corners don't show white.
+  await render(
+    'public/apple-touch-icon.png',
+    await iconHtml(180),
+    180,
+    180,
+    true,
+  )
 } finally {
   await browser.close()
 }
