@@ -44,17 +44,17 @@ instance does.
 
 ## URLs
 
-| URL                                | What it serves                                                                                                                                                                      |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                                | the index of published elections                                                                                                                                                    |
-| `/<slug>`                          | an election; `#/compass`, `#/compass/<code>` and `#/results` name the view (a results-only election has only `#/results`)                                                           |
-| `/<slug>.md`                       | the election as markdown (also `Accept: text/markdown` on `/<slug>`)                                                                                                                |
-| `/llms.txt`                        | the agent index                                                                                                                                                                     |
-| `POST /mcp`                        | a public, read-only MCP server (streamable HTTP, JSON-RPC)                                                                                                                          |
-| `POST /_voting/ingest/{slug}`      | push a raw results document (bearer `VOTING_INGEST_TOKEN`; `?official=1`)                                                                                                           |
-| `POST /_voting/source/{slug}?url=` | set or clear the page the server-side fetch pulls (bearer token)                                                                                                                    |
-| `GET /_voting/fetch`               | run one fetch tick (public; the election-night webhook target)                                                                                                                      |
-| `GET /_voting/early-vote`          | pull each election's early vote turnout before its polls close (public; throttled to once per 15 minutes; a webhook target; a PDF feed is pushed by `pnpm early-vote:push` instead) |
+| URL                                | What it serves                                                                                                                                                                                       |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                                | the index of published elections                                                                                                                                                                     |
+| `/<slug>`                          | an election; `#/compass`, `#/compass/<code>` and `#/results` name the view (a results-only election has only `#/results`)                                                                            |
+| `/<slug>.md`                       | the election as markdown (also `Accept: text/markdown` on `/<slug>`)                                                                                                                                 |
+| `/llms.txt`                        | the agent index                                                                                                                                                                                      |
+| `POST /mcp`                        | a public, read-only MCP server (streamable HTTP, JSON-RPC); `results_series` pages with `limit` and `next`, and PocketHost's Cloudflare refuses Python urllib's default User-Agent (403, error 1010) |
+| `POST /_voting/ingest/{slug}`      | push a raw results document (bearer `VOTING_INGEST_TOKEN`; `?official=1`)                                                                                                                            |
+| `POST /_voting/source/{slug}?url=` | set or clear the page the server-side fetch pulls (bearer token)                                                                                                                                     |
+| `GET /_voting/fetch`               | run one fetch tick (public; the election-night webhook target)                                                                                                                                       |
+| `GET /_voting/early-vote`          | pull each election's early vote turnout before its polls close (public; throttled to once per 15 minutes; a webhook target; a PDF feed is pushed by `pnpm early-vote:push` instead)                  |
 
 The hash grammar is frozen because cubby.fyi links redirect here:
 `#/compass/<code>` is one character per question (`-` skipped, `0`-`9` the

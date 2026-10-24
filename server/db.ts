@@ -34,8 +34,11 @@ export interface Db {
   /** The newest snapshot by source stamp. */
   latestResult(electionId: string): Row | null
   hasOfficialResult(electionId: string): boolean
-  /** Every snapshot for an election in stamp order, optionally after a stamp. */
-  resultsFor(electionId: string, afterTs?: string): Row[]
+  /**
+   * Snapshots for an election in stamp order, optionally after a stamp and
+   * at most limit of them (every one when limit is absent).
+   */
+  resultsFor(electionId: string, afterTs?: string, limit?: number): Row[]
   newResult(): Row
   /** Throws UniqueError when an index refuses the row. */
   save(row: Row): void
@@ -121,13 +124,13 @@ export function pocketbaseDb(app: PbApp): Db {
       )[0] || null,
     hasOfficialResult: (id) =>
       !!first('results', 'election = {:id} && official = true', { id }),
-    resultsFor: (id, afterTs) =>
+    resultsFor: (id, afterTs, limit) =>
       afterTs
         ? app.findRecordsByFilter(
             'results',
             'election = {:id} && source_ts > {:ts}',
             'source_ts',
-            0,
+            limit || 0,
             0,
             { id, ts: afterTs },
           )
@@ -135,7 +138,7 @@ export function pocketbaseDb(app: PbApp): Db {
             'results',
             'election = {:id}',
             'source_ts',
-            0,
+            limit || 0,
             0,
             { id },
           ),

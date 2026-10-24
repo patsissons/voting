@@ -16,7 +16,7 @@ import { parseEarlyVote } from '../../shared/parsers/early-vote.ts'
 import { memoryDb } from '../db.memory.ts'
 import { storeSnapshot } from '../store.ts'
 import { describeServer, dispatch, validateModule } from './rpc.ts'
-import { call, tools, votingTools } from './tools.ts'
+import { call, fitRows, SERIES_MAX, tools, votingTools } from './tools.ts'
 
 function seeded() {
   const db = memoryDb()
@@ -204,6 +204,90 @@ describe('voting tools', () => {
     expect(
       fails('results_series', { slug: 'vancouver-2026', metric: 'share' }),
     ).toBe('metric "share" needs contest')
+  })
+
+  it('pages a series with limit and next', () => {
+    const all = run('results_series', {
+      slug: 'vancouver-2026',
+      metric: 'ballots',
+    })
+    expect(all.rows.length).toBe(8)
+    expect(all.next).toBeUndefined()
+    const seen: string[] = []
+    let since: string | undefined
+    let pages = 0
+    do {
+      const page = run('results_series', {
+        slug: 'vancouver-2026',
+        metric: 'ballots',
+        limit: 3,
+        ...(since ? { since } : {}),
+      })
+      pages++
+      expect(page.rows.length).toBeLessThanOrEqual(3)
+      seen.push(...page.rows.map((r: { asOf: string }) => r.asOf))
+      if (page.next)
+        expect(page.next).toBe(page.rows[page.rows.length - 1].asOf)
+      since = page.next
+    } while (since)
+    expect(pages).toBe(3)
+    expect(seen).toEqual(all.rows.map((r: { asOf: string }) => r.asOf))
+    // an exact fit leaves no next
+    expect(
+      run('results_series', {
+        slug: 'vancouver-2026',
+        metric: 'ballots',
+        limit: 8,
+      }).next,
+    ).toBeUndefined()
+    // a page past the end still names the contest
+    const past = run('results_series', {
+      slug: 'alberta-2026',
+      metric: 'share',
+      contest: 'q3',
+      since: '2099-01-01 00:00:00',
+    })
+    expect(past.rows).toEqual([])
+    expect(past.choices).toEqual(['Yes', 'No'])
+    expect(past.next).toBeUndefined()
+  })
+
+  it('cuts a page that would pass the text budget', () => {
+    const rows = Array.from({ length: 50 }, (_, i) => ({
+      asOf: `2026-10-19 ${String(i).padStart(2, '0')}:00:00`,
+      wide: 'x'.repeat(100),
+    }))
+    const out = { slug: 's', metric: 'ballots', rows }
+    const fit = fitRows(out, false, 2000)
+    expect(JSON.stringify(fit, null, 2).length).toBeLessThanOrEqual(2000)
+    expect(fit.rows.length).toBeGreaterThan(0)
+    expect(fit.rows).toEqual(rows.slice(0, fit.rows.length))
+    expect(fit.next).toBe(fit.rows[fit.rows.length - 1].asOf)
+    expect(fitRows(out, false).next).toBeUndefined()
+    expect(fitRows(out, true).next).toBe(rows[49].asOf)
+    expect(fitRows({ ...out, rows: [] }, false)).toEqual({ ...out, rows: [] })
+  })
+
+  it('refuses a series limit out of range', () => {
+    const describe_ = describeServer({ name: 'voting' })
+    for (const limit of [0, SERIES_MAX + 1, 2.5]) {
+      const out = dispatch(
+        [
+          {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/call',
+            params: {
+              name: 'results_series',
+              arguments: { slug: 'vancouver-2026', metric: 'ballots', limit },
+            },
+          },
+        ],
+        false,
+        { module: votingTools, describe: describe_, ctx },
+      )
+      expect((out.body as { error: { code: number } }).error.code).toBe(-32602)
+    }
   })
 
   it('answers a chambers election by race and by chamber', () => {

@@ -317,6 +317,8 @@ export function shapeResult(ret: unknown): CallResult {
       ],
     }
   }
+  // A text-only client should know the JSON stops early and where the rest is.
+  const marker = `[truncated at ${MAX_TEXT} characters${result.structuredContent !== undefined ? '; the full result is in structuredContent' : ''}]`
   for (const item of result.content) {
     if (
       item &&
@@ -324,7 +326,7 @@ export function shapeResult(ret: unknown): CallResult {
       typeof item.text === 'string' &&
       item.text.length > MAX_TEXT
     )
-      item.text = `${item.text.slice(0, MAX_TEXT)}\n[truncated]`
+      item.text = `${item.text.slice(0, MAX_TEXT)}\n${marker}`
   }
   return result
 }
