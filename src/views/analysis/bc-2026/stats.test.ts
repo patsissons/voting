@@ -4,7 +4,7 @@ import { bc, bcEarlyVote } from '../../../../scripts/fixtures/load.ts'
 import type { EarlyVote } from '../../../../shared/early-vote.ts'
 import { normalize } from '../../../../shared/parsers/index.ts'
 import type { Contest, Payload } from '../../../../shared/payload.ts'
-import { findings, leadText, swingText } from './findings'
+import { findings, leadText, rangeText, swingText } from './findings'
 import { PRIOR } from './prior'
 import {
   finalWatch,
@@ -287,5 +287,13 @@ describe('bc swing copy', () => {
     expect(swingText(0.01)).toBe('no change')
     expect(leadText(5.4)).toBe('Conservatives by 5.4')
     expect(leadText(-1.6)).toBe('NDP by 1.6')
+    // The Northwest moved 0.8 toward the NDP, the Cariboo 12.0 the other way.
+    expect(rangeText(-0.8, 12)).toBe(
+      '0.8 points toward the NDP to 12.0 toward the Conservatives',
+    )
+    expect(rangeText(6.9, 12)).toBe(
+      '6.9 to 12.0 points toward the Conservatives',
+    )
+    expect(rangeText(-6, -2)).toBe('2.0 to 6.0 points toward the NDP')
   })
 })

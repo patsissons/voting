@@ -3,7 +3,7 @@
 // advance vote, the late ballots of the final count); the 2024 table is
 // ./prior.
 import { useMemo, useState } from 'react'
-import { DataTable, Note, PartyChip, Section } from '@/components/bits'
+import { DataTable, Note, PartyChip, Section, Swatch } from '@/components/bits'
 import { ChangeBars } from '@/components/charts/change-bars'
 import { Choropleth } from '@/components/charts/choropleth'
 import { Dumbbell } from '@/components/charts/dumbbell'
@@ -81,6 +81,8 @@ function shortOf(election: DistrictElection): (key: string) => string {
   return (key) => (key === 'other' ? 'Independent' : partyShort(P, key))
 }
 
+/** What a signed lead or swing axis means. */
+const LEAD_SIGNS = '+ Conservative, − NDP'
 /** An axis tick in points: "+20", "0", "-20". */
 const leadTick = (v: number) => (v > 0 ? `+${v}` : String(v))
 const arrow = (a: number | undefined, b: number | undefined) =>
@@ -338,8 +340,8 @@ function SwingSection({
         yTicks={ticks}
         xFormat={leadTick}
         yFormat={leadTick}
-        xLabel="2024 Conservative lead"
-        yLabel="2026 Conservative lead"
+        xLabel={`2024 lead (${LEAD_SIGNS})`}
+        yLabel={`2026 lead (${LEAD_SIGNS})`}
         labels={named.map((v) => ({ key: v.code, text: v.name }))}
         ariaLabel="Each riding's Conservative lead over the NDP, 2024 against 2026"
       />
@@ -357,7 +359,7 @@ function SwingSection({
           set={election.boundaries}
           fills={fills}
           ariaLabel={`Swing by riding: ${bySwing
-            .map((v) => `${v.name} ${signed(v.swing)}`)
+            .map((v) => `${v.name} ${swingText(v.swing)}`)
             .join(', ')}`}
           describe={(code) => {
             const v = byCode.get(code)
@@ -367,7 +369,18 @@ function SwingSection({
           }}
         />
       ) : null}
-      <h3 className="text-sm font-semibold">By region</h3>
+      <h3 className="text-sm font-semibold">
+        By region{' '}
+        <span className="text-muted-foreground font-normal">
+          swing in points
+        </span>
+      </h3>
+      <Legend
+        items={[
+          { label: 'toward the NDP', color: partyColor('ndp') },
+          { label: 'toward the Conservatives', color: partyColor('cp') },
+        ]}
+      />
       <ChangeBars
         rows={regions.map((r) => ({
           label: r.label,
@@ -390,9 +403,11 @@ function SwingSection({
             ],
           }),
         }))}
-        xFormat={leadTick}
-        valueFormat={signed}
-        ariaLabel="Vote-weighted swing by region, positive toward the Conservatives"
+        xFormat={(v) => String(Math.abs(v))}
+        valueFormat={(v) => Math.abs(v).toFixed(1)}
+        ariaLabel={`Vote-weighted swing by region: ${regions
+          .map((r) => `${r.label} ${swingText(r.swing)}`)
+          .join(', ')}`}
       />
       <Note>
         The province swung {Math.abs(province.swing).toFixed(1)} points{' '}
@@ -578,7 +593,7 @@ function MinorSection({
                 lines: [
                   { label: '2024 Green share', value: pct1(v.prior.green) },
                   { label: '2026 Green share', value: pct1(v.shares.green) },
-                  { label: 'Change', value: pts(v.green as number) },
+                  { label: 'Green change', value: pts(v.green as number) },
                 ],
               }),
             }))}
@@ -667,7 +682,7 @@ function TurnoutSection({
           xFormat={(v) => `${v}%`}
           yFormat={leadTick}
           xLabel={label}
-          yLabel="Swing to the Conservatives"
+          yLabel={`Swing (${LEAD_SIGNS})`}
           height={320}
           ariaLabel={aria}
         />
@@ -861,9 +876,10 @@ function RidingsSection({
   return (
     <Section id="ridings" title="Every riding" sub={`${views.length} ridings`}>
       <Note>
-        Shares of the 2026 count; swing and the Green change are in points
-        against 2024, votes in percent against 2024&apos;s advance and
-        voting-day votes. Click a heading to sort.
+        Shares of the 2026 count. Swing is in points toward the party whose
+        swatch it carries; the Green change is in points and votes in percent
+        against 2024&apos;s advance and voting-day votes. Click a heading to
+        sort.
       </Note>
       <Input
         type="search"
@@ -911,7 +927,19 @@ function RidingsSection({
                 <td className="px-1.5 py-1 text-right">
                   {cell(v.shares.green, (x) => x.toFixed(1))}
                 </td>
-                <td className="px-1.5 py-1 text-right">{signed(v.swing)}</td>
+                <td
+                  className="px-1.5 py-1 text-right whitespace-nowrap"
+                  title={swingText(v.swing)}
+                >
+                  {Math.abs(v.swing) < 0.05 ? (
+                    '0.0'
+                  ) : (
+                    <>
+                      <Swatch party={v.swing > 0 ? 'cp' : 'ndp'} />{' '}
+                      {Math.abs(v.swing).toFixed(1)}
+                    </>
+                  )}
+                </td>
                 <td className="px-1.5 py-1 text-right">{cell(v.green)}</td>
                 <td className="px-1.5 py-1 text-right">
                   {cell(v.votesChange)}

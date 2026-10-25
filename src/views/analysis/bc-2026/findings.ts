@@ -38,6 +38,15 @@ export const swingText = (swing: number) =>
 /** A Conservative-over-NDP lead as who leads: "Conservatives by 5.4". */
 export const leadText = (lead: number) =>
   `${lead >= 0 ? 'Conservatives' : 'NDP'} by ${Math.abs(lead).toFixed(1)}`
+/** Two swings as a range in words: "7.0 to 12.0 points toward the Conservatives", or each with its direction when they differ. */
+export function rangeText(lo: number, hi: number): string {
+  if (lo * hi > 0 || !lo || !hi) {
+    const [a, b] = [Math.abs(lo), Math.abs(hi)].sort((x, y) => x - y)
+    return `${a.toFixed(1)} to ${b.toFixed(1)} points ${toward(lo + hi)}`
+  }
+  return `${Math.abs(lo).toFixed(1)} points ${toward(lo)} to ${Math.abs(hi).toFixed(1)} ${toward(hi)}`
+}
+
 const seatsText = (n: number) => `${fmt(n)} seat${n === 1 ? '' : 's'}`
 
 /** The votes counted against 2024's advance and voting-day votes. */
@@ -95,7 +104,7 @@ export function findings({
     const uniform = province.uniform[top ? top.key : 'cp'] || 0
     out.push({
       lead: `A ${ptLong(province.swing)} swing ${toward(province.swing)}.`,
-      text: `The Conservative lead over the NDP went from ${signed(province.lead24)} to ${signed(province.lead26)} points, and ${fmt(flips.length)} seat${flips.length === 1 ? '' : 's'} changed hands. Riding swings spread ${province.spread.toFixed(1)} points either side of that; moving every riding by the province-wide change gives the ${top ? name(top.key) : 'winners'} ${seatsText(uniform)}, against the ${fmt(actual)} they won.`,
+      text: `The lead went from ${leadText(province.lead24)} to ${leadText(province.lead26)} points, and ${fmt(flips.length)} seat${flips.length === 1 ? '' : 's'} changed hands. Riding swings spread ${province.spread.toFixed(1)} points either side of that; moving every riding by the province-wide change gives the ${top ? name(top.key) : 'winners'} ${seatsText(uniform)}, against the ${fmt(actual)} they won.`,
     })
   }
 
@@ -103,12 +112,12 @@ export function findings({
     const sorted = [...regions].sort((a, b) => b.swing - a.swing)
     const most = sorted[0]
     const rest = sorted.slice(1)
-    const restLo = Math.min(...rest.map((r) => r.swing))
-    const restHi = Math.max(...rest.map((r) => r.swing))
+    const lo = rest[rest.length - 1]
+    const hi = rest[0]
     const gained = (most.seats.cp || 0) - (most.seats24.cp || 0)
     out.push({
       lead: `The ${most.label} swung furthest,`,
-      text: `${pts(most.swing)} ${toward(most.swing)}${gained > 0 ? ` for ${fmt(gained)} Conservative gain${gained === 1 ? '' : 's'}` : ''}, against ${restLo.toFixed(1)} to ${restHi.toFixed(1)} in the other regions.`,
+      text: `${pts(most.swing)} ${toward(most.swing)}${gained > 0 ? ` for ${fmt(gained)} Conservative gain${gained === 1 ? '' : 's'}` : ''}, against ${rangeText(lo.swing, hi.swing)} in the other regions.`,
     })
   }
 
