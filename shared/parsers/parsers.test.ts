@@ -233,6 +233,10 @@ describe('elections bc page', () => {
     expect(r.eligible).toBe(3738182)
     const abm = r.contests.find((c) => c.id === 'ABM')!
     expect(abm.boxes).toEqual({ advance: [0, 5], final: [0, 75], ood: '' })
+    expect(r.contests.every((c) => c.rejected === 0)).toBe(true)
+    expect(
+      normalize(enr2024, bcDocAny).contests.some((c) => 'rejected' in c),
+    ).toBe(false)
     // The totals rows ("Total Valid Votes", "Rejected Ballots*") are not candidates.
     expect(abm.choices.map((c) => [c.name, c.partyName])).toEqual([
       ['Darryl Kropp', 'Conservative Party'],

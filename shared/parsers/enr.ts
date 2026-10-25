@@ -7,8 +7,12 @@
 // with one <tr data-ed="Abbotsford-Mission"> group per riding: candidate rows
 // (name, affiliation, votes, pct), a totals row, then three colspan rows
 // "Advance voting ballot boxes | 5 of 5 reported", "Final Voting Day ballot
-// boxes | 16 of 16 reported" and "Out-of-district ballots | Complete". Each
-// riding becomes one kind "district" contest; "polls" counts ballot boxes.
+// boxes | 16 of 16 reported" and "Out-of-district ballots | Complete". The
+// 2026 page (scripts/fixtures/voting-2026-enr-candidate.html) drops the pin
+// column and the out-of-district row, marks box counts "(Not Verified)", and
+// adds "Total Valid Votes", "Rejected Ballots*" and "Total Considered Votes"
+// rows in the candidate shape. Each riding becomes one kind "district"
+// contest; "polls" counts ballot boxes.
 // Candidates are attributed by the page's affiliation column through the
 // election's affiliations map, and matched by name to districts[].candidates
 // for the sitting flag.
@@ -189,6 +193,7 @@ export function normalizeEnr(
     const district = findDistrict(group.name)
     const choices: Choice[] = []
     let districtTotal = 0
+    let rejected: number | null = null
     const reported: Boxes = { advance: null, final: null, ood: '' }
     for (const cells of group.rows) {
       if (cells.length === 1 && cells[0].span >= 5) {
@@ -216,6 +221,7 @@ export function normalizeEnr(
         // "Rejected Ballots*", "Total Considered Votes".
         if (/^(total|rejected)\b/i.test(who)) {
           if (/^total valid votes/i.test(who)) districtTotal = num(at(2))
+          else if (/^rejected/i.test(who)) rejected = num(at(2))
           continue
         }
         const affiliation = at(3)
@@ -252,6 +258,7 @@ export function normalizeEnr(
       acclaimed: false,
       sort: contests.length,
       boxes: reported,
+      ...(rejected != null ? { rejected } : {}),
       choices,
     })
   })

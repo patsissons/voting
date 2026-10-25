@@ -36,6 +36,7 @@ import {
   momentum,
   popularSeries,
   regionShares,
+  rejectedBallots,
   ridingsLed,
   ridingsOf,
   seatsTimeline,
@@ -110,7 +111,11 @@ export function DistrictResults({
         timeZone={election.timeZone}
         stage={stage}
       />
-      <CountTiles latest={latest} unitLabel={capitalize(unit)} />
+      <CountTiles
+        latest={latest}
+        unitLabel={capitalize(unit)}
+        rejected={rejectedBallots(latest)}
+      />
       {matchParty && P[matchParty] ? (
         <Note>
           <PartyChip party={matchParty} label={P[matchParty].name} /> is
@@ -185,12 +190,14 @@ export function DistrictResults({
               total={b.ridings}
               value={`${b.ridingsIn} / ${b.ridings}`}
             />
-            <Meter
-              label="Out-of-district counts done"
-              closed={b.oodComplete}
-              total={b.ridings}
-              value={`${b.oodComplete} / ${b.ridings}`}
-            />
+            {b.oodReported ? (
+              <Meter
+                label="Out-of-district counts done"
+                closed={b.oodComplete}
+                total={b.ridings}
+                value={`${b.oodComplete} / ${b.ridings}`}
+              />
+            ) : null}
             {election.results.baseline ? (
               <Meter
                 label={`Votes vs ${election.results.baseline.year}`}

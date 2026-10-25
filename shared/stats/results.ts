@@ -379,6 +379,8 @@ export type BoxesReported = {
   final: [number, number]
   ridingsIn: number
   ridings: number
+  /** Ridings whose page has an out-of-district line (2024 did, 2026 does not). */
+  oodReported: number
   oodComplete: number
 }
 
@@ -389,6 +391,7 @@ export function boxesReported(payload: Payload): BoxesReported {
     final: [0, 0],
     ridingsIn: 0,
     ridings: 0,
+    oodReported: 0,
     oodComplete: 0,
   }
   for (const c of ridingsOf(payload)) {
@@ -403,9 +406,18 @@ export function boxesReported(payload: Payload): BoxesReported {
     const pairs = [b.advance, b.final].filter((x): x is [number, number] => !!x)
     if (pairs.length && pairs.every((x) => x[1] > 0 && x[0] >= x[1]))
       out.ridingsIn++
+    if (b.ood) out.oodReported++
     if (/complete/i.test(b.ood || '')) out.oodComplete++
   }
   return out
+}
+
+/** Rejected ballots across every riding, or null when the page does not report them (2024). */
+export function rejectedBallots(payload: Payload): number | null {
+  const listed = ridingsOf(payload).filter((c) => c.rejected != null)
+  return listed.length
+    ? listed.reduce((n, c) => n + (c.rejected || 0), 0)
+    : null
 }
 
 export type Flip = {

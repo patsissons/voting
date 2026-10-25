@@ -108,6 +108,26 @@ describe('ResultsView', () => {
     expect(
       screen.getByRole('searchbox', { name: 'Find a riding or candidate' }),
     ).toBeInTheDocument()
+    expect(screen.getByText('Out-of-district counts done')).toBeInTheDocument()
+    expect(screen.queryByText(/rejected/)).toBeNull()
+  })
+
+  it('drops the out-of-district meter and shows rejected ballots on a 2026 page', () => {
+    const e = bc()
+    const snapshots = night(e).map((s) => ({
+      ...s,
+      payload: {
+        ...s.payload,
+        contests: s.payload.contests.map((c) => ({
+          ...c,
+          rejected: c.id === 'ABM' ? 7 : 1,
+          boxes: c.boxes && { ...c.boxes, ood: '' },
+        })),
+      },
+    }))
+    mount(e, snapshots)
+    expect(screen.queryByText('Out-of-district counts done')).toBeNull()
+    expect(screen.getByText(/^plus 99 rejected · /)).toBeInTheDocument()
   })
 
   it('renders every referendum section', () => {
