@@ -37,6 +37,7 @@ const any = vancouverAny()
 const feed2022 = fixture('voting-2022-arearesults.json')
 const feed2025 = fixture('voting-2025-arearesults.json')
 const enr2024 = fixture('voting-2024-enr-candidate.html')
+const enr2026 = fixture('voting-2026-enr-candidate.html')
 const eab2021 = fixture('voting-2021-eab-referendum.html')
 const abDash = fixture('voting-2026-eab-dash-empty.json')
 const bcDoc = bc()
@@ -215,6 +216,32 @@ describe('elections bc page', () => {
     expect(by.ndp.votes).toBe(909277)
     expect(Math.abs(by.ndp.pct - 44.6)).toBeLessThan(0.01)
     expect(r.summary!.reporting).toBe('100%')
+  })
+
+  it('normalizes the 2026 page, which dropped the pin column', () => {
+    const r = normalize(enr2026, bcDoc)
+    expect(r.asOf).toBe('2026-10-24 19:52:00')
+    expect(r.project).toBe('2026 Provincial General Election')
+    expect(r.status).toEqual({
+      initial: 'Not Started',
+      final: 'November 6, 2026',
+    })
+    expect(r.contests.length).toBe(93)
+    expect(r.contests.every((c) => c.id !== c.name)).toBe(true)
+    expect(r.contests.reduce((n, c) => n + c.choices.length, 0)).toBe(353)
+    expect(r.polls).toEqual({ closed: 0, total: 7268 })
+    expect(r.eligible).toBe(3738182)
+    const abm = r.contests.find((c) => c.id === 'ABM')!
+    expect(abm.boxes).toEqual({ advance: [0, 5], final: [0, 75], ood: '' })
+    // The totals rows ("Total Valid Votes", "Rejected Ballots*") are not candidates.
+    expect(abm.choices.map((c) => [c.name, c.partyName])).toEqual([
+      ['Darryl Kropp', 'Conservative Party'],
+      ['Jeff Monds', 'Libertarian'],
+      ['Lakhwinder Jhaj', 'CentreBC'],
+      ['Pam Alexis', 'BC NDP'],
+      ['Virender Dass', 'OneBC'],
+    ])
+    expect(abm.choices.find((c) => c.name === 'Pam Alexis')!.party).toBe('ndp')
   })
 
   it('parses "As of" stamps in the forms the page might use', () => {
