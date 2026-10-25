@@ -60,7 +60,7 @@ import {
 import { CountTiles, SourceNote, StatusLine } from './results-header'
 import type { SectionLink } from './results-view'
 
-/** The momentum-over-time window: about five of Elections BC's 3-minute updates. */
+/** The momentum window (the section and the chart over time): about five of Elections BC's 3-minute updates. */
 const MOMENTUM_MINUTES = 15
 
 /** Ballot boxes reported against the clock, as a one-line timeline. */
@@ -184,7 +184,7 @@ export function DistrictResults({
         )}
       </Section>
 
-      <EveryRiding ridings={ridings} ctx={ctx} own={own} />
+      <EveryRiding ridings={ridings} ctx={ctx} />
 
       <MapSection ridings={ridings} ctx={ctx} own={mine} />
 
@@ -267,7 +267,8 @@ export function DistrictResults({
       />
       <MomentumSection
         id="momentum"
-        m={momentum(snapshots, 60, 5, popularSeries(election))}
+        m={momentum(snapshots, MOMENTUM_MINUTES, 5, popularSeries(election))}
+        chart="change"
         title="Popular-vote momentum"
         noun="votes"
         head="Party"
@@ -467,11 +468,9 @@ function SeatsSection({
 function EveryRiding({
   ridings,
   ctx,
-  own,
 }: {
   ridings: Contest[]
   ctx: RaceContext
-  own?: Contest
 }) {
   const { election, P } = ctx
   const [q, setQ] = useState('')
@@ -511,10 +510,9 @@ function EveryRiding({
           const hits = list.filter((c) => !needle || text(c).includes(needle))
           if (!list.length || (needle && !hits.length)) return null
           const counts = ridingsLed(list, election)
-          const open = needle
-            ? true
-            : (openRegions[reg.key] ??
-              (!!own && list.some((c) => c.id === own.id)))
+          // Collapsed until opened or searched: the viewer's own riding
+          // already has its section above.
+          const open = needle ? true : (openRegions[reg.key] ?? false)
           return (
             <details
               key={reg.key}

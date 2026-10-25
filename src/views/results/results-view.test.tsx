@@ -130,7 +130,9 @@ describe('ResultsView', () => {
     }))
     mount(e, snapshots)
     expect(screen.queryByText('Out-of-district counts done')).toBeNull()
-    expect(screen.getByText(/^plus 99 rejected · /)).toBeInTheDocument()
+    expect(
+      screen.getByText(/^plus 99 rejected · [\d.]+% rejection rate$/),
+    ).toBeInTheDocument()
   })
 
   it('renders every referendum section', () => {
@@ -295,6 +297,28 @@ describe('ResultsView', () => {
     const nav = screen.getByRole('navigation', { name: 'Results sections' })
     fireEvent.click(within(nav).getByRole('link', { name: 'Early vote' }))
     expect(folded.open).toBe(true)
+  })
+
+  it('keeps every region folded and draws momentum as change bars', () => {
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+      configurable: true,
+      get: () => 640,
+    })
+    localStorage.setItem('voting:bc-2026:district', 'ABM')
+    mount(bc())
+    expect(
+      screen.getByRole('heading', { name: 'Your riding: Abbotsford-Mission' }),
+    ).toBeInTheDocument()
+    const regions = [
+      ...document.querySelectorAll('#ridings details.rounded-lg'),
+    ] as HTMLDetailsElement[]
+    expect(regions.length).toBeGreaterThan(1)
+    expect(regions.every((d) => !d.open)).toBe(true)
+    expect(
+      screen.getByRole('img', {
+        name: /^Popular-vote momentum: each share of the votes counted since/,
+      }),
+    ).toBeInTheDocument()
   })
 
   it('shows the advance vote by riding while BC waits', async () => {
