@@ -101,7 +101,12 @@ After making changes from a prompt and BEFORE committing:
   `Scatter` and `RangeDots` (`components/charts/`), `Lines` with `yMin` to
   zoom, `linearFit` (`shared/stats/fit.ts`) and `SectionNav`. Only the newest
   snapshot keeps division rows, so anything by division reads it alone;
-  over-time pieces can read every snapshot. A chambers election has no tabs,
+  over-time pieces can read every snapshot. The props also carry the
+  election's `earlyVote`. Data from outside the feed is hard-coded in the
+  module: `bc-2026/prior.ts` is 2024 by riding (DataBC's voting-place file,
+  split into advance and voting-day ballots and the late ones of the final
+  count; its header says how it was built, and a test checks it against
+  `districts[].last`). A chambers election has no tabs,
   so giving one an analysis means revisiting `resultsOnly` in
   `election-page.tsx`.
 - **Theme**: `src/lib/theme.ts` + `src/components/theme-toggle.tsx`; the
