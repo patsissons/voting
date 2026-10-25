@@ -236,4 +236,5 @@ read the row.
 An Analysis tab is never part of setting up a vote. Once the count is in,
 one can be written by hand for the election: a module under
 `src/views/analysis/<slug>/` registered in `src/views/analysis/index.tsx`
-(see the Analysis tabs note in `AGENTS.md`; `alberta-2026` is the first).
+(see the Analysis tabs note in `AGENTS.md`; `alberta-2026` and `bc-2026` are
+the examples).

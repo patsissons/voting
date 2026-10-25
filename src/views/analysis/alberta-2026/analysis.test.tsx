@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { TipProvider } from '@/components/charts/tooltip'
 import { feedText, fixtureFeeds } from '../../../../scripts/fixtures/fixture.ts'
-import { alberta, bc } from '../../../../scripts/fixtures/load.ts'
+import { alberta, vancouver } from '../../../../scripts/fixtures/load.ts'
 import { normalize } from '../../../../shared/parsers/index.ts'
 import type { Election } from '../../../../shared/schema/election.ts'
 import { AnalysisView, hasAnalysis } from '..'
@@ -59,12 +59,13 @@ describe('alberta analysis', () => {
     ).toBeInTheDocument()
   })
 
-  it('is registered for Alberta only', () => {
+  it('is registered for the elections that have one', () => {
     expect(hasAnalysis('alberta-2026')).toBe(true)
-    expect(hasAnalysis('bc-2026')).toBe(false)
+    expect(hasAnalysis('bc-2026')).toBe(true)
+    expect(hasAnalysis('vancouver-2026')).toBe(false)
     expect(hasAnalysis('toString')).toBe(false)
     const { container } = render(
-      <AnalysisView election={bc()} snapshots={[]} live={false} />,
+      <AnalysisView election={vancouver()} snapshots={[]} live={false} />,
     )
     expect(container).toBeEmptyDOMElement()
   })

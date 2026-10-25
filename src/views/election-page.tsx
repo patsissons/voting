@@ -245,6 +245,7 @@ function ElectionView({
             <AnalysisView
               election={election}
               snapshots={results.snapshots}
+              earlyVote={earlyVote}
               live={results.live}
             />
           ) : (
