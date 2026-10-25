@@ -46,10 +46,28 @@ test('the division table sorts and filters', async ({ page }) => {
 test('an election without an analysis has no analysis tab', async ({
   page,
 }) => {
-  await page.goto('/bc-2026#/analysis')
+  await page.goto('/vancouver-2026#/analysis')
   await expect(page.getByRole('tab', { name: 'Results' })).toHaveAttribute(
     'data-state',
     'active',
   )
   await expect(page.getByRole('tab', { name: 'Analysis' })).toHaveCount(0)
+})
+
+test('the BC analysis compares every riding with 2024', async ({ page }) => {
+  await page.goto('/bc-2026#/analysis')
+  await expect(page.getByRole('tab', { name: 'Analysis' })).toHaveAttribute(
+    'data-state',
+    'active',
+  )
+  await expect(
+    page.getByRole('heading', { name: 'The swing from 2024', level: 2 }),
+  ).toBeVisible()
+  await expect(page.locator('#swing .viz-scatter-dot')).toHaveCount(93)
+  const table = page.locator('#ridings table')
+  await table.scrollIntoViewIfNeeded()
+  await page
+    .getByRole('searchbox', { name: 'Find a riding or region' })
+    .fill('surrey')
+  await expect(table.locator('tbody tr')).toHaveCount(10)
 })
