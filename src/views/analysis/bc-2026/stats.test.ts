@@ -4,7 +4,7 @@ import { bc, bcEarlyVote } from '../../../../scripts/fixtures/load.ts'
 import type { EarlyVote } from '../../../../shared/early-vote.ts'
 import { normalize } from '../../../../shared/parsers/index.ts'
 import type { Contest, Payload } from '../../../../shared/payload.ts'
-import { findings } from './findings'
+import { findings, leadText, swingText } from './findings'
 import { PRIOR } from './prior'
 import {
   finalWatch,
@@ -276,5 +276,16 @@ describe('bc findings', () => {
       /swung furthest|took more than|Turnout|incumbent/,
     )
     expect(leads).toContain('The final count is unlikely to change a seat.')
+  })
+})
+
+describe('bc swing copy', () => {
+  it('names the direction once and who leads', () => {
+    // Bulkley Valley-Stikine: the Conservative lead went 13.4 to 5.4.
+    expect(swingText(5.4 - 13.4)).toBe('8.0 pts toward the NDP')
+    expect(swingText(12.26)).toBe('12.3 pts toward the Conservatives')
+    expect(swingText(0.01)).toBe('no change')
+    expect(leadText(5.4)).toBe('Conservatives by 5.4')
+    expect(leadText(-1.6)).toBe('NDP by 1.6')
   })
 })

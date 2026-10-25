@@ -17,7 +17,7 @@ import { Tile } from '../../results/results-header'
 import { SectionNav } from '../../results/results-view'
 import type { AnalysisProps } from '..'
 import { listOf } from '../alberta-2026/findings'
-import { findings, toward } from './findings'
+import { findings, leadText, swingText, toward } from './findings'
 import {
   finalWatch,
   greenChanges,
@@ -48,12 +48,12 @@ const SECTIONS = [
 
 /** The swing map's bands: the upper edge of each, toward the NDP first. */
 const BANDS = [
-  { lo: -Infinity, hi: -10, label: 'NDP 10+' },
-  { lo: -10, hi: -STEADY, label: `NDP ${STEADY}–10` },
-  { lo: -STEADY, hi: STEADY, label: `within ${STEADY}` },
-  { lo: STEADY, hi: 10, label: `Conservative ${STEADY}–10` },
-  { lo: 10, hi: 20, label: 'Conservative 10–20' },
-  { lo: 20, hi: Infinity, label: 'Conservative 20+' },
+  { lo: -Infinity, hi: -10, label: 'toward NDP 10+' },
+  { lo: -10, hi: -STEADY, label: `toward NDP ${STEADY}–10` },
+  { lo: -STEADY, hi: STEADY, label: `within ${STEADY} either way` },
+  { lo: STEADY, hi: 10, label: `toward Conservative ${STEADY}–10` },
+  { lo: 10, hi: 20, label: 'toward Conservative 10–20' },
+  { lo: 20, hi: Infinity, label: 'toward Conservative 20+' },
 ]
 const DEPTH = [70, 35, 0, 30, 55, 80]
 const bandColor = (i: number) =>
@@ -83,6 +83,36 @@ function shortOf(election: DistrictElection): (key: string) => string {
 
 /** An axis tick in points: "+20", "0", "-20". */
 const leadTick = (v: number) => (v > 0 ? `+${v}` : String(v))
+const arrow = (a: number | undefined, b: number | undefined) =>
+  `${pct1(a || 0)} → ${pct1(b || 0)}`
+
+/** A riding's swing tooltip: the result, both big parties' shares, the leads and the swing. */
+function swingLines(v: RidingView, short: (key: string) => string) {
+  return [
+    {
+      label: 'Result',
+      value:
+        v.winner === v.was
+          ? `${short(v.winner)} hold`
+          : `${short(v.winner)} gain from ${short(v.was)}`,
+      color: partyColor(v.winner),
+    },
+    {
+      label: short('cp'),
+      value: arrow(v.prior.cp, v.shares.cp),
+      color: partyColor('cp'),
+    },
+    {
+      label: short('ndp'),
+      value: arrow(v.prior.ndp, v.shares.ndp),
+      color: partyColor('ndp'),
+    },
+    { label: '2024 lead', value: leadText(v.lead24) },
+    { label: '2026 lead', value: leadText(v.lead26) },
+    { label: 'Swing', value: swingText(v.swing) },
+  ]
+}
+
 const pts = (v: number) => `${signed(v)} pts`
 const signedInt = (n: number) => (n > 0 ? `+${n}` : String(n))
 const cell = (v: number | null | undefined, text = signed) =>
@@ -264,19 +294,7 @@ function SwingSection({
   const byCode = new Map(views.map((v) => [v.code, v]))
   const fills: Record<string, string> = {}
   for (const v of views) fills[v.code] = bandColor(bandOf(v.swing))
-  const lines = (v: RidingView) => [
-    {
-      label: '2024',
-      value: `${short(v.was)}, Conservative lead ${signed(v.lead24)}`,
-      color: partyColor(v.was),
-    },
-    {
-      label: '2026',
-      value: `${short(v.winner)}, Conservative lead ${signed(v.lead26)}`,
-      color: partyColor(v.winner),
-    },
-    { label: 'Swing', value: `${pts(v.swing)} ${toward(v.swing)}` },
-  ]
+  const lines = (v: RidingView) => swingLines(v, short)
   const top = Object.keys(province.seats).sort(
     (a, b) => province.seats[b] - province.seats[a],
   )[0]
@@ -325,7 +343,12 @@ function SwingSection({
         labels={named.map((v) => ({ key: v.code, text: v.name }))}
         ariaLabel="Each riding's Conservative lead over the NDP, 2024 against 2026"
       />
-      <h3 className="text-sm font-semibold">By riding</h3>
+      <h3 className="text-sm font-semibold">
+        By riding{' '}
+        <span className="text-muted-foreground font-normal">
+          swing in points
+        </span>
+      </h3>
       <Legend
         items={BANDS.map((b, i) => ({ label: b.label, color: bandColor(i) }))}
       />
@@ -354,8 +377,9 @@ function SwingSection({
             title: r.label,
             lines: [
               { label: 'Ridings', value: fmt(r.n) },
-              { label: '2024 Conservative lead', value: signed(r.lead24) },
-              { label: '2026 Conservative lead', value: signed(r.lead26) },
+              { label: '2024 lead', value: leadText(r.lead24) },
+              { label: '2026 lead', value: leadText(r.lead26) },
+              { label: 'Swing', value: swingText(r.swing) },
               ...Object.keys(r.seats)
                 .sort((a, b) => r.seats[b] - r.seats[a])
                 .map((k) => ({
@@ -625,7 +649,7 @@ function TurnoutSection({
               title: v.name,
               lines: [
                 { label, value: `${signed(pick(v) as number)}%` },
-                { label: 'Swing', value: `${pts(v.swing)} ${toward(v.swing)}` },
+                { label: 'Swing', value: swingText(v.swing) },
                 {
                   label: 'Won',
                   value: short(v.winner),
