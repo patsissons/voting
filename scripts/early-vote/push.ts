@@ -15,6 +15,12 @@
 //   ... --out early-vote.json    also write the EarlyVote JSON
 //   ... --force                  write even when the counts are unchanged
 //   ... --pdf a.pdf --prior-pdf b.pdf   local files instead of downloading
+//   ... --allow-unreachable      a PDF that cannot be downloaded (after the
+//                                retries) is a warning that keeps the stored
+//                                counts, not a failure; CI passes it, since
+//                                Elections BC's site slows to a crawl on
+//                                election night. A table that no longer
+//                                parses, or a failed write, still fails.
 //
 // Needs pdftotext (poppler): `brew install poppler`.
 import { execFile } from 'node:child_process'
@@ -40,15 +46,61 @@ const USER_AGENT = 'voting.lgtm.page (+https://github.com/patsissons/voting)'
 
 type Pdf = { bytes: Buffer; lastModified: string | null }
 
-async function download(url: string): Promise<Pdf> {
-  const res = await fetch(url, { headers: { 'user-agent': USER_AGENT } })
-  if (res.status !== 200) throw new Error(`${url}: HTTP ${res.status}`)
-  const type = res.headers.get('content-type') || ''
-  if (!/pdf/i.test(type)) throw new Error(`${url}: not a PDF (${type})`)
-  return {
-    bytes: Buffer.from(await res.arrayBuffer()),
-    lastModified: res.headers.get('last-modified'),
+/** The source could not be reached or answered with an error: nothing to parse, nothing wrong on our side. */
+class UnreachableError extends Error {}
+
+/** Waits before each retry; Node's fetch gives up on a connect after 10 s. */
+const RETRY_MS = [5000, 15000, 30000]
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+/** "fetch failed (UND_ERR_CONNECT_TIMEOUT)": undici hides the reason in the cause. */
+function reason(err: unknown): string {
+  const e = err as {
+    message?: string
+    cause?: { code?: string; message?: string }
   }
+  const cause = e && e.cause ? e.cause.code || e.cause.message : ''
+  return `${(e && e.message) || String(err)}${cause ? ` (${cause})` : ''}`
+}
+
+async function download(url: string): Promise<Pdf> {
+  let last = ''
+  for (let attempt = 0; attempt <= RETRY_MS.length; attempt++) {
+    if (attempt) {
+      console.log(
+        `${url}: ${last}; retrying in ${RETRY_MS[attempt - 1] / 1000} s`,
+      )
+      await sleep(RETRY_MS[attempt - 1])
+    }
+    let res: Response
+    try {
+      res = await fetch(url, {
+        headers: { 'user-agent': USER_AGENT },
+        signal: AbortSignal.timeout(60000),
+      })
+    } catch (err) {
+      last = reason(err)
+      continue
+    }
+    if (res.status !== 200) {
+      last = `HTTP ${res.status}`
+      // A 4xx other than rate limiting will not change on a retry.
+      if (res.status < 500 && res.status !== 429) break
+      continue
+    }
+    const type = res.headers.get('content-type') || ''
+    if (!/pdf/i.test(type)) throw new Error(`${url}: not a PDF (${type})`)
+    try {
+      return {
+        bytes: Buffer.from(await res.arrayBuffer()),
+        lastModified: res.headers.get('last-modified'),
+      }
+    } catch (err) {
+      last = reason(err)
+    }
+  }
+  throw new UnreachableError(`${url}: ${last}`)
 }
 
 /** The text pdftotext -layout makes of a PDF. */
@@ -182,10 +234,16 @@ async function main() {
     try {
       await push(election, args, client)
     } catch (err) {
+      const message = `${election.slug}: ${String((err as Error).message || err)}`
+      if (err instanceof UnreachableError && args.has('allow-unreachable')) {
+        // A GitHub Actions annotation; plain text anywhere else.
+        console.log(
+          `${process.env.GITHUB_ACTIONS ? '::warning::' : 'warning: '}${message}; kept the stored counts`,
+        )
+        continue
+      }
       failed.push(election.slug)
-      console.error(
-        `${election.slug}: ${String((err as Error).message || err)}`,
-      )
+      console.error(message)
     }
   }
   if (failed.length) throw new Error(`failed: ${failed.join(', ')}`)

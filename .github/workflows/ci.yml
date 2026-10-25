@@ -252,8 +252,12 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends poppler-utils
+      # Elections BC's site crawls on election night (a 10-24 deploy failed
+      # here on a connect timeout): the push retries, and a PDF it still
+      # cannot download is a warning that keeps the stored counts.
       - name: Push the advance vote
-        run: pnpm early-vote:push --all --url https://voting.pockethost.io
+        timeout-minutes: 5
+        run: pnpm early-vote:push --all --allow-unreachable --url https://voting.pockethost.io
         env:
           PB_SUPERUSER_EMAIL: ${{ secrets.PHIO_USERNAME }}
           PB_SUPERUSER_PASSWORD: ${{ secrets.PHIO_PASSWORD }}
