@@ -23,6 +23,7 @@ import {
   partyShares,
   popularSeries,
   regionShares,
+  rejectedBallots,
   seatLineRace,
   seatsTimeline,
   wallMs,
@@ -32,6 +33,7 @@ const election = vancouver()
 const any = vancouverAny()
 const bcDoc = bc()
 const enr2024 = fixture('voting-2024-enr-candidate.html')
+const enr2026 = fixture('voting-2026-enr-candidate.html')
 const night = fixtureFeeds(election).map((f) => ({
   payload: normalize(feedText(f), any),
 }))
@@ -189,12 +191,24 @@ describe('riding stats', () => {
     expect(b.ridings).toBe(93)
     expect(b.advance[0] + b.final[0]).toBe(r.polls.closed)
     expect(b.advance[1] + b.final[1]).toBe(r.polls.total)
-    expect([b.ridingsIn, b.oodComplete]).toEqual([93, 93])
+    expect([b.ridingsIn, b.oodReported, b.oodComplete]).toEqual([93, 93, 93])
     const first = boxesReported(bcNight[0].payload)
     expect(first.ridingsIn < first.ridings).toBe(true)
     expect(first.advance[0] + first.final[0]).toBe(
       bcNight[0].payload.polls.closed,
     )
+  })
+
+  it('reports no out-of-district line and counts rejected ballots on the 2026 page', () => {
+    const r = normalize(enr2026, bcDoc)
+    expect(boxesReported(r)).toMatchObject({ ridings: 93, oodReported: 0 })
+    expect(rejectedBallots(r)).toBe(0)
+    expect(rejectedBallots(enrPayload())).toBeNull()
+    const some: Payload = {
+      ...r,
+      contests: r.contests.map((c, i) => ({ ...c, rejected: i < 3 ? 4 : 0 })),
+    }
+    expect(rejectedBallots(some)).toBe(12)
   })
 
   it('compares each riding leader with the 2024 winning party', () => {

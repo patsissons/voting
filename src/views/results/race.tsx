@@ -132,7 +132,7 @@ export function Race({
     : ''
   const sub =
     contest.kind === 'district'
-      ? `${boxes || 'no boxes yet'} · ${fmt(contest.ballots)} votes${d && d.last && d.last.party && P[d.last.party] ? ` · last time: ${P[d.last.party].short} by ${d.last.margin} points` : ''}`
+      ? `${boxes || 'no boxes yet'} · ${fmt(contest.ballots)} votes${contest.rejected ? ` · ${fmt(contest.rejected)} rejected` : ''}${d && d.last && d.last.party && P[d.last.party] ? ` · last time: ${P[d.last.party].short} by ${d.last.margin} points` : ''}`
       : contest.reporting != null
         ? `${pct1(contest.reporting)} of the expected vote in · ${fmt(contest.ballots)} votes`
         : `${contest.voteFor === 1 ? 'vote for 1' : `top ${contest.voteFor} elected`} · ${fmt(contest.ballots)} ballots`

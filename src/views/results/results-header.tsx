@@ -111,12 +111,16 @@ export function Tile({
 export function CountTiles({
   latest,
   unitLabel,
+  rejected = null,
 }: {
   latest: Payload
   unitLabel: string
+  /** Rejected ballots on top of the counted ones, when the source reports them. */
+  rejected?: number | null
 }) {
   const p = latest.polls
   const share = p.total ? p.closed / p.total : 0
+  const considered = latest.ballots + (rejected || 0)
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       <Tile
@@ -125,7 +129,15 @@ export function CountTiles({
         sub={`of ${fmt(p.total)} · ${pct1(share * 100)}`}
         share={share}
       />
-      <Tile label="Ballots counted" value={fmt(latest.ballots)} />
+      <Tile
+        label="Ballots counted"
+        value={fmt(latest.ballots)}
+        sub={
+          rejected != null
+            ? `plus ${fmt(rejected)} rejected${considered ? ` · ${pct1((rejected / considered) * 100)} of ballots` : ''}`
+            : undefined
+        }
+      />
       {latest.turnout != null ? (
         <Tile
           label="Turnout"

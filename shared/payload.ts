@@ -64,7 +64,7 @@ export type Contest = {
   boxes?: Boxes
   /** A chamber contest: the feed's percent of the expected vote reported (0-100). */
   reporting?: number
-  /** Referendum questions (eab-ref, eab-dash). */
+  /** Referendum questions (eab-ref, eab-dash); rejected also on a 2026 ebc-enr riding. */
   n?: number
   rejected?: number
   posted?: boolean
