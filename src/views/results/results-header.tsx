@@ -134,7 +134,7 @@ export function CountTiles({
         value={fmt(latest.ballots)}
         sub={
           rejected != null
-            ? `plus ${fmt(rejected)} rejected${considered ? ` · ${pct1((rejected / considered) * 100)} of ballots` : ''}`
+            ? `plus ${fmt(rejected)} rejected${considered ? ` · ${pct1((rejected / considered) * 100)} rejection rate` : ''}`
             : undefined
         }
       />

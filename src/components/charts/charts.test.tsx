@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { Meter, SegmentBar, TwoOptionBar } from './bars'
+import { ChangeBars } from './change-bars'
 import { Choropleth } from './choropleth'
 import { Dumbbell } from './dumbbell'
 import { FlipClock } from './flip-clock'
@@ -270,6 +271,50 @@ describe('chart kit', () => {
     expect(svg.querySelector('.viz-you-ring')).not.toBeNull()
     fireEvent.focus(svg.querySelector('circle.viz-dot')!)
     expect(screen.getByRole('status')).toHaveTextContent('A')
+  })
+
+  it('centres change bars on zero, gains right and losses left', () => {
+    withWidth(500)
+    render(
+      <TipProvider>
+        <ChangeBars
+          rows={[
+            {
+              label: 'Up',
+              color: 'red',
+              value: 1.5,
+              describe: () => ({ title: 'up', lines: [] }),
+            },
+            {
+              label: 'Down',
+              color: 'blue',
+              value: -2.5,
+              describe: () => ({ title: 'down', lines: [] }),
+            },
+          ]}
+          xFormat={(v) => String(v)}
+          valueFormat={(v) => `${v > 0 ? '+' : ''}${v} pts`}
+          ariaLabel="change"
+        />
+      </TipProvider>,
+    )
+    const svg = screen.getByRole('img', { name: 'change' })
+    const zero = Number(svg.querySelector('.viz-base')!.getAttribute('x1'))
+    const [up, down] = [...svg.querySelectorAll('rect[rx]')].map((r) => ({
+      x: Number(r.getAttribute('x')),
+      w: Number(r.getAttribute('width')),
+    }))
+    expect(up.x).toBeCloseTo(zero)
+    expect(down.x + down.w).toBeCloseTo(zero)
+    expect(down.w).toBeGreaterThan(up.w)
+    // A symmetric axis with headroom past the largest change.
+    const ticks = [
+      ...svg.querySelectorAll('.viz-axis text:not(.viz-row-label)'),
+    ].map((t) => Number(t.textContent))
+    expect(ticks[0]).toBe(-ticks[ticks.length - 1])
+    expect(ticks[ticks.length - 1]).toBeGreaterThan(2.5)
+    expect(screen.getByText('+1.5 pts')).toBeInTheDocument()
+    expect(screen.getByText('-2.5 pts')).toBeInTheDocument()
   })
 
   it('renders strips, dumbbells, legends and bars', () => {

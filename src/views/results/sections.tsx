@@ -4,6 +4,7 @@
 // (lines with a table).
 import type { ReactNode } from 'react'
 import { DataTable, Note, Section } from '@/components/bits'
+import { ChangeBars } from '@/components/charts/change-bars'
 import { Dumbbell } from '@/components/charts/dumbbell'
 import { Legend } from '@/components/charts/legend'
 import { Lines } from '@/components/charts/lines'
@@ -43,6 +44,7 @@ export function MomentumSection({
   head = 'Candidate',
   label,
   P,
+  chart = 'dumbbell',
 }: {
   id: string
   m: Momentum | null
@@ -51,38 +53,55 @@ export function MomentumSection({
   head?: string
   label: (r: Momentum['rows'][number]) => string
   P: PartyLookup
+  /** 'change' draws each row's gain or loss against its overall share, for counts where the shift is a point or two. */
+  chart?: 'dumbbell' | 'change'
 }) {
   if (!m || !m.rows.length) return null
   const lead = m.rows[0]
   const since = clockOf(m.since)
   const who = (r: Momentum['rows'][number]) =>
     `${r.name}${r.party && P[r.party] && P[r.party].name !== r.name ? ` (${P[r.party].short})` : ''}`
+  const describe = (r: Momentum['rows'][number]) => ({
+    title: who(r),
+    lines: [
+      { label: 'Overall', value: pct1(r.overall) },
+      { label: `Since ${since}`, value: pct1(r.recent) },
+      { label: 'Change', value: `${signed(r.change)} pts` },
+    ],
+  })
   return (
     <Section id={id} title={title} sub={`votes counted since ${since}`}>
       <p className="font-medium">
         Of the {fmt(m.votes)} {noun} counted since {since}, {lead.name} took{' '}
         {pct1(lead.recent)} ({pct1(lead.overall)} overall).
       </p>
-      <Dumbbell
-        rows={m.rows.map((r) => ({
-          label: label(r),
-          color: partyColor(r.party),
-          a: r.overall,
-          b: r.recent,
-          describe: () => ({
-            title: who(r),
-            lines: [
-              { label: 'Overall', value: pct1(r.overall) },
-              { label: `Since ${since}`, value: pct1(r.recent) },
-              { label: 'Change', value: `${signed(r.change)} pts` },
-            ],
-          }),
-        }))}
-        aLabel="Overall share"
-        bLabel={`Share since ${since}`}
-        xFormat={(v) => `${Math.round(v)}%`}
-        ariaLabel={`${title}: share overall and of the votes counted since ${since}`}
-      />
+      {chart === 'change' ? (
+        <ChangeBars
+          rows={m.rows.map((r) => ({
+            label: label(r),
+            color: partyColor(r.party),
+            value: r.change,
+            describe: () => describe(r),
+          }))}
+          xFormat={(v) => (v ? signed(v).replace('.0', '') : '0')}
+          valueFormat={(v) => `${signed(v)} pts`}
+          ariaLabel={`${title}: each share of the votes counted since ${since} against its overall share, in points`}
+        />
+      ) : (
+        <Dumbbell
+          rows={m.rows.map((r) => ({
+            label: label(r),
+            color: partyColor(r.party),
+            a: r.overall,
+            b: r.recent,
+            describe: () => describe(r),
+          }))}
+          aLabel="Overall share"
+          bLabel={`Share since ${since}`}
+          xFormat={(v) => `${Math.round(v)}%`}
+          ariaLabel={`${title}: share overall and of the votes counted since ${since}`}
+        />
+      )}
       <Note>
         Batches can lean one way by where and when they were cast (advance,
         mail, election day), so this reads the votes counted, not a forecast.
