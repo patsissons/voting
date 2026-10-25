@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { seriesColor } from '@/lib/party'
-import { fmt, pct1, signed, wallClock } from '../../../../shared/format.ts'
+import { fmt, pct1, wallClock } from '../../../../shared/format.ts'
 import type { Payload } from '../../../../shared/payload.ts'
 import type {
   ReferendumElection,
@@ -120,6 +120,12 @@ function shade(n: number, v: number | null | undefined): string | undefined {
   const depth = Math.round(Math.min(1, Math.abs(v - 50) / 30) * 50)
   return `color-mix(in oklab, var(${optionOne ? '--ref-a' : '--ref-b'}) ${depth}%, var(--muted))`
 }
+
+/** Points with no sign, where the words already say which way. */
+const ptsText = (v: number) => `${Math.abs(v).toFixed(1)} pts`
+/** A signed gap as "3.2 pts above" or "1.0 pts below". */
+const sideOf = (v: number) =>
+  Math.abs(v) < 0.05 ? 'level' : `${ptsText(v)} ${v > 0 ? 'above' : 'below'}`
 
 const shareText = (v: number | null | undefined) =>
   v == null ? '-' : v.toFixed(1)
@@ -301,8 +307,8 @@ function PollsSection({ gaps }: { gaps: ReturnType<typeof pollGaps> }) {
               ...(g.range
                 ? [
                     {
-                      label: 'Gap to the latest poll',
-                      value: `${signed(g.value - g.range.latest)} pts`,
+                      label: 'Against the latest poll',
+                      value: sideOf(g.value - g.range.latest),
                     },
                   ]
                 : []),
@@ -401,7 +407,7 @@ function AxisSection({
                   value: pct1(d.y[SEPARATION]),
                 },
                 { label: `Q${q.n} ${q.options[0].t}`, value: pct1(d.y[q.n]) },
-                { label: 'Distance from the line', value: `${signed(e)} pts` },
+                { label: 'Against the line', value: sideOf(e) },
                 ...(d.complete || !d.polls
                   ? []
                   : [
@@ -433,8 +439,8 @@ function AxisSection({
       <Note>
         Q{q.n} {q.options[0].t} = {qf.fit.a.toFixed(1)} + {qf.fit.b.toFixed(2)}{' '}
         × {sep.options[1].t}. Furthest above the line:{' '}
-        {listOf(above.map((r) => `${r.d.name} (${signed(r.e)})`))}. Furthest
-        below: {listOf(below.map((r) => `${r.d.name} (${signed(r.e)})`))}.
+        {listOf(above.map((r) => `${r.d.name} (${ptsText(r.e)})`))}. Furthest
+        below: {listOf(below.map((r) => `${r.d.name} (${ptsText(r.e)})`))}.
       </Note>
     </Section>
   )
