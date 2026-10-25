@@ -206,16 +206,25 @@ export function normalizeEnr(
         districtTotal = num(cells[1].text)
         continue
       }
-      if (cells.length >= 6) {
-        const who = cells[2].text
+      if (cells.length >= 5) {
+        // Read from the end: 2024 led each row with a pin button and the
+        // riding (6 cells), 2026 with the riding only (5 cells).
+        const at = (i: number) => cells[cells.length - i].text
+        const who = at(4)
         if (!who) continue
-        const affiliation = cells[3].text
+        // 2026's totals rows share the candidate shape: "Total Valid Votes",
+        // "Rejected Ballots*", "Total Considered Votes".
+        if (/^(total|rejected)\b/i.test(who)) {
+          if (/^total valid votes/i.test(who)) districtTotal = num(at(2))
+          continue
+        }
+        const affiliation = at(3)
         const known = candidateMatch(district, who)
         choices.push({
           ballot: null,
           name: known ? known[0] : who,
-          votes: num(cells[4].text),
-          pct: num(cells[5].text),
+          votes: num(at(2)),
+          pct: num(at(1)),
           party: partyOf(affiliation) || (known && known[1]) || null,
           partyName: affiliation,
           incumbent: !!(known && known[2]),
