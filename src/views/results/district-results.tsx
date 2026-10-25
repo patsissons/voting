@@ -1,7 +1,8 @@
 // A riding election (BC): the seat count across the province with the
 // majority line and the popular vote, the viewer's own riding, every riding
 // by region with a filter, the map, the seat timeline, then the count (boxes left,
-// popular-vote momentum), the ridings (changing hands, closest) and the
+// boxes over the night, popular-vote momentum, then the momentum and the vote
+// share against the clock), the ridings (changing hands, closest) and the
 // parties (vote by region, the legislature on the compass).
 import { useMemo, useState } from 'react'
 import {
@@ -14,6 +15,7 @@ import {
 } from '@/components/bits'
 import { Meter, SegmentBar } from '@/components/charts/bars'
 import { Choropleth } from '@/components/charts/choropleth'
+import { niceTicks } from '@/components/charts/use-measure'
 import { Legend } from '@/components/charts/legend'
 import { useTip, tipHandlersFor } from '@/components/charts/tooltip'
 import { Input } from '@/components/ui/input'
@@ -34,17 +36,22 @@ import {
   leaderOf,
   legislatureCentre,
   momentum,
+  momentumClock,
   popularSeries,
   regionShares,
   rejectedBallots,
   ridingsLed,
   ridingsOf,
   seatsTimeline,
+  shareClock,
   voteShares,
+  type Timeline,
 } from '../../../shared/stats/results.ts'
+import { pollsSeries } from '../../../shared/stats/referendum.ts'
 import { RidingPicker } from '../compass/riding-card'
 import { RaceBody, RaceRow, labelOf, type RaceContext } from './race'
 import {
+  ClockSection,
   CompassSection,
   MomentumSection,
   SharesSection,
@@ -52,6 +59,36 @@ import {
 } from './sections'
 import { CountTiles, SourceNote, StatusLine } from './results-header'
 import type { SectionLink } from './results-view'
+
+/** The momentum-over-time window: about five of Elections BC's 3-minute updates. */
+const MOMENTUM_MINUTES = 15
+
+/** Ballot boxes reported against the clock, as a one-line timeline. */
+function boxesClock(snapshots: Snapshot[], unit: string): Timeline | null {
+  const data = pollsSeries(snapshots)
+  if (!data) return null
+  return {
+    rows: data.rows,
+    xs: data.xs,
+    series: [
+      {
+        id: 'boxes',
+        label: `${capitalize(unit)} reported`,
+        short: 'Reported',
+        party: null,
+        values: data.values,
+      },
+    ],
+  }
+}
+
+/** The boxes axis follows the count up to 100%, so the early night is not a flat line on the floor. */
+function boxesTicks(snapshots: Snapshot[]): number[] | undefined {
+  const data = pollsSeries(snapshots)
+  if (!data) return undefined
+  const ticks = niceTicks(Math.max(1, ...data.values))
+  return ticks[ticks.length - 1] >= 100 ? [0, 25, 50, 75, 100] : ticks
+}
 
 export function districtSections(election: DistrictElection): SectionLink[] {
   return [
@@ -217,6 +254,17 @@ export function DistrictResults({
           </Note>
         </Section>
       ) : null}
+      <ClockSection
+        id="boxes-time"
+        t={boxesClock(snapshots, unit)}
+        title={`${capitalize(unit)} reported over time`}
+        sub={`${fmt(latest.polls.closed)} of ${fmt(latest.polls.total)} so far`}
+        yTicks={boxesTicks(snapshots)}
+        yFormat={(v) => `${+v.toFixed(2)}%`}
+        valueFormat={pct1}
+        color={() => 'var(--primary)'}
+        ariaLabel={`Share of ${unit} reported over time`}
+      />
       <MomentumSection
         id="momentum"
         m={momentum(snapshots, 60, 5, popularSeries(election))}
@@ -225,6 +273,31 @@ export function DistrictResults({
         head="Party"
         label={(r) => partyShort(P, r.party || 'other')}
         P={P}
+      />
+      <ClockSection
+        id="momentum-time"
+        t={momentumClock(snapshots, election, MOMENTUM_MINUTES)}
+        title="Where the new votes went"
+        sub={`each party's share of the votes counted in the ${MOMENTUM_MINUTES} minutes before each update`}
+        yFormat={(v) => `${Math.round(v)}%`}
+        valueFormat={pct1}
+        ariaLabel={`Each party's share of the votes counted in the ${MOMENTUM_MINUTES} minutes before each update`}
+      >
+        <Note>
+          A party whose line runs above its share in the chart below is gaining
+          as the count goes on. Early updates move a lot: a handful of boxes
+          from one part of the province can swing a {MOMENTUM_MINUTES}-minute
+          window.
+        </Note>
+      </ClockSection>
+      <ClockSection
+        id="share-time"
+        t={shareClock(snapshots, election)}
+        title="Popular vote over time"
+        sub="each party's share of all votes counted so far"
+        yFormat={(v) => `${Math.round(v)}%`}
+        valueFormat={pct1}
+        ariaLabel="Each party's share of all votes counted so far, over time"
       />
 
       {near.length ? (

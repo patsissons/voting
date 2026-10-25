@@ -614,6 +614,113 @@ export function mayorTimeline(
 }
 
 /** Ridings led by the top four parties at every snapshot with polls, against the share of boxes reported. */
+const partyVotes = (payload: Payload): Record<string, number> => {
+  const out: Record<string, number> = {}
+  for (const x of (payload.summary && payload.summary.parties) || [])
+    out[x.key] = x.votes
+  return out
+}
+const sumOf = (votes: Record<string, number>) =>
+  Object.values(votes).reduce((n, v) => n + v, 0)
+
+/** The parties a clock timeline follows: each with at least `floor`% of the newest count, largest first, at most `top`. */
+function clockSeries(
+  latest: Payload,
+  election: PartyElection,
+  top: number,
+  floor = 1,
+): Omit<TimelineSeries, 'values'>[] {
+  const votes = partyVotes(latest)
+  const total = sumOf(votes)
+  const names: Record<string, { name: string; short: string }> = {}
+  for (const p of election.parties) names[p.key] = p
+  return Object.keys(votes)
+    .filter((k) => total > 0 && (votes[k] / total) * 100 >= floor)
+    .sort((a, b) => votes[b] - votes[a])
+    .slice(0, top)
+    .map((k) => ({
+      id: k,
+      label: k === 'other' || !names[k] ? 'Others' : names[k].name,
+      short: k === 'other' || !names[k] ? 'Others' : names[k].short,
+      party: k === 'other' ? null : k,
+    }))
+}
+
+/** Snapshots with a stamp and a counted province-wide vote, oldest first. */
+const clockRows = (snapshots: PayloadRow[]) =>
+  snapshots.filter(
+    (r) =>
+      r.payload &&
+      r.payload.summary &&
+      Number.isFinite(wallMs(r.payload.asOf)) &&
+      sumOf(partyVotes(r.payload)) > 0,
+  )
+
+/** Each party's share of all votes counted so far at every snapshot, against the clock (xs are wall-clock ms). */
+export function shareClock(
+  snapshots: PayloadRow[],
+  election: PartyElection,
+  top = 6,
+): Timeline | null {
+  const rows = clockRows(snapshots)
+  if (rows.length < 2) return null
+  const keys = clockSeries(rows[rows.length - 1].payload, election, top)
+  if (!keys.length) return null
+  const shares = rows.map((r) => {
+    const votes = partyVotes(r.payload)
+    const total = sumOf(votes)
+    return (k: string) => ((votes[k] || 0) / total) * 100
+  })
+  return {
+    rows,
+    xs: rows.map((r) => wallMs(r.payload.asOf)),
+    series: keys.map((s) => ({ ...s, values: shares.map((f) => f(s.id)) })),
+  }
+}
+
+/**
+ * Each party's share of the votes added in the `minutes` before every
+ * snapshot, against the clock: the momentum line. A party running above its
+ * overall share is gaining. A snapshot with no earlier one that far back
+ * measures from the first stored one; snapshots that added no votes are left
+ * out.
+ */
+export function momentumClock(
+  snapshots: PayloadRow[],
+  election: PartyElection,
+  minutes = 15,
+  top = 6,
+): Timeline | null {
+  const rows = clockRows(snapshots)
+  if (rows.length < 2) return null
+  const keys = clockSeries(rows[rows.length - 1].payload, election, top)
+  if (!keys.length) return null
+  const points: { row: PayloadRow; share: (k: string) => number }[] = []
+  for (let i = 1; i < rows.length; i++) {
+    const cutoff = wallMs(rows[i].payload.asOf) - minutes * 60000
+    let base = rows[0]
+    for (let j = 0; j < i; j++)
+      if (wallMs(rows[j].payload.asOf) <= cutoff) base = rows[j]
+    const now = partyVotes(rows[i].payload)
+    const then = partyVotes(base.payload)
+    const added = sumOf(now) - sumOf(then)
+    if (added <= 0) continue
+    points.push({
+      row: rows[i],
+      share: (k) => Math.max(0, ((now[k] || 0) - (then[k] || 0)) / added) * 100,
+    })
+  }
+  if (points.length < 2) return null
+  return {
+    rows: points.map((p) => p.row),
+    xs: points.map((p) => wallMs(p.row.payload.asOf)),
+    series: keys.map((s) => ({
+      ...s,
+      values: points.map((p) => p.share(s.id)),
+    })),
+  }
+}
+
 export function seatsTimeline(
   snapshots: PayloadRow[],
   election: PartyElection,

@@ -1,6 +1,8 @@
 // Sections shared by the at-large and riding results pages: momentum
 // (dumbbell), vote shares by group (segmented bars), seats on the compass
-// plane, and the election-night timeline (lines with a table).
+// plane, and the election-night timelines, by share reported or by the clock
+// (lines with a table).
+import type { ReactNode } from 'react'
 import { DataTable, Note, Section } from '@/components/bits'
 import { Dumbbell } from '@/components/charts/dumbbell'
 import { Legend } from '@/components/charts/legend'
@@ -17,6 +19,7 @@ import {
   partyShort,
   type PartyLookup,
 } from '@/lib/party'
+import { atClock, timeTicks } from '@/lib/time'
 import {
   clockOf,
   fmt,
@@ -266,6 +269,78 @@ export function CompassSection({
           ? ` ${centre.unplaced} ${centre.unplaced === 1 ? 'seat goes' : 'seats go'} to candidates outside the compass parties and ${centre.unplaced === 1 ? 'is' : 'are'} not placed.`
           : ''}
       </Note>
+    </Section>
+  )
+}
+
+/** A timeline against the clock (xs in wall-clock ms): one line per series, a legend for two or more, and the table under it. */
+export function ClockSection({
+  id,
+  t,
+  title,
+  sub,
+  yFormat,
+  ariaLabel,
+  valueFormat,
+  yTicks,
+  color = (s) => partyColor(s.party),
+  children,
+}: {
+  id: string
+  t: Timeline | null
+  title: string
+  sub: string
+  yFormat: (v: number) => string
+  ariaLabel: string
+  valueFormat?: (v: number) => string
+  yTicks?: number[]
+  color?: (s: Timeline['series'][number]) => string
+  children?: ReactNode
+}) {
+  if (!t) return null
+  const series = t.series.map((s) => ({
+    label: s.label,
+    short: s.short,
+    color: color(s),
+    values: s.values,
+  }))
+  const start = t.xs[0]
+  const end = t.xs[t.xs.length - 1]
+  return (
+    <Section id={id} title={title} sub={sub}>
+      {series.length > 1 ? (
+        <Legend
+          items={series.map((s) => ({
+            label: s.label,
+            color: s.color,
+            line: true,
+          }))}
+        />
+      ) : null}
+      <Lines
+        points={t.xs}
+        xMin={start}
+        xMax={end}
+        xTicks={timeTicks(start, end)}
+        xFormat={atClock}
+        yFormat={yFormat}
+        yTicks={yTicks}
+        valueFormat={valueFormat}
+        lines={series}
+        title={(i) =>
+          `${clockOf(t.rows[i].payload.asOf)} · ${fmt(t.rows[i].payload.polls.closed)} of ${fmt(t.rows[i].payload.polls.total)} reported`
+        }
+        ariaLabel={ariaLabel}
+      />
+      {children}
+      <DataTable
+        heads={['As of', 'Reported', ...series.map((s) => s.short)]}
+        rows={t.rows.map((r, i) => [
+          clockOf(r.payload.asOf),
+          `${fmt(r.payload.polls.closed)}/${fmt(r.payload.polls.total)}`,
+          ...series.map((s) => (valueFormat || yFormat)(s.values[i] as number)),
+        ])}
+      />
     </Section>
   )
 }

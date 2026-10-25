@@ -20,12 +20,14 @@ import {
   legislatureCentre,
   mayorTimeline,
   momentum,
+  momentumClock,
   partyShares,
   popularSeries,
   regionShares,
   rejectedBallots,
   seatLineRace,
   seatsTimeline,
+  shareClock,
   wallMs,
 } from './results.ts'
 
@@ -209,6 +211,48 @@ describe('riding stats', () => {
       contests: r.contests.map((c, i) => ({ ...c, rejected: i < 3 ? 4 : 0 })),
     }
     expect(rejectedBallots(some)).toBe(12)
+  })
+
+  it("plots each party's share of the vote against the clock", () => {
+    const t = shareClock(bcNight, bcDoc)!
+    expect(t.rows.length).toBeGreaterThanOrEqual(2)
+    expect(t.xs).toEqual(t.rows.map((r) => wallMs(r.payload.asOf)))
+    expect(t.xs.every((x, i) => i === 0 || x > t.xs[i - 1])).toBe(true)
+    const last = t.rows[t.rows.length - 1].payload
+    const lead = last
+      .summary!.parties.slice()
+      .sort((a, b) => b.votes - a.votes)[0]
+    expect(t.series[0].id).toBe(lead.key)
+    const total = last.summary!.parties.reduce((n, p) => n + p.votes, 0)
+    expect(t.series[0].values[t.rows.length - 1]).toBeCloseTo(
+      (lead.votes / total) * 100,
+      9,
+    )
+    expect(shareClock(bcNight.slice(0, 1), bcDoc)).toBeNull()
+  })
+
+  it("plots each party's share of the newest votes against the clock", () => {
+    const t = momentumClock(bcNight, bcDoc, 15)!
+    // The fixture steps 20 minutes apart, so each point measures from the one before.
+    const rows = bcNight.filter((r) => r.payload.ballots > 0)
+    expect(t.rows[0]).toBe(rows[1])
+    const votes = (p: Payload, k: string) =>
+      p.summary!.parties.find((x) => x.key === k)!.votes
+    const k = t.series[0].id
+    const [a, b] = [rows[1].payload, rows[2].payload]
+    const added = b.ballots - a.ballots
+    expect(t.series[0].values[1]).toBeCloseTo(
+      ((votes(b, k) - votes(a, k)) / added) * 100,
+      9,
+    )
+    // A wide window reaches back to the first stored snapshot.
+    const wide = momentumClock(bcNight, bcDoc, 600)!
+    const first = rows[0].payload
+    const end = rows[rows.length - 1].payload
+    expect(wide.series[0].values[wide.rows.length - 1]).toBeCloseTo(
+      ((votes(end, k) - votes(first, k)) / (end.ballots - first.ballots)) * 100,
+      9,
+    )
   })
 
   it('compares each riding leader with the 2024 winning party', () => {
