@@ -30,6 +30,14 @@ const THE: Record<string, string> = {
 export const toward = (swing: number) =>
   `toward the ${THE[swing >= 0 ? 'cp' : 'ndp']}`
 
+/** A swing in words, its direction once: "8.0 pts toward the NDP". */
+export const swingText = (swing: number) =>
+  Math.abs(swing) < 0.05
+    ? 'no change'
+    : `${Math.abs(swing).toFixed(1)} pts ${toward(swing)}`
+/** A Conservative-over-NDP lead as who leads: "Conservatives by 5.4". */
+export const leadText = (lead: number) =>
+  `${lead >= 0 ? 'Conservatives' : 'NDP'} by ${Math.abs(lead).toFixed(1)}`
 const seatsText = (n: number) => `${fmt(n)} seat${n === 1 ? '' : 's'}`
 
 /** The votes counted against 2024's advance and voting-day votes. */
