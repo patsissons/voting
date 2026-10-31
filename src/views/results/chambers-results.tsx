@@ -302,6 +302,8 @@ function ChamberBlock({
   )
 }
 
+/** "+3", "−2" or "±0": a gain or loss of seats. */
+const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0')
 const mix = (color: string, pct: number) =>
   `color-mix(in oklab, ${color} ${pct}%, var(--background))`
 const hatch = (color: string) =>
@@ -334,6 +336,14 @@ function BalanceSection({
   const describe =
     (key: string, kind: 'called' | 'leading' | 'holdover', n: number) => () => {
       const list = kind === 'holdover' ? [] : names(key, kind === 'called')
+      const r = rows.find((x) => x.key === key)
+      const change =
+        kind === 'called' && r && r.net != null
+          ? [
+              { label: 'Held before', value: fmt(r.before || 0) },
+              { label: 'Net, called and not up', value: signed(r.net) },
+            ]
+          : []
       return {
         title: `${partyName(P, key)}: ${n} ${kind === 'holdover' ? 'not up this year' : kind}`,
         lines: list
@@ -343,7 +353,8 @@ function BalanceSection({
             list.length > 12
               ? [{ label: `and ${list.length - 12} more`, value: '' }]
               : [],
-          ),
+          )
+          .concat(change),
       }
     }
   const side = (r: Balance['rows'][number], reverse: boolean): Segment[] => {
@@ -394,13 +405,23 @@ function BalanceSection({
   ]
   const ranked = rows.slice().sort((a, b) => total(b) - total(a))
   const firm = (r: Balance['rows'][number]) => r.called + r.holdover
+  // The net change once a seat is called: firm seats against those held before.
+  const withNet = (r: Balance['rows'][number]) =>
+    `${partyShort(P, r.key)} ${total(r)}${balance.called && r.net != null ? ` (${signed(r.net)})` : ''}`
+  const held = rows
+    .filter((r) => r.before)
+    .sort((a, b) => (b.before || 0) - (a.before || 0))
+  const before =
+    balance.vacant == null
+      ? ''
+      : `Before the election: ${held.map((r) => `${partyShort(P, r.key)} ${fmt(r.before || 0)}`).join(' · ')}${balance.vacant ? ` · ${balance.vacant} vacant` : ''}.${balance.called ? ' The change in brackets counts seats called and not up, not leads.' : ''}`
   let line = ''
   if (ranked.length >= 2) {
     const [a, b] = ranked
     const majority = balance.majority
     const holder =
       majority != null ? rows.find((r) => firm(r) >= majority) : null
-    line = `${partyShort(P, a.key)} ${total(a)} · ${partyShort(P, b.key)} ${total(b)}`
+    line = `${withNet(a)} · ${withNet(b)}`
     if (holder)
       line += ` · ${partyName(P, holder.key)} has a majority: ${firm(holder)} seats called or not up.`
     else if (majority != null)
@@ -414,6 +435,9 @@ function BalanceSection({
       sub={`${balance.called} of ${Object.keys(chamber.divisions).length} races called${balance.majority != null ? ` · ${balance.majority} of ${balance.seats} for a majority` : ` · ${balance.seats} in all`}`}
     >
       {line ? <p className="font-medium">{line}</p> : null}
+      {before ? (
+        <p className="text-muted-foreground text-sm">{before}</p>
+      ) : null}
       <SegmentBar
         caption="Called, leading and not up this year"
         majority={balance.majority || undefined}

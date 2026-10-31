@@ -87,8 +87,9 @@ After making changes from a prompt and BEFORE committing:
   committed; never edit by hand; sources cached in the ignored
   `.geo-cache/`): a `province` frame (the whole area) plus city insets, one
   projected SVG path per division code (the Census files are projected with
-  Albers USA on the way). An election opts in with `boundaries`, a
-  chambers election per chamber. The geometry
+  Albers USA on the way; a set may merge several files and clip them to
+  land, as `us-cd120` does with the per-state TIGER/Line districts). An
+  election opts in with `boundaries`, a chambers election per chamber. The geometry
   loads lazily into its own hashed chunk (`components/charts/choropleth.tsx`).
   Fills blend the choice colours with nested CSS `color-mix` over the page
   tokens (`src/lib/blend.ts`) using `shared/stats/blend.ts`, which cubes the
@@ -205,9 +206,11 @@ After making changes from a prompt and BEFORE committing:
    `us-2026` (civicAPI, three race documents per fetch) has no official
    step: the winners are civicAPI's calls. Its source is the base URL,
    `POST /_voting/source/us-2026?url=https://civicapi.org/api/v2/race/`;
-   the fetch starts at pollsClose (23:00 UTC Nov 3) and runs 96 hours, so
-   the webhook `GET /_voting/fetch?slug=us-2026` should cover at least
-   23:00 UTC Nov 3 to 06:00 UTC Nov 4 (Alaska closes), ideally the window.
+   the fetch starts at pollsClose (23:00 UTC Nov 3) and runs 336 hours (to
+   23:00 UTC Nov 17, for the slow House counts), so the webhook
+   `GET /_voting/fetch?slug=us-2026` should cover at least 23:00 UTC Nov 3
+   to 06:00 UTC Nov 4 (Alaska closes) every minute, then hourly for the
+   rest of the window.
 5. This instance is the system of record for every election; cubby.fyi
    ingests nothing. Alberta moved here on 2026-10-20 (cubby's source
    cleared, then a last sync) and BC night runs only here. The one-off

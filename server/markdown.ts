@@ -500,11 +500,16 @@ export function chambersResultsMarkdown(
     )
     for (const row of b.rows) {
       const total = row.called + row.leading + row.holdover
-      if (!total) continue
+      if (!total && !row.before) continue
+      const change =
+        row.net == null
+          ? ''
+          : `; ${row.before} before, net ${row.net > 0 ? '+' : ''}${row.net} counting seats called and not up`
       lines.push(
-        `- ${partyShort(election, row.key)}: ${total} (${row.called} called, ${row.leading} leading, ${row.holdover} not up)`,
+        `- ${partyShort(election, row.key)}: ${total} (${row.called} called, ${row.leading} leading, ${row.holdover} not up${change})`,
       )
     }
+    if (b.vacant) lines.push(`- Vacant before the election: ${b.vacant}`)
     if (b.undecided) lines.push(`- Not yet leading anyone: ${b.undecided}`)
     lines.push('')
   }

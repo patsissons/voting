@@ -44,23 +44,53 @@ describe('chamber stats', () => {
   it('balances each chamber from calls, leads and holdovers', () => {
     expect(balanceOf(counted, chamber('house'), tiny)).toEqual({
       rows: [
-        { key: 'dem', called: 2, leading: 1, holdover: 0 },
-        { key: 'gop', called: 1, leading: 0, holdover: 0 },
+        {
+          key: 'dem',
+          called: 2,
+          leading: 1,
+          holdover: 0,
+          before: null,
+          net: null,
+        },
+        {
+          key: 'gop',
+          called: 1,
+          leading: 0,
+          holdover: 0,
+          before: null,
+          net: null,
+        },
       ],
       seats: 4,
       majority: 3,
       undecided: 0,
       called: 3,
+      vacant: null,
     })
     expect(balanceOf(counted, chamber('senate'), tiny)).toEqual({
       rows: [
-        { key: 'dem', called: 1, leading: 0, holdover: 1 },
-        { key: 'gop', called: 0, leading: 1, holdover: 1 },
+        {
+          key: 'dem',
+          called: 1,
+          leading: 0,
+          holdover: 1,
+          before: null,
+          net: null,
+        },
+        {
+          key: 'gop',
+          called: 0,
+          leading: 1,
+          holdover: 1,
+          before: null,
+          net: null,
+        },
       ],
       seats: 4,
       majority: 3,
       undecided: 0,
       called: 1,
+      vacant: null,
     })
     expect(balanceOf(counted, chamber('governor'), tiny)).toMatchObject({
       rows: [
@@ -78,6 +108,39 @@ describe('chamber stats', () => {
       undecided: 4,
       called: 0,
     })
+  })
+
+  it('nets the firm seats against those held before', () => {
+    // House: Dem called 2 having held 1, GOP called 1 having held 3.
+    const house = balanceOf(
+      counted,
+      { ...chamber('house'), before: { dem: 1, gop: 3 } },
+      tiny,
+    )
+    expect(house.rows).toEqual([
+      { key: 'dem', called: 2, leading: 1, holdover: 0, before: 1, net: 1 },
+      { key: 'gop', called: 1, leading: 0, holdover: 0, before: 3, net: -2 },
+    ])
+    expect(house.vacant).toBe(0)
+    // Senate: holdovers count as held; a seat vacant going in shows up.
+    const senate = balanceOf(
+      counted,
+      { ...chamber('senate'), before: { dem: 1, gop: 2 } },
+      tiny,
+    )
+    expect(senate.rows.map((r) => [r.key, r.before, r.net])).toEqual([
+      ['dem', 1, 1],
+      ['gop', 2, -1],
+    ])
+    expect(senate.vacant).toBe(1)
+    // Before any call the nets read as losses of every seat up; the page waits for a call.
+    expect(
+      balanceOf(
+        empty,
+        { ...chamber('house'), before: { dem: 1, gop: 3 } },
+        tiny,
+      ).rows[1].net,
+    ).toBe(-3)
   })
 
   it('ranks the closest uncalled races', () => {

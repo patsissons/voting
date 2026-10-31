@@ -407,6 +407,15 @@ describe('ResultsView', () => {
     const bar = within(house).getByRole('img', { name: /218 for a majority/ })
     expect(bar.getAttribute('aria-label')).toMatch(/Dem \d+ \(\d+ called/)
     expect(within(house).getByText(/for a majority/)).toBeInTheDocument()
+    // The document's `before`: the seats held going in and each party's net change.
+    expect(
+      within(house).getByText(
+        /^Before the election: GOP 218 · Dem 214 · 3 vacant\. The change in brackets counts seats called and not up, not leads\.$/,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      within(house).getByText(/^(Dem|GOP) \d+ \([+−]\d+\) · /),
+    ).toBeInTheDocument()
     expect(screen.getByText('Races called')).toBeInTheDocument()
     expect(
       screen.getByRole('combobox', { name: 'Your state' }),

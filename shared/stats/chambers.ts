@@ -26,6 +26,10 @@ export type BalanceRow = {
   leading: number
   /** Not up this time. */
   holdover: number
+  /** Held going in (the document's `before`), or null when the document has none. */
+  before: number | null
+  /** Called plus not up, less held before: the firm net change; null without `before`. */
+  net: number | null
 }
 export type Balance = {
   rows: BalanceRow[]
@@ -35,12 +39,16 @@ export type Balance = {
   undecided: number
   /** Contests the feed has called. */
   called: number
+  /** Seats vacant going in (seats less the document's `before`), or null without `before`. */
+  vacant: number | null
 }
 
 /**
  * One chamber's balance of power from the payload's chamber tallies and the
  * document's holdovers, one row per election party (in document order) plus
- * 'other' when anyone outside them holds or leads a seat.
+ * 'other' when anyone outside them holds or leads a seat. With `before` in
+ * the document each row also carries the seats held going in and the net
+ * change of its firm seats (called and not up), never of leads.
  */
 export function balanceOf(
   payload: Payload,
@@ -50,9 +58,17 @@ export function balanceOf(
   const tally = (payload.chambers && payload.chambers[chamber.key]) || null
   const byKey: Record<string, BalanceRow> = {}
   const rows: BalanceRow[] = []
+  const before = chamber.before || null
   const row = (key: string) => {
     if (!byKey[key]) {
-      byKey[key] = { key, called: 0, leading: 0, holdover: 0 }
+      byKey[key] = {
+        key,
+        called: 0,
+        leading: 0,
+        holdover: 0,
+        before: before ? before[key] || 0 : null,
+        net: null,
+      }
       rows.push(byKey[key])
     }
     return byKey[key]
@@ -71,6 +87,13 @@ export function balanceOf(
     led += t.leading
     called += c
   }
+  let had = 0
+  if (before) {
+    for (const r of rows) {
+      r.net = r.called + r.holdover - (r.before || 0)
+      had += r.before || 0
+    }
+  }
   const up = Object.keys(chamber.divisions).length
   return {
     rows,
@@ -78,6 +101,7 @@ export function balanceOf(
     majority: chamber.majority == null ? null : chamber.majority,
     undecided: Math.max(0, up - led),
     called,
+    vacant: before ? Math.max(0, chamber.seats - had) : null,
   }
 }
 

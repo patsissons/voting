@@ -291,7 +291,8 @@ function seriesOf(
     }
   if (metric === 'seats' && election.ballot === 'chambers') {
     const chamber = args.chamber != null ? String(args.chamber) : ''
-    if (!election.chambers.some((c) => c.key === chamber))
+    const spec = election.chambers.filter((c) => c.key === chamber)[0]
+    if (!spec)
       throw new InvalidParams(
         `seats needs chamber: one of ${election.chambers.map((c) => c.key).join(', ')}`,
       )
@@ -299,6 +300,9 @@ function seriesOf(
       slug: election.slug,
       metric,
       chamber,
+      // Seats held going in (and not up), so a reader can work out the net change.
+      ...(spec.before ? { before: spec.before } : {}),
+      holdovers: spec.holdovers,
       rows: rows.map((s) => {
         const tally = s.payload.chambers && s.payload.chambers[chamber]
         const led: Record<string, number> = {}

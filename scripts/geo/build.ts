@@ -10,9 +10,12 @@
  * Projected coordinates go straight to the page: Alberta keeps the
  * shapefile's 10TM, BC is requested in BC Albers (EPSG:3005), and the Census
  * files for the US (long/lat) are projected here with mapshaper's Albers USA,
- * which tucks Alaska and Hawaii under the lower 48. BC's districts run out to
- * sea, so they are clipped to its land first. mapshaper simplifies each frame
- * at its own resolution, keeping shared borders shared.
+ * which tucks Alaska and Hawaii under the lower 48. A set's inputs are merged
+ * into one layer (the Census publishes the 2026 districts one state at a
+ * time). BC's districts run out to sea and the TIGER/Line districts run into
+ * the lakes and the territorial sea, so both are clipped to land first.
+ * mapshaper simplifies each frame at its own resolution, keeping shared
+ * borders shared; a full-resolution source gets one coarse pass first.
  *
  * Frame 0 is always keyed `province`: the whole area, whatever the
  * jurisdiction calls itself. The insets follow.
@@ -43,12 +46,16 @@ type FrameSpec = {
   codes?: (code: string) => boolean
 }
 
+/** A download: its URL and the cached file's name (mapshaper reads it by extension). */
+type Input = { source: string; file: string }
+
 type SetSpec = {
   key: string
   attribution: string
-  source: string
-  /** The cached download's file name; mapshaper reads it by extension. */
-  file: string
+  /** The source files, merged into one layer of divisions. */
+  inputs: Input[]
+  /** A first simplification of the merged input in metres, for full-resolution sources. */
+  presimplify?: number
   /** A mapshaper -each expression that sets `code`. */
   code: string
   /** A mapshaper -filter expression that keeps the divisions wanted. */
@@ -56,7 +63,7 @@ type SetSpec = {
   /** A mapshaper -proj argument for a source in long/lat ("albersusa"). */
   proj?: string
   /** Land polygons to clip the divisions to, and the -filter that picks them. */
-  land?: { source: string; file: string; filter: string }
+  land?: Input & { filter: string }
   frames: FrameSpec[]
 }
 
@@ -126,9 +133,13 @@ const SETS: SetSpec[] = [
     key: 'ab-2017',
     attribution:
       'Boundaries: Elections Alberta, the 87 electoral divisions of 2017 (Open Government Licence – Alberta).',
-    source:
-      'https://www.elections.ab.ca/uploads/2019Boundaries_ED-Shapefiles.zip',
-    file: 'ab-2017.zip',
+    inputs: [
+      {
+        source:
+          'https://www.elections.ab.ca/uploads/2019Boundaries_ED-Shapefiles.zip',
+        file: 'ab-2017.zip',
+      },
+    ],
     code: "code = String(EDNumber20).padStart(2, '0')",
     frames: [
       { key: 'province', label: 'Alberta', interval: 400, minIsland: 0 },
@@ -152,9 +163,13 @@ const SETS: SetSpec[] = [
     key: 'bc-2023',
     attribution:
       'Boundaries: Elections BC via the BC Data Catalogue, the 93 electoral districts of 2023 (Open Government Licence – British Columbia).',
-    source:
-      'https://openmaps.gov.bc.ca/geo/pub/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_ADMIN_BOUNDARIES.EBC_PROV_ELECTORAL_DIST_SVW&outputFormat=json&srsName=EPSG:3005&propertyName=ED_ABBREVIATION,SHAPE',
-    file: 'bc-2023.json',
+    inputs: [
+      {
+        source:
+          'https://openmaps.gov.bc.ca/geo/pub/wfs?service=WFS&version=2.0.0&request=GetFeature&typeName=WHSE_ADMIN_BOUNDARIES.EBC_PROV_ELECTORAL_DIST_SVW&outputFormat=json&srsName=EPSG:3005&propertyName=ED_ABBREVIATION,SHAPE',
+        file: 'bc-2023.json',
+      },
+    ],
     code: 'code = ED_ABBREVIATION',
     // The 1:250,000 coastline: the mainland and the islands, not the sea tiles.
     land: {
@@ -194,9 +209,13 @@ const SETS: SetSpec[] = [
     key: 'us-state',
     attribution:
       'Boundaries: US Census Bureau cartographic boundary files, 2024 states (public domain; no licence needed).',
-    source:
-      'https://www2.census.gov/geo/tiger/GENZ2024/shp/cb_2024_us_state_20m.zip',
-    file: 'us-state.zip',
+    inputs: [
+      {
+        source:
+          'https://www2.census.gov/geo/tiger/GENZ2024/shp/cb_2024_us_state_20m.zip',
+        file: 'us-state.zip',
+      },
+    ],
     filter: "STUSPS != 'PR' && STUSPS != 'DC'",
     proj: 'albersusa',
     code: 'code = STUSPS.toLowerCase()',
@@ -217,21 +236,34 @@ const SETS: SetSpec[] = [
     ],
   },
   {
-    key: 'us-cd119',
+    key: 'us-cd120',
     attribution:
-      'Boundaries: US Census Bureau cartographic boundary files, the 435 districts of the 119th Congress (public domain; no licence needed).',
-    source:
-      'https://www2.census.gov/geo/tiger/GENZ2024/shp/cb_2024_us_cd119_500k.zip',
-    file: 'us-cd119.zip',
+      'Boundaries: US Census Bureau TIGER/Line files, the 435 districts of the 120th Congress, clipped to the cartographic state shoreline (public domain; no licence needed).',
+    // No national file yet for the districts drawn for 2026: one TIGER/Line
+    // file per state (iterating the table skips DC and the territories).
+    inputs: Object.keys(FIPS_POSTAL).map((fips) => ({
+      source: `https://www2.census.gov/geo/tiger/TIGER2026/CD/tl_2026_${fips}_cd120.zip`,
+      file: `us-cd120-${fips}.zip`,
+    })),
     // 98 and ZZ are the non-voting delegates and the undefined areas.
-    filter: "CD119FP != '98' && CD119FP != 'ZZ'",
+    filter: "CD120FP != '98' && CD120FP != 'ZZ'",
+    // TIGER/Line is full resolution; 40 m is well under the finest frame.
+    presimplify: 40,
+    // TIGER/Line districts run into the lakes and out to the territorial
+    // sea: clip them to the 1:500k state shoreline.
+    land: {
+      source:
+        'https://www2.census.gov/geo/tiger/GENZ2025/shp/cb_2025_us_state_500k.zip',
+      file: 'us-state-500k.zip',
+      filter: "STATEFP < '60' && STATEFP != '11'",
+    },
     proj: 'albersusa',
     // The expression travels inside double quotes, so the table uses single ones.
     code: `code = ({${Object.entries(FIPS_POSTAL)
       .map(([k, v]) => `'${k}':'${v}'`)
       .join(
         ',',
-      )}})[STATEFP].toLowerCase() + '-' + (CD119FP === '00' ? 'al' : CD119FP)`,
+      )}})[STATEFP].toLowerCase() + '-' + (CD120FP === '00' ? 'al' : CD120FP)`,
     frames: [
       {
         key: 'province',
@@ -344,9 +376,19 @@ function bounds(features: Feature[], keep: (code: string) => boolean) {
 }
 
 async function build(spec: SetSpec, refresh: boolean): Promise<BoundarySet> {
-  const input: Record<string, unknown> = {
-    [spec.file]: await cached(spec.source, spec.file, refresh),
-  }
+  const input: Record<string, unknown> = {}
+  for (const i of spec.inputs)
+    input[i.file] = await cached(i.source, i.file, refresh)
+  const files = spec.inputs.map((i) => i.file).join(' ')
+  // Several inputs import together (shared topology) and merge into one layer.
+  const open =
+    spec.inputs.length > 1
+      ? `-i ${files} combine-files -merge-layers force name=ed`
+      : `-i ${files} name=ed`
+  const filter = spec.filter ? ` -filter "${spec.filter}" target=ed` : ''
+  const pre = spec.presimplify
+    ? ` -simplify interval=${spec.presimplify} keep-shapes target=ed`
+    : ''
   let clip = ''
   if (spec.land) {
     input[spec.land.file] = await cached(
@@ -356,10 +398,9 @@ async function build(spec: SetSpec, refresh: boolean): Promise<BoundarySet> {
     )
     clip = ` -i ${spec.land.file} name=land -filter "${spec.land.filter}" target=land -clip land target=ed`
   }
-  const filter = spec.filter ? ` -filter "${spec.filter}" target=ed` : ''
   const proj = spec.proj ? ` -proj ${spec.proj} target=ed` : ''
   const full = await run(
-    `-i ${spec.file} name=ed${clip}${filter}${proj} -each "${spec.code}" target=ed -filter-fields code target=ed -o out.json format=geojson target=ed`,
+    `${open}${filter}${pre}${clip}${proj} -each "${spec.code}" target=ed -filter-fields code target=ed -o out.json format=geojson target=ed`,
     input,
   )
   const frames: Frame[] = []

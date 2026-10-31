@@ -127,6 +127,31 @@ describe('electionMarkdown', () => {
       '- Senate: 2 of 4 seats up, 3 for a majority (not up: Dem 1, GOP 1).',
     )
     expect(md).not.toMatch(/compass/i)
+    const withBefore = electionMarkdown(
+      {
+        ...e,
+        chambers: [
+          { ...e.chambers[0], before: { dem: 1, gop: 2 } },
+          ...e.chambers.slice(1),
+        ],
+      },
+      {
+        id: 'r1',
+        source_ts: payload.asOf,
+        official: false,
+        polls_closed: payload.polls.closed,
+        polls_total: payload.polls.total,
+        payload,
+      },
+      origin,
+    )
+    expect(withBefore).toContain(
+      '- Dem: 3 (2 called, 1 leading, 0 not up; 1 before, net +1 counting seats called and not up)',
+    )
+    expect(withBefore).toContain(
+      '- GOP: 1 (1 called, 0 leading, 0 not up; 2 before, net -1 counting seats called and not up)',
+    )
+    expect(withBefore).toContain('- Vacant before the election: 1')
     const waiting = electionMarkdown(e, null, origin)
     expect(waiting).toContain('No results yet')
     expect(waiting).toContain('[civicAPI](https://civicapi.org/)')

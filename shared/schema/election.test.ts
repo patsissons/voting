@@ -137,6 +137,20 @@ describe('election documents', () => {
     expect(
       problems((e) => ({
         ...e,
+        chambers: [
+          { ...e.chambers[0], before: { dem: 2, lib: 1 } },
+          { ...e.chambers[1], before: { dem: 0, gop: 3 } },
+          { ...e.chambers[2], before: { dem: 3, gop: 3 } },
+        ],
+      })),
+    ).toEqual([
+      'house: before party "lib" is unknown',
+      'senate: dem held 0 seats before but 1 are not up',
+      'governor: 6 seats held before exceed 3',
+    ])
+    expect(
+      problems((e) => ({
+        ...e,
         affiliations: { Democratic: 'dem', Whig: 'whig' },
       })),
     ).toEqual(

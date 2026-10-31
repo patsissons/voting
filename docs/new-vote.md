@@ -58,9 +58,11 @@ What each ballot mode needs:
   else stays under its own label), `regions` (the states: division codes are
   `<key>` or `<key>-<n>`), and `chambers`, each with `seats`, `majority`
   (omit for offices with no control line, like governors), `holdovers`
-  (seats not up this year, per party), an optional `boundaries` set and
-  `divisions` (the feed's region keys to short names; divisions plus
-  holdovers equal `seats`). `us-2026`'s divisions were derived once from the
+  (seats not up this year, per party), an optional `before` (seats each
+  party held going in, for the net change; a total below `seats` means
+  vacancies, and no party may hold fewer than its holdovers), an optional
+  `boundaries` set and `divisions` (the feed's region keys to short names;
+  divisions plus holdovers equal `seats`). `us-2026`'s divisions were derived once from the
   three civicAPI documents with a throwaway script (House `<State> <n>` or
   `<State> at-large`, Senate and governors the state name); the keys do not
   change during a cycle.
@@ -70,7 +72,7 @@ never needs a stylesheet change.
 
 District and referendum elections draw a results map when `boundaries`
 names a set in `src/geo/` (`ab-2017`, `bc-2023`); a chambers election names
-one per chamber (`us-cd119` for the House, `us-state` for the Senate and
+one per chamber (`us-cd120` for the House, `us-state` for the Senate and
 the governors). The templates start with their province's set; delete the
 key for a place without one. The set's division codes must be the results'
 codes: `districts[].code` for a district election, the `results.divisions`
@@ -78,11 +80,16 @@ keys for Alberta's dashboard feed, and a chamber's `divisions` keys, which
 may be a subset of the set (the state map serves 35 Senate races); a test
 checks all three. Frame 0 of every set is keyed `province`, the whole area,
 whatever the jurisdiction calls itself.
-A new boundary set is an entry in `scripts/geo/build.ts` (its source, the
-field that becomes the code, an optional `filter` and `proj` for a long/lat
-source such as the Census files, the province frame and the city insets), a
-key in `BOUNDARY_SETS` in `shared/schema/election.ts`, then `pnpm geo`;
-commit the generated `src/geo/<set>.json`, never edit it by hand.
+A new boundary set is an entry in `scripts/geo/build.ts` (its `inputs`,
+one or several files merged into one layer, the field that becomes the
+code, an optional `filter`, a `proj` for a long/lat source such as the
+Census files, an optional `land` clip for divisions that run into the water
+and a `presimplify` pass for a full-resolution source, the province frame
+and the city insets), a key in `BOUNDARY_SETS` in `shared/schema/election.ts`,
+then `pnpm geo`; commit the generated `src/geo/<set>.json`, never edit it by
+hand. `us-cd120` merges the Census TIGER/Line file of every state (the
+districts drawn for 2026 have no national file yet) and clips them to the
+cartographic state shoreline.
 
 ## 3. Results
 
