@@ -636,7 +636,7 @@
       { "label": "Ballotpedia, 2026 election results", "url": "https://ballotpedia.org/Election_results,_2026" }
     ],
     "serverFetch": true,
-    "fetchHours": 96,
+    "fetchHours": 336,
     "throttleSeconds": 120,
     "sourcePrefix": "https://civicapi.org/",
     "earlyVote": { "format": "ufel-csv", "source": "https://election.lab.ufl.edu/data-downloads/earlyvote/2026/US.csv", "page": { "label": "UF Election Lab, 2026 early voting", "url": "https://election.lab.ufl.edu/early-vote/2026-early-voting/" }, "boundaries": "us-state" }
