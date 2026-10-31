@@ -55,6 +55,7 @@
       "seats": 2,
       "majority": 2,
       "holdovers": {},
+      "before": { "alpha": 1, "beta": 1 },
       "divisions": {
         "aa-01": "TODO State A 1",
         "bb-al": "TODO State B at-large"

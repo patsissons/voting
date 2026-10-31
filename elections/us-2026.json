@@ -88,6 +88,7 @@
       "seats": 435,
       "majority": 218,
       "holdovers": {},
+      "before": { "gop": 218, "dem": 214 },
       "boundaries": "us-cd120",
       "divisions": {
         "ak-al": "Alaska at-large",
@@ -534,6 +535,7 @@
       "seats": 100,
       "majority": 51,
       "holdovers": { "dem": 34, "gop": 31 },
+      "before": { "gop": 53, "dem": 47 },
       "boundaries": "us-state",
       "divisions": {
         "ak": "Alaska",
@@ -579,6 +581,7 @@
       "short": "Gov",
       "seats": 50,
       "holdovers": { "gop": 8, "dem": 6 },
+      "before": { "gop": 26, "dem": 24 },
       "boundaries": "us-state",
       "divisions": {
         "ak": "Alaska",

@@ -164,7 +164,12 @@ test('the results-only election has no tabs and shows every chamber', async ({
   await expect(
     house.getByRole('img', { name: /218 for a majority/ }),
   ).toBeVisible()
-  await expect(house.getByText(/^(Dem|GOP) \d+ · (Dem|GOP) \d+/)).toBeVisible()
+  await expect(
+    house.getByText(/^(Dem|GOP) \d+ \([+−]\d+\) · (Dem|GOP) \d+ \([+−]\d+\)/),
+  ).toBeVisible()
+  await expect(
+    house.getByText(/^Before the election: GOP 218 · Dem 214 · 3 vacant\./),
+  ).toBeVisible()
 
   await page.getByRole('combobox', { name: 'Your state' }).click()
   await page.getByRole('option', { name: 'Alaska' }).click()

@@ -58,9 +58,11 @@ What each ballot mode needs:
   else stays under its own label), `regions` (the states: division codes are
   `<key>` or `<key>-<n>`), and `chambers`, each with `seats`, `majority`
   (omit for offices with no control line, like governors), `holdovers`
-  (seats not up this year, per party), an optional `boundaries` set and
-  `divisions` (the feed's region keys to short names; divisions plus
-  holdovers equal `seats`). `us-2026`'s divisions were derived once from the
+  (seats not up this year, per party), an optional `before` (seats each
+  party held going in, for the net change; a total below `seats` means
+  vacancies, and no party may hold fewer than its holdovers), an optional
+  `boundaries` set and `divisions` (the feed's region keys to short names;
+  divisions plus holdovers equal `seats`). `us-2026`'s divisions were derived once from the
   three civicAPI documents with a throwaway script (House `<State> <n>` or
   `<State> at-large`, Senate and governors the state name); the keys do not
   change during a cycle.

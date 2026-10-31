@@ -304,6 +304,15 @@ describe('voting tools', () => {
       chamber: 'house',
     })
     expect(seats.rows.length).toBe(2)
+    expect(seats.before).toBeUndefined()
+    expect(seats.holdovers).toEqual({})
+    expect(
+      run('results_series', {
+        slug: 'tiny-2026',
+        metric: 'seats',
+        chamber: 'senate',
+      }).holdovers,
+    ).toEqual({ dem: 1, gop: 1 })
     expect(seats.rows[1]).toEqual({
       asOf: '2026-11-03 22:30:00',
       polls: { closed: 5, total: 8 },

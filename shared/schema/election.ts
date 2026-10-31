@@ -376,7 +376,8 @@ const chamberParty = z.strictObject({
 
 /**
  * One chamber (or a set of offices, like the governors): `seats` is the whole
- * body, `holdovers` the seats not up this time per party, and `divisions`
+ * body, `holdovers` the seats not up this time per party, `before` the seats
+ * each party held going in (optional, for the net change), and `divisions`
  * the contests the feed reports (code -> short name), so divisions + holdovers
  * = seats. `boundaries` names the map set whose codes are the division codes.
  */
@@ -387,6 +388,8 @@ const chamber = z.strictObject({
   seats: z.number().int().positive(),
   majority: z.number().int().positive().optional(),
   holdovers: z.record(z.string(), z.number().int().nonnegative()).default({}),
+  /** Seats each party held going in, for the net change; a total below `seats` means vacancies. */
+  before: z.record(z.string(), z.number().int().nonnegative()).optional(),
   boundaries,
   divisions: z.record(z.string().min(1), z.string().min(1)),
 })
@@ -545,6 +548,20 @@ export function electionProblems(e: Election): string[] {
         )
       if (c.majority != null && c.majority > c.seats)
         problems.push(`${c.key}: majority exceeds seats`)
+      if (c.before) {
+        let had = 0
+        for (const [key, n] of Object.entries(c.before)) {
+          if (!keys.has(key))
+            problems.push(`${c.key}: before party "${key}" is unknown`)
+          if (n < (c.holdovers[key] || 0))
+            problems.push(
+              `${c.key}: ${key} held ${n} seats before but ${c.holdovers[key]} are not up`,
+            )
+          had += n
+        }
+        if (had > c.seats)
+          problems.push(`${c.key}: ${had} seats held before exceed ${c.seats}`)
+      }
       for (const code of divisions) {
         if (!regions.has(code.split('-')[0]))
           problems.push(`${c.key}: division ${code} is in no region`)
