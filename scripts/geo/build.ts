@@ -236,25 +236,34 @@ const SETS: SetSpec[] = [
     ],
   },
   {
-    key: 'us-cd119',
+    key: 'us-cd120',
     attribution:
-      'Boundaries: US Census Bureau cartographic boundary files, the 435 districts of the 119th Congress (public domain; no licence needed).',
-    inputs: [
-      {
-        source:
-          'https://www2.census.gov/geo/tiger/GENZ2024/shp/cb_2024_us_cd119_500k.zip',
-        file: 'us-cd119.zip',
-      },
-    ],
+      'Boundaries: US Census Bureau TIGER/Line files, the 435 districts of the 120th Congress, clipped to the cartographic state shoreline (public domain; no licence needed).',
+    // No national file yet for the districts drawn for 2026: one TIGER/Line
+    // file per state (iterating the table skips DC and the territories).
+    inputs: Object.keys(FIPS_POSTAL).map((fips) => ({
+      source: `https://www2.census.gov/geo/tiger/TIGER2026/CD/tl_2026_${fips}_cd120.zip`,
+      file: `us-cd120-${fips}.zip`,
+    })),
     // 98 and ZZ are the non-voting delegates and the undefined areas.
-    filter: "CD119FP != '98' && CD119FP != 'ZZ'",
+    filter: "CD120FP != '98' && CD120FP != 'ZZ'",
+    // TIGER/Line is full resolution; 40 m is well under the finest frame.
+    presimplify: 40,
+    // TIGER/Line districts run into the lakes and out to the territorial
+    // sea: clip them to the 1:500k state shoreline.
+    land: {
+      source:
+        'https://www2.census.gov/geo/tiger/GENZ2025/shp/cb_2025_us_state_500k.zip',
+      file: 'us-state-500k.zip',
+      filter: "STATEFP < '60' && STATEFP != '11'",
+    },
     proj: 'albersusa',
     // The expression travels inside double quotes, so the table uses single ones.
     code: `code = ({${Object.entries(FIPS_POSTAL)
       .map(([k, v]) => `'${k}':'${v}'`)
       .join(
         ',',
-      )}})[STATEFP].toLowerCase() + '-' + (CD119FP === '00' ? 'al' : CD119FP)`,
+      )}})[STATEFP].toLowerCase() + '-' + (CD120FP === '00' ? 'al' : CD120FP)`,
     frames: [
       {
         key: 'province',

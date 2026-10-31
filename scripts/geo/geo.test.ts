@@ -96,7 +96,7 @@ describe('boundary sets', () => {
 
   it('covers every House district and every state', () => {
     const house = us().chambers.find((c) => c.key === 'house')!
-    const districts = loadSet('us-cd119')
+    const districts = loadSet('us-cd120')
     expect(Object.keys(districts.frames[0].paths).sort()).toEqual(
       Object.keys(house.divisions).sort(),
     )

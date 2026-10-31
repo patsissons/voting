@@ -87,8 +87,9 @@ After making changes from a prompt and BEFORE committing:
   committed; never edit by hand; sources cached in the ignored
   `.geo-cache/`): a `province` frame (the whole area) plus city insets, one
   projected SVG path per division code (the Census files are projected with
-  Albers USA on the way). An election opts in with `boundaries`, a
-  chambers election per chamber. The geometry
+  Albers USA on the way; a set may merge several files and clip them to
+  land, as `us-cd120` does with the per-state TIGER/Line districts). An
+  election opts in with `boundaries`, a chambers election per chamber. The geometry
   loads lazily into its own hashed chunk (`components/charts/choropleth.tsx`).
   Fills blend the choice colours with nested CSS `color-mix` over the page
   tokens (`src/lib/blend.ts`) using `shared/stats/blend.ts`, which cubes the
