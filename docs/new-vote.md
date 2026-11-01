@@ -59,10 +59,25 @@ What each ballot mode needs:
   `<key>` or `<key>-<n>`), and `chambers`, each with `seats`, `majority`
   (omit for offices with no control line, like governors), `holdovers`
   (seats not up this year, per party), an optional `before` (seats each
-  party held going in, for the net change; a total below `seats` means
-  vacancies, and no party may hold fewer than its holdovers), an optional
-  `boundaries` set and `divisions` (the feed's region keys to short names;
-  divisions plus holdovers equal `seats`). `us-2026`'s divisions were derived once from the
+  party held going in, for the net change; `other` counts independents; a
+  total below `seats` means vacancies, and no party may hold fewer than its
+  holdovers), an optional `holders` (the party holding each division going
+  in, `other` for an independent, `null` for a vacant or newly drawn seat;
+  every division or none) and an optional `ratings` (one forecaster's
+  pre-election rating of every division as `tossup` or `safe`/`likely`/`lean`
+  and a party key, with the forecaster's `label`, `url` and the `asOf` day),
+  an optional `boundaries` set and `divisions` (the feed's region keys to
+  short names; divisions plus holdovers equal `seats`). With `holders` and
+  `ratings` the page shows each chamber before the night (the held seats, a
+  bar of the rating bands against the majority line, a map that colours by
+  rating or by holder, the seats rated to change hands) and, once the counts
+  start, the same picture folded under the map plus the seats changing hands
+  (a called seat whose winner's party is not the holder's; open and vacant
+  seats never count). `us-2026`'s holders and Sabato's Crystal Ball ratings
+  were taken once from Wikipedia's per-state tables and ratings article
+  with a throwaway script (a seat the forecaster does not list as
+  competitive is `safe` for its holder, or for its PVI party when it has
+  none), then checked by hand. `us-2026`'s divisions were derived once from the
   three civicAPI documents with a throwaway script (House `<State> <n>` or
   `<State> at-large`, Senate and governors the state name); the keys do not
   change during a cycle.

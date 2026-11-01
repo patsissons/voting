@@ -11,7 +11,12 @@ import {
   chamberTimeline,
   closestIn,
   contestsOf,
+  divisionOf,
+  flipOf,
+  goingIn,
+  holderOf,
   inState,
+  ratingOf,
 } from './chambers.ts'
 import { voteShares } from './results.ts'
 
@@ -51,6 +56,8 @@ describe('chamber stats', () => {
           holdover: 0,
           before: null,
           net: null,
+          gained: null,
+          lost: null,
         },
         {
           key: 'gop',
@@ -59,6 +66,8 @@ describe('chamber stats', () => {
           holdover: 0,
           before: null,
           net: null,
+          gained: null,
+          lost: null,
         },
       ],
       seats: 4,
@@ -76,6 +85,8 @@ describe('chamber stats', () => {
           holdover: 1,
           before: null,
           net: null,
+          gained: null,
+          lost: null,
         },
         {
           key: 'gop',
@@ -84,6 +95,8 @@ describe('chamber stats', () => {
           holdover: 1,
           before: null,
           net: null,
+          gained: null,
+          lost: null,
         },
       ],
       seats: 4,
@@ -118,8 +131,26 @@ describe('chamber stats', () => {
       tiny,
     )
     expect(house.rows).toEqual([
-      { key: 'dem', called: 2, leading: 1, holdover: 0, before: 1, net: 1 },
-      { key: 'gop', called: 1, leading: 0, holdover: 0, before: 3, net: -2 },
+      {
+        key: 'dem',
+        called: 2,
+        leading: 1,
+        holdover: 0,
+        before: 1,
+        net: 1,
+        gained: null,
+        lost: null,
+      },
+      {
+        key: 'gop',
+        called: 1,
+        leading: 0,
+        holdover: 0,
+        before: 3,
+        net: -2,
+        gained: null,
+        lost: null,
+      },
     ])
     expect(house.vacant).toBe(0)
     // Senate: holdovers count as held; a seat vacant going in shows up.
@@ -141,6 +172,84 @@ describe('chamber stats', () => {
         tiny,
       ).rows[1].net,
     ).toBe(-3)
+  })
+
+  it('tracks the seats changing hands and the picture going in', () => {
+    const house = {
+      ...chamber('house'),
+      before: { dem: 1, gop: 2, other: 1 },
+      holders: {
+        'ak-al': 'dem',
+        'ca-12': 'dem',
+        'ny-10': 'gop',
+        'wi-02': null,
+      },
+      ratings: {
+        label: 'Tiny Ball',
+        url: 'https://example.com/ratings',
+        asOf: '2026-10-27',
+        divisions: {
+          'ak-al': 'lean gop',
+          'ca-12': 'safe dem',
+          'ny-10': 'tossup',
+          'wi-02': 'safe dem',
+        },
+      },
+    }
+    const byId = (id: string) => counted.contests.find((c) => c.id === id)!
+    expect(divisionOf(house, byId('ak-al'))).toBe('ak-al')
+    expect(divisionOf(chamber('senate'), byId('ga-sen'))).toBe('ga')
+    expect(holderOf(house, byId('wi-02'))).toBeNull()
+    expect(holderOf(chamber('house'), byId('wi-02'))).toBeUndefined()
+    // Alaska: called GOP, held Dem; New York 10: called Dem, held GOP; Wisconsin 2 had no holder; California 12 is not called.
+    expect(flipOf(house, byId('ak-al'))).toEqual({ from: 'dem', to: 'gop' })
+    expect(flipOf(house, byId('ny-10'))).toEqual({ from: 'gop', to: 'dem' })
+    expect(flipOf(house, byId('wi-02'))).toBeNull()
+    expect(flipOf(house, byId('ca-12'))).toBeNull()
+    const balance = balanceOf(counted, house, tiny)
+    expect(
+      balance.rows.map((r) => [r.key, r.before, r.gained, r.lost]),
+    ).toEqual([
+      ['dem', 1, 1, 1],
+      ['gop', 2, 1, 1],
+      ['other', 1, 0, 0],
+    ])
+    expect(balance.vacant).toBe(0)
+    expect(ratingOf(house, 'ak-al')).toEqual({ grade: 'lean', party: 'gop' })
+    expect(ratingOf(house, 'ny-10')).toEqual({ grade: 'tossup', party: null })
+    expect(ratingOf(chamber('house'), 'ak-al')).toBeNull()
+    expect(goingIn(chamber('house'), tiny)).toBeNull()
+    expect(goingIn(house, tiny)).toEqual({
+      held: [
+        { key: 'dem', n: 2 },
+        { key: 'gop', n: 1 },
+      ],
+      open: 1,
+      bands: [
+        { grade: 'safe', party: 'dem', n: 2 },
+        { grade: 'likely', party: 'dem', n: 0 },
+        { grade: 'lean', party: 'dem', n: 0 },
+        { grade: 'tossup', party: null, n: 1 },
+        { grade: 'lean', party: 'gop', n: 1 },
+        { grade: 'likely', party: 'gop', n: 0 },
+        { grade: 'safe', party: 'gop', n: 0 },
+      ],
+      flips: [
+        {
+          code: 'ak-al',
+          label: 'Alaska at-large',
+          from: 'dem',
+          to: 'gop',
+          grade: 'lean',
+        },
+      ],
+      tossups: [{ code: 'ny-10', label: 'New York 10', from: 'gop' }],
+    })
+    // Ratings alone: no holders, so nothing is rated to change hands.
+    const rated = goingIn({ ...house, holders: undefined }, tiny)!
+    expect(rated.held).toBeNull()
+    expect(rated.flips).toEqual([])
+    expect(rated.tossups[0].from).toBeNull()
   })
 
   it('ranks the closest uncalled races', () => {
