@@ -90,7 +90,7 @@ export const tools: Tool[] = [
     name: 'get_election',
     title: 'Get an election',
     description:
-      'The election document (parties, offices or ridings, compass questions or referendum questions, dates, sources), plus earlyVoteTurnout (ballots cast before voting day by state or riding, with registered voters, per-day counts and the last election\'s baseline where the feed gives them, and, as partyTotals, party registration summed over the states that report it) when the election has it. Pass section to get one top-level section, e.g. "questions", "parties", "districts", "dates", "results", "earlyVoteTurnout".',
+      'The election document (parties, offices or ridings, compass questions or referendum questions, dates, sources; for a chambers election each chamber\'s holders, the party holding every seat going in, and ratings, one forecaster\'s pre-election rating of every seat, where the document has them), plus earlyVoteTurnout (ballots cast before voting day by state or riding, with registered voters, per-day counts and the last election\'s baseline where the feed gives them, and, as partyTotals, party registration summed over the states that report it) when the election has it. Pass section to get one top-level section, e.g. "questions", "parties", "districts", "dates", "results", "earlyVoteTurnout".',
     inputSchema: {
       type: 'object',
       properties: { slug: slugArg, section: { type: 'string', maxLength: 40 } },

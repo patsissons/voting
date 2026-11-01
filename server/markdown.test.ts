@@ -155,6 +155,61 @@ describe('electionMarkdown', () => {
     const waiting = electionMarkdown(e, null, origin)
     expect(waiting).toContain('No results yet')
     expect(waiting).toContain('[civicAPI](https://civicapi.org/)')
+    expect(waiting).not.toContain('## Before the election')
+    // Holders and ratings: the picture going in, and the seats changing hands once called.
+    const rated = {
+      ...e,
+      chambers: [
+        {
+          ...e.chambers[0],
+          before: { dem: 1, gop: 2, other: 1 },
+          holders: {
+            'ak-al': 'dem',
+            'ca-12': 'dem',
+            'ny-10': 'gop',
+            'wi-02': null,
+          },
+          ratings: {
+            label: 'Tiny Ball',
+            url: 'https://example.com/ratings',
+            asOf: '2026-10-27',
+            divisions: {
+              'ak-al': 'lean gop',
+              'ca-12': 'safe dem',
+              'ny-10': 'tossup',
+              'wi-02': 'safe dem',
+            },
+          },
+        },
+        ...e.chambers.slice(1),
+      ],
+    }
+    const goingIn = electionMarkdown(rated, null, origin)
+    expect(goingIn).toContain(
+      '## Before the election\n\n### House of Representatives before the election\n\n- Held: GOP 2, Dem 1, Others 1.\n- Seats up, by the party holding them: Dem 2, GOP 1, 1 with no sitting member (vacant or newly drawn).\n- Ratings by [Tiny Ball](https://example.com/ratings) as of 2026-10-27: Safe Dem 2, Toss-up 1, Lean GOP 1. A seat the forecaster does not list as competitive is safe for its holder.\n- Rated to change hands: Alaska at-large (Lean GOP, from Dem).\n- Toss-ups: New York 10 (GOP).',
+    )
+    expect(goingIn).not.toContain('### Senate before the election')
+    const after = electionMarkdown(
+      rated,
+      {
+        id: 'r1',
+        source_ts: payload.asOf,
+        official: false,
+        polls_closed: payload.polls.closed,
+        polls_total: payload.polls.total,
+        payload,
+      },
+      origin,
+    )
+    expect(after).toContain(
+      '- Dem: 3 (2 called, 1 leading, 0 not up; 1 before, net +1 counting seats called and not up; 1 gained from other parties, 1 lost)',
+    )
+    expect(after).toContain(
+      '- Others: 0 (0 called, 0 leading, 0 not up; 1 before, net -1 counting seats called and not up; 0 gained from other parties, 0 lost)',
+    )
+    expect(after.indexOf('## Before the election')).toBeGreaterThan(
+      after.indexOf('### Races by state'),
+    )
   })
 
   it('adds the advance vote by riding to a district election, before and after the results', () => {

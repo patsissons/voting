@@ -15,7 +15,13 @@ import type {
 } from '../shared/schema/election.ts'
 import { changingHands, complete, leaderOf } from '../shared/stats/results.ts'
 import { ballotWide, contestOf } from '../shared/stats/referendum.ts'
-import { balanceOf, calledOf, contestsOf } from '../shared/stats/chambers.ts'
+import {
+  balanceOf,
+  calledOf,
+  contestsOf,
+  goingIn,
+  type GoingIn,
+} from '../shared/stats/chambers.ts'
 import {
   changeFromPrior,
   daySeries,
@@ -482,8 +488,9 @@ export function chambersResultsMarkdown(
   const source = results.label || 'the results feed'
   // The page waits for the first contests, not the first row: the fetch can
   // store a snapshot before any race reports.
+  const before = goingInMarkdown(election)
   if (!snapshot || !snapshot.payload.contests.length)
-    return `## Results\n\nNo results yet. They appear after the first polls close on voting day, from [${source}](${results.official}).${follow}${earlyVote ? `\n\n${earlyVoteMarkdown(election, earlyVote)}` : ''}`
+    return `## Results\n\nNo results yet. They appear after the first polls close on voting day, from [${source}](${results.official}).${follow}${before ? `\n\n${before}` : ''}${earlyVote ? `\n\n${earlyVoteMarkdown(election, earlyVote)}` : ''}`
   const r = snapshot.payload
   const short = (key: string | null) => (key ? partyShort(election, key) : '')
   const lines = [
@@ -505,8 +512,12 @@ export function chambersResultsMarkdown(
         row.net == null
           ? ''
           : `; ${row.before} before, net ${row.net > 0 ? '+' : ''}${row.net} counting seats called and not up`
+      const moved =
+        row.gained == null
+          ? ''
+          : `; ${row.gained} gained from other parties, ${row.lost} lost`
       lines.push(
-        `- ${partyShort(election, row.key)}: ${total} (${row.called} called, ${row.leading} leading, ${row.holdover} not up${change})`,
+        `- ${partyShort(election, row.key)}: ${total} (${row.called} called, ${row.leading} leading, ${row.holdover} not up${change}${moved})`,
       )
     }
     if (b.vacant) lines.push(`- Vacant before the election: ${b.vacant}`)
@@ -536,8 +547,68 @@ export function chambersResultsMarkdown(
   }
   const house = contestsOf(r, election.chambers[0].key)
   if (!house.length) lines.push('No races reported yet.', '')
+  if (before) lines.push(before, '')
   if (earlyVote) lines.push(earlyVoteMarkdown(election, earlyVote, true), '')
   return lines.join('\n').trimEnd() + follow
+}
+
+/** "Toss-up" or "Lean Dem". */
+const ratingWords = (
+  election: ChambersElection,
+  b: { grade: string; party: string | null },
+) =>
+  b.grade === 'tossup'
+    ? 'Toss-up'
+    : `${b.grade[0].toUpperCase()}${b.grade.slice(1)} ${partyShort(election, b.party || 'other')}`
+
+/**
+ * Each chamber before the night, from the document's `before`, `holders`
+ * and `ratings`: the seats held, the seats up by holder, the forecaster's
+ * bands and the seats rated to change hands. '' when no chamber has any.
+ */
+export function goingInMarkdown(election: ChambersElection): string {
+  const lines: string[] = []
+  for (const c of election.chambers) {
+    const g: GoingIn | null = goingIn(c, election)
+    if (!g) continue
+    lines.push(`### ${c.label} before the election`, '')
+    const before = c.before
+    if (before) {
+      const keys = Object.keys(before)
+        .filter((k) => before[k] > 0)
+        .sort((a, b) => before[b] - before[a])
+      const had = keys.reduce((n, k) => n + before[k], 0)
+      lines.push(
+        `- Held: ${keys.map((k) => `${partyShort(election, k)} ${before[k]}`).join(', ')}${c.seats - had > 0 ? `, ${c.seats - had} vacant` : ''}.`,
+      )
+    }
+    if (g.held)
+      lines.push(
+        `- Seats up, by the party holding them: ${g.held.map((h) => `${partyShort(election, h.key)} ${h.n}`).join(', ')}${g.open ? `, ${g.open} with no sitting member (vacant or newly drawn)` : ''}.`,
+      )
+    if (c.ratings) {
+      lines.push(
+        `- Ratings by [${c.ratings.label}](${c.ratings.url}) as of ${c.ratings.asOf}: ${g.bands
+          .filter((b) => b.n)
+          .map((b) => `${ratingWords(election, b)} ${b.n}`)
+          .join(
+            ', ',
+          )}. A seat the forecaster does not list as competitive is safe for its holder.`,
+      )
+      if (g.flips.length)
+        lines.push(
+          `- Rated to change hands: ${g.flips.map((f) => `${f.label} (${ratingWords(election, { grade: f.grade, party: f.to })}, from ${partyShort(election, f.from)})`).join(', ')}.`,
+        )
+      if (g.tossups.length)
+        lines.push(
+          `- Toss-ups: ${g.tossups.map((t) => `${t.label}${t.from ? ` (${partyShort(election, t.from)})` : ''}`).join(', ')}.`,
+        )
+    }
+    lines.push('')
+  }
+  return lines.length
+    ? ['## Before the election', '', ...lines].join('\n').trimEnd()
+    : ''
 }
 
 export type IndexEntry = { election: Election; latest: Payload | null }
