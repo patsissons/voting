@@ -1,6 +1,7 @@
 // A results-only election (the US midterms): the viewer's state, then for
 // every chamber its balance of power (called, leading and not up, with the
-// majority line), the map, every race by state with a filter, the closest
+// majority line, and the seats changing hands), the map, the folded
+// pre-election picture, every race by state with a filter, the closest
 // uncalled races and the seat timeline. Race calls are the feed's own.
 import { useMemo, useState } from 'react'
 import { Check, ChevronsUpDown } from 'lucide-react'
@@ -39,7 +40,11 @@ import {
   chamberTimeline,
   closestIn,
   contestsOf,
+  divisionOf,
+  flipOf,
+  holderOf,
   inState,
+  ratingOf,
   type Balance,
 } from '../../../shared/stats/chambers.ts'
 import {
@@ -48,6 +53,7 @@ import {
   ridingsLed,
   voteShares,
 } from '../../../shared/stats/results.ts'
+import { GoingInFold } from './going-in'
 import { RaceBody, RaceRow, labelOf, type RaceContext } from './race'
 import { SourceNote, StatusLine, Tile } from './results-header'
 import type { SectionLink } from './results-view'
@@ -282,6 +288,7 @@ function ChamberBlock({
         ctx={ctx}
       />
       <MapSection chamber={chamber} contests={contests} ctx={ctx} mine={mine} />
+      <GoingInFold chamber={chamber} election={election} mine={mine} />
       <RacesSection
         chamber={chamber}
         contests={contests}
@@ -385,9 +392,11 @@ function BalanceSection({
     ]
     return reverse ? parts.reverse() : parts
   }
-  const [first, ...rest] = rows
+  // The election's parties flank the bar; anyone else sits in the middle.
+  const majors = rows.filter((r) => r.key !== 'other')
+  const [first, ...rest] = majors
   const last = rest.length ? rest[rest.length - 1] : null
-  const middle = rest.slice(0, -1)
+  const middle = rest.slice(0, -1).concat(rows.filter((r) => r.key === 'other'))
   const segments: Segment[] = [
     ...(first ? side(first, false) : []),
     ...middle.flatMap((r) => side(r, false)),
@@ -415,6 +424,18 @@ function BalanceSection({
     balance.vacant == null
       ? ''
       : `Before the election: ${held.map((r) => `${partyShort(P, r.key)} ${fmt(r.before || 0)}`).join(' · ')}${balance.vacant ? ` · ${balance.vacant} vacant` : ''}.${balance.called ? ' The change in brackets counts seats called and not up, not leads.' : ''}`
+  // Seats called for a party other than the one holding them going in.
+  const moved = rows.filter((r) => r.gained || r.lost)
+  const flips = moved.length
+    ? `Changed hands so far: ${moved
+        .map(
+          (r) =>
+            `${partyShort(P, r.key)} ${signed((r.gained || 0) - (r.lost || 0))} (${r.gained || 0} gained, ${r.lost || 0} lost)`,
+        )
+        .join(
+          ' · ',
+        )}. Only called seats count, and only those someone held going in.`
+    : ''
   let line = ''
   if (ranked.length >= 2) {
     const [a, b] = ranked
@@ -438,6 +459,7 @@ function BalanceSection({
       {before ? (
         <p className="text-muted-foreground text-sm">{before}</p>
       ) : null}
+      {flips ? <p className="text-muted-foreground text-sm">{flips}</p> : null}
       <SegmentBar
         caption="Called, leading and not up this year"
         majority={balance.majority || undefined}
@@ -462,7 +484,7 @@ function MapSection({
   const { election, P } = ctx
   if (!chamber.boundaries) return null
   const byState = chamber.key !== 'house'
-  const codeOf = (c: Contest) => (byState ? c.region || c.id : c.id)
+  const codeOf = (c: Contest) => divisionOf(chamber, c)
   const byCode = new Map(contests.map((c) => [codeOf(c), c]))
   const fills: Record<string, string> = {}
   for (const c of contests) {
@@ -513,6 +535,9 @@ function MapSection({
             }
           const w = calledOf(c)
           const lead = leaderOf(c)
+          const held = holderOf(chamber, c)
+          const flip = flipOf(chamber, c)
+          const rating = ratingOf(chamber, code)
           return {
             title,
             lines: [
@@ -522,11 +547,37 @@ function MapSection({
                 color: partyColor(s.key),
               })),
               ...(w
-                ? [{ label: 'Called', value: w.name }]
+                ? [
+                    {
+                      label: flip
+                        ? `Called, gained from ${partyShort(P, flip.from)}`
+                        : 'Called',
+                      value: w.name,
+                    },
+                  ]
                 : lead
                   ? [{ label: 'Leading', value: lead.name }]
                   : []),
               { label: 'Expected vote in', value: pct1(c.reporting || 0) },
+              ...(held !== undefined
+                ? [
+                    {
+                      label: 'Held before',
+                      value: held ? partyShort(P, held) : 'no one',
+                    },
+                  ]
+                : []),
+              ...(rating
+                ? [
+                    {
+                      label: 'Rated',
+                      value:
+                        rating.grade === 'tossup'
+                          ? 'Toss-up'
+                          : `${rating.grade[0].toUpperCase()}${rating.grade.slice(1)} ${partyShort(P, rating.party)}`,
+                    },
+                  ]
+                : []),
             ],
           }
         }}
@@ -623,14 +674,17 @@ function RacesSection({
                 </span>
               </summary>
               <div className="divide-y border-t">
-                {hits.map((c) => (
-                  <RaceRow
-                    key={c.id}
-                    contest={c}
-                    ctx={ctx}
-                    meta={`${pct1(c.reporting || 0)} in`}
-                  />
-                ))}
+                {hits.map((c) => {
+                  const flip = flipOf(chamber, c)
+                  return (
+                    <RaceRow
+                      key={c.id}
+                      contest={c}
+                      ctx={ctx}
+                      meta={`${pct1(c.reporting || 0)} in${flip ? ` · from ${partyShort(P, flip.from)}` : ''}`}
+                    />
+                  )
+                })}
               </div>
             </details>
           )

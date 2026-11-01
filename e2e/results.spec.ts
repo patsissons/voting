@@ -168,7 +168,9 @@ test('the results-only election has no tabs and shows every chamber', async ({
     house.getByText(/^(Dem|GOP) \d+ \([+−]\d+\) · (Dem|GOP) \d+ \([+−]\d+\)/),
   ).toBeVisible()
   await expect(
-    house.getByText(/^Before the election: GOP 218 · Dem 214 · 3 vacant\./),
+    house.getByText(
+      /^Before the election: GOP 218 · Dem 214 · Others 1 · 2 vacant\./,
+    ),
   ).toBeVisible()
 
   await page.getByRole('combobox', { name: 'Your state' }).click()
@@ -202,4 +204,32 @@ test('the US maps draw every district and every state', async ({ page }) => {
   await expect(states.locator('path[data-code]')).toHaveCount(50)
   await states.locator('path[data-code="ak"]').focus()
   await expect(page.getByRole('status')).toContainText('Alaska')
+})
+
+test('the US page folds each chamber’s pre-election picture under its map', async ({
+  page,
+}) => {
+  await page.goto('/us-2026')
+  const fold = page.locator('#house-before')
+  await fold.scrollIntoViewIfNeeded()
+  await expect(fold.locator('summary')).toHaveText(
+    'Before the election: who held each seat and how it was rated',
+  )
+  await fold.locator('summary').click()
+  const before = page.locator('#house-going-in')
+  await expect(
+    before.getByText(
+      /^Held before the election: GOP 218 · Dem 214 · Others 1 · 2 vacant\.$/,
+    ),
+  ).toBeVisible()
+  await expect(
+    before.getByRole('img', { name: /218 for a majority$/ }),
+  ).toBeVisible()
+  const rated = before.locator('[data-frame=province] path[data-code]')
+  await expect(rated).toHaveCount(435)
+  await expect(before.getByText(/^Toss-ups \(17\):/)).toBeVisible()
+  await before.getByRole('radio', { name: 'Held by' }).click()
+  await expect(
+    before.locator('[data-frame=province] path[data-code][data-hatched]'),
+  ).toHaveCount(10)
 })
