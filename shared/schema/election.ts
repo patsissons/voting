@@ -374,12 +374,18 @@ const chamberParty = z.strictObject({
   colorDark: color.optional(),
 })
 
+/** A forecaster's rating of one division: "tossup", or safe, likely or lean and a party key. */
+export const RATING = /^(tossup|(safe|likely|lean) [a-z][a-z0-9]*)$/
+
 /**
  * One chamber (or a set of offices, like the governors): `seats` is the whole
  * body, `holdovers` the seats not up this time per party, `before` the seats
  * each party held going in (optional, for the net change), and `divisions`
  * the contests the feed reports (code -> short name), so divisions + holdovers
  * = seats. `boundaries` names the map set whose codes are the division codes.
+ * `holders` and `ratings` (both optional, each covering every division) say
+ * who sits in each seat going in and how a forecaster rated it, for the maps
+ * before the night and the seats changing hands after.
  */
 const chamber = z.strictObject({
   key: z.string().regex(/^[a-z][a-z0-9]*$/),
@@ -390,6 +396,20 @@ const chamber = z.strictObject({
   holdovers: z.record(z.string(), z.number().int().nonnegative()).default({}),
   /** Seats each party held going in, for the net change; a total below `seats` means vacancies. */
   before: z.record(z.string(), z.number().int().nonnegative()).optional(),
+  /** The party holding each division going in ('other' for an independent), or null for a vacant or newly drawn seat. */
+  holders: z.record(z.string(), z.string().nullable()).optional(),
+  /** One forecaster's pre-election rating of every division, with the credit line and the day the ratings were taken. */
+  ratings: z
+    .strictObject({
+      label: z.string().min(1),
+      url,
+      asOf: day,
+      divisions: z.record(
+        z.string(),
+        z.string().regex(RATING, 'tossup, or safe/likely/lean and a party'),
+      ),
+    })
+    .optional(),
   boundaries,
   divisions: z.record(z.string().min(1), z.string().min(1)),
 })
@@ -551,7 +571,7 @@ export function electionProblems(e: Election): string[] {
       if (c.before) {
         let had = 0
         for (const [key, n] of Object.entries(c.before)) {
-          if (!keys.has(key))
+          if (!keys.has(key) && key !== 'other')
             problems.push(`${c.key}: before party "${key}" is unknown`)
           if (n < (c.holdovers[key] || 0))
             problems.push(
@@ -565,6 +585,28 @@ export function electionProblems(e: Election): string[] {
       for (const code of divisions) {
         if (!regions.has(code.split('-')[0]))
           problems.push(`${c.key}: division ${code} is in no region`)
+      }
+      const seats = new Set(divisions)
+      const whole = (codes: string[]) =>
+        codes.length === divisions.length && codes.every((x) => seats.has(x))
+      if (c.holders) {
+        if (!whole(Object.keys(c.holders)))
+          problems.push(`${c.key}: holders must cover every division`)
+        for (const [code, key] of Object.entries(c.holders)) {
+          if (key != null && !keys.has(key) && key !== 'other')
+            problems.push(`${c.key}: ${code} is held by unknown party "${key}"`)
+        }
+      }
+      if (c.ratings) {
+        if (!whole(Object.keys(c.ratings.divisions)))
+          problems.push(`${c.key}: ratings must cover every division`)
+        for (const [code, rating] of Object.entries(c.ratings.divisions)) {
+          const party = rating.split(' ')[1]
+          if (party && !keys.has(party) && party !== 'other')
+            problems.push(
+              `${c.key}: ${code} is rated for unknown party "${party}"`,
+            )
+        }
       }
     }
     return problems

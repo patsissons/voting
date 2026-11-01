@@ -148,6 +148,71 @@ describe('election documents', () => {
       'senate: dem held 0 seats before but 1 are not up',
       'governor: 6 seats held before exceed 3',
     ])
+    // Holders and ratings cover every division, name known parties (or other) and use the rating grammar.
+    const holders = {
+      'ak-al': 'gop',
+      'ca-12': 'dem',
+      'ny-10': null,
+      'wi-02': 'other',
+    }
+    const ratings = {
+      label: 'Tiny Ball',
+      url: 'https://example.com/ratings',
+      asOf: '2026-10-27',
+      divisions: {
+        'ak-al': 'lean dem',
+        'ca-12': 'safe dem',
+        'ny-10': 'tossup',
+        'wi-02': 'likely gop',
+      },
+    }
+    const house = (patch: Record<string, unknown>) => (e: typeof tiny) => ({
+      ...e,
+      chambers: [{ ...e.chambers[0], ...patch }, ...e.chambers.slice(1)],
+    })
+    expect(
+      problems(
+        house({ holders, ratings, before: { dem: 2, gop: 1, other: 1 } }),
+      ),
+    ).toEqual([])
+    expect(
+      problems(
+        house({
+          holders: { ...holders, 'wi-02': 'lib' },
+          ratings: {
+            ...ratings,
+            divisions: { ...ratings.divisions, 'ny-10': 'lean lib' },
+          },
+        }),
+      ),
+    ).toEqual([
+      'house: wi-02 is held by unknown party "lib"',
+      'house: ny-10 is rated for unknown party "lib"',
+    ])
+    expect(
+      problems(
+        house({
+          holders: { 'ak-al': 'gop', 'ca-12': 'dem', 'ny-10': null },
+          ratings: {
+            ...ratings,
+            divisions: { ...ratings.divisions, 'zz-01': 'tossup' },
+          },
+        }),
+      ),
+    ).toEqual([
+      'house: holders must cover every division',
+      'house: ratings must cover every division',
+    ])
+    expect(
+      ElectionSchema.safeParse(
+        house({
+          ratings: {
+            ...ratings,
+            divisions: { ...ratings.divisions, 'ak-al': 'solid gop' },
+          },
+        })(tiny),
+      ).success,
+    ).toBe(false)
     expect(
       problems((e) => ({
         ...e,

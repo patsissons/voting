@@ -17,6 +17,7 @@ import { ChambersResults, chambersSections } from './chambers-results'
 import { DistrictResults, districtSections } from './district-results'
 import { EarlyVotePanel } from './early-vote'
 import { earlyVoteCopy, type EarlyVoteCopy } from './early-vote-copy'
+import { GoingInBlocks } from './going-in'
 import { ReferendumResults, referendumSections } from './referendum-results'
 
 export type SectionLink = { id: string; label: string }
@@ -251,6 +252,9 @@ function Waiting({
           )}
         </p>
       </div>
+      {election.ballot === 'chambers' ? (
+        <GoingInBlocks election={election} />
+      ) : null}
       {earlyVote ? (
         <EarlyVotePanel election={election} earlyVote={earlyVote} />
       ) : null}

@@ -94,6 +94,17 @@ After making changes from a prompt and BEFORE committing:
   Fills blend the choice colours with nested CSS `color-mix` over the page
   tokens (`src/lib/blend.ts`) using `shared/stats/blend.ts`, which cubes the
   shares and holds a sole leader at 75% or more so it reads first.
+- **Before the night** (chambers): a chamber's optional `holders` (the party
+  holding each seat going in) and `ratings` (one forecaster's pre-election
+  rating of every seat) feed `goingIn`, `flipOf` and the `gained`/`lost`
+  balance rows in `shared/stats/chambers.ts`; the waiting screen shows each
+  chamber's picture (`src/views/results/going-in.tsx`: held seats, rating
+  bands against the majority line, a map coloured by rating or holder, the
+  seats rated to change hands), the results fold it under each chamber's
+  map and add the seats changing hands to the balance, the race rows and
+  the map tooltips; the markdown page carries a "Before the election"
+  section and the balance rows the gains and losses. The data is hand-kept
+  per election (`docs/new-vote.md`).
 - **Analysis tabs**: an election gets an Analysis tab (`#/analysis`, after
   Results) only when one is written for it by hand. Each is a bespoke module
   under `src/views/analysis/<slug>/` (its own layout, charts and findings),

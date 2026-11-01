@@ -410,7 +410,7 @@ describe('ResultsView', () => {
     // The document's `before`: the seats held going in and each party's net change.
     expect(
       within(house).getByText(
-        /^Before the election: GOP 218 · Dem 214 · 3 vacant\. The change in brackets counts seats called and not up, not leads\.$/,
+        /^Before the election: GOP 218 · Dem 214 · Others 1 · 2 vacant\. The change in brackets counts seats called and not up, not leads\.$/,
       ),
     ).toBeInTheDocument()
     expect(
@@ -433,6 +433,93 @@ describe('ResultsView', () => {
       name: /^Senate: each state coloured/,
     })
     expect(states.querySelectorAll('path[data-code]')).toHaveLength(50)
+    // The seats changing hands, from the document's holders, and the folded picture going in.
+    expect(
+      within(house).getByText(/^Changed hands so far: /),
+    ).toBeInTheDocument()
+    expect(
+      screen.getAllByText(
+        'Before the election: who held each seat and how it was rated',
+      ),
+    ).toHaveLength(3)
+    expect(
+      screen.queryByRole('heading', { name: 'Before the election' }),
+    ).toBeNull()
+    const fold = document.getElementById('senate-before') as HTMLDetailsElement
+    fold.open = true
+    fireEvent(fold, new Event('toggle'))
+    expect(
+      within(fold).getByRole('heading', { name: 'Before the election' }),
+    ).toBeInTheDocument()
+    expect(
+      within(fold).getByText(/^Held before the election: GOP 53 · Dem 47\.$/),
+    ).toBeInTheDocument()
+  })
+
+  it('shows each chamber before the election while a results-only election waits', async () => {
+    mount(us(), [])
+    expect(
+      screen.getAllByRole('heading', { name: 'Before the election' }),
+    ).toHaveLength(3)
+    const house = document.getElementById('house-going-in')!
+    expect(
+      within(house).getByText(
+        /^Held before the election: GOP 218 · Dem 214 · Others 1 · 2 vacant\.$/,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      within(house).getByText(
+        /^Sitting members by district: GOP 215 · Dem 209 · Others 1 · 10 with none \(redrawn or vacant\)\.$/,
+      ),
+    ).toBeInTheDocument()
+    // Sabato's House bands: 225 Dem, 17 toss-ups, 193 GOP, against the 218 line.
+    const bar = within(house).getByRole('img', {
+      name: /^House of Representatives before the election: Safe Dem 184, Likely Dem 19, Lean Dem 22, Toss-up 17, Lean GOP 14, Likely GOP 15, Safe GOP 164; 218 for a majority$/,
+    })
+    expect(bar).toBeInTheDocument()
+    expect(
+      within(house)
+        .getByText(/^Rated to go Dem \(18\):/)
+        .closest('p')!,
+    ).toHaveTextContent('Arizona 1 (lean, from GOP)')
+    expect(
+      within(house)
+        .getByText(/^Rated to go GOP \(3\):/)
+        .closest('p')!,
+    ).toHaveTextContent('Maine 2 (lean, from Dem)')
+    expect(
+      within(house)
+        .getByText(/^Toss-ups \(17\):/)
+        .closest('p')!,
+    ).toHaveTextContent('Alabama 2 (Dem)')
+    const [map] = await within(house).findAllByRole('img', {
+      name: /^House of Representatives before the election: each district coloured by its rating$/,
+    })
+    const fills = [...map.querySelectorAll('path[data-code]')].map(
+      (p) => p.getAttribute('fill') || '',
+    )
+    expect(fills).toHaveLength(435)
+    expect(fills.every((f) => f.startsWith('color-mix(in oklab'))).toBe(true)
+    fireEvent.click(within(house).getByRole('radio', { name: 'Held by' }))
+    const [held] = await within(house).findAllByRole('img', {
+      name: /^House of Representatives before the election: each district coloured by the party holding it$/,
+    })
+    expect(held.querySelectorAll('path[data-code][data-hatched]')).toHaveLength(
+      10,
+    )
+    expect(
+      held.querySelectorAll('path[data-code][fill^="var(--party-"]'),
+    ).toHaveLength(425)
+    // The Senate bar carries the seats not up so the 51 line means something.
+    const senate = document.getElementById('senate-going-in')!
+    expect(
+      within(senate).getByRole('img', {
+        name: /^Senate before the election: .*; 51 for a majority$/,
+      }).parentElement!.parentElement!,
+    ).toHaveTextContent('Dem not up 34')
+    expect(
+      within(senate).getByText(/^Seats up this year: GOP 22 · Dem 13\.$/),
+    ).toBeInTheDocument()
   })
 
   it('shows the chosen state’s races first', () => {

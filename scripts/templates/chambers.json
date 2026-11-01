@@ -56,6 +56,13 @@
       "majority": 2,
       "holdovers": {},
       "before": { "alpha": 1, "beta": 1 },
+      "holders": { "aa-01": "alpha", "bb-al": "beta" },
+      "ratings": {
+        "label": "TODO: the forecaster",
+        "url": "https://example.com/TODO-ratings",
+        "asOf": "2026-01-01",
+        "divisions": { "aa-01": "likely alpha", "bb-al": "tossup" }
+      },
       "divisions": {
         "aa-01": "TODO State A 1",
         "bb-al": "TODO State B at-large"
