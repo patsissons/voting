@@ -55,8 +55,8 @@ export function hemicycleSeats(n: number): Seat[] {
     .map(({ x, y, angle }) => ({ x, y, angle }))
 }
 
-/** A dot's radius for n seats, in the same units: under half the gap between rows. */
-const dotRadius = (n: number) => (0.42 * (1 - INNER)) / (hemicycleRows(n) - 1)
+/** The distance between rows of seats for n seats, in the same units. */
+const rowGap = (n: number) => (1 - INNER) / (hemicycleRows(n) - 1)
 
 /**
  * The seats of a chamber filled by segments in order, any left over in the
@@ -83,7 +83,10 @@ export function Hemicycle({
   const id = useId()
   const S = 100
   const places = hemicycleSeats(seats)
-  const r = dotRadius(seats) * S
+  // A dot is under half the gap between rows; a transparent ring takes the
+  // pointer most of the way to its neighbours, short of their dots.
+  const r = 0.42 * rowGap(seats) * S
+  const hit = 0.3 * rowGap(seats) * S
   const pad = r + 3
   const filled = segments.filter((s) => s.n > 0)
   // Where each segment starts: the seats of every segment before it.
@@ -159,7 +162,11 @@ export function Hemicycle({
                   cx={p.x * S}
                   cy={-p.y * S}
                   r={r}
-                  style={{ fill: pattern ? `url(#${pattern})` : s.color }}
+                  style={{
+                    fill: pattern ? `url(#${pattern})` : s.color,
+                    stroke: 'transparent',
+                    strokeWidth: hit,
+                  }}
                 />
               ))}
             </g>

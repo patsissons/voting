@@ -84,6 +84,10 @@ describe('chart kit', () => {
     const hatched = seg('a-up').querySelector('circle')!
     expect(hatched.style.fill).toMatch(/^url\("?#.+-hatch-1"?\)$/)
     expect(svg.querySelectorAll('pattern')).toHaveLength(1)
+    // A transparent ring widens each seat's pointer target into the gaps.
+    const seat = seg('a').querySelector('circle')!
+    expect(seat.style.stroke).toBe('transparent')
+    expect(parseFloat(seat.style.strokeWidth)).toBeGreaterThan(0)
     expect(svg.querySelectorAll('g[tabindex="0"]')).toHaveLength(3)
     expect(svg.querySelectorAll('line.viz-mark')).toHaveLength(1)
     expect(screen.getByText('51 for a majority')).toBeInTheDocument()
