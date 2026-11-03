@@ -582,6 +582,22 @@ describe('ResultsView', () => {
     expect(groups().map((g) => g.state)).toEqual(['Georgia'])
   })
 
+  it('clears the chosen state', () => {
+    localStorage.setItem('voting:us-2026:district', 'ak')
+    mount(us())
+    fireEvent.click(screen.getByRole('button', { name: 'Clear your state' }))
+    expect(
+      screen.getByRole('heading', { name: 'Your state', level: 2 }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('combobox', { name: 'Your state' }),
+    ).toHaveTextContent('Choose a state')
+    expect(localStorage.getItem('voting:us-2026:district')).toBeNull()
+    expect(
+      screen.queryByRole('button', { name: 'Clear your state' }),
+    ).toBeNull()
+  })
+
   it('maps the first question with division rows on the Alberta map', async () => {
     mount(alberta())
     const section = document.getElementById('map')!

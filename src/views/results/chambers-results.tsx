@@ -1,11 +1,11 @@
 // A results-only election (the US midterms): every chamber with a majority
-// line as a semicircle of seats, the viewer's state, then for
+// line as a semicircle of seats, the viewer's state (clearable), then for
 // every chamber its balance of power (called, leading and not up, with the
 // majority line, and the seats changing hands), the map, the folded
 // pre-election picture, every race by state with a filter, the closest
 // uncalled races and the seat timeline. Race calls are the feed's own.
 import { useMemo, useState } from 'react'
-import { Check, ChevronsUpDown } from 'lucide-react'
+import { Check, ChevronsUpDown, X } from 'lucide-react'
 import { GroupHead, Note, Section, Swatch } from '@/components/bits'
 import { SegmentBar, type Segment } from '@/components/charts/bars'
 import { Choropleth } from '@/components/charts/choropleth'
@@ -95,6 +95,10 @@ export function ChambersResults({
   const [mine, setMine] = useState(() =>
     readString(storageKeys.district(election.slug)),
   )
+  const choose = (key: string) => {
+    setMine(key)
+    writeString(storageKeys.district(election.slug), key)
+  }
   const state = election.regions.find((r) => r.key === mine)
   const own = state ? inState(latest, state.key) : []
   const share = latest.polls.total
@@ -139,14 +143,20 @@ export function ChambersResults({
         title={state ? `Your state: ${state.label}` : 'Your state'}
         sub={state ? `${own.length} races` : 'pick one'}
       >
-        <StatePicker
-          election={election}
-          value={mine}
-          onChange={(key) => {
-            setMine(key)
-            writeString(storageKeys.district(election.slug), key)
-          }}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <StatePicker election={election} value={mine} onChange={choose} />
+          {state ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => choose('')}
+              aria-label="Clear your state"
+            >
+              <X className="size-4" />
+              Clear
+            </Button>
+          ) : null}
+        </div>
         {state ? (
           own.length ? (
             <div className="divide-y">
@@ -229,7 +239,7 @@ function StatePicker({
           role="combobox"
           aria-expanded={open}
           aria-label="Your state"
-          className="w-full justify-between sm:w-80"
+          className="min-w-0 flex-1 justify-between sm:w-80 sm:flex-none"
         >
           <span className="truncate">
             {current ? current.label : 'Choose a state'}

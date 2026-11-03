@@ -201,6 +201,14 @@ test('the results-only election has no tabs and shows every chamber', async ({
   await expect(
     page.getByRole('heading', { name: 'Your state: Alaska', level: 2 }),
   ).toBeVisible()
+  await page.getByRole('button', { name: 'Clear your state' }).click()
+  await expect(page.getByRole('combobox', { name: 'Your state' })).toHaveText(
+    'Choose a state',
+  )
+  await page.reload()
+  await expect(
+    page.getByRole('heading', { name: 'Your state', exact: true, level: 2 }),
+  ).toBeVisible()
 })
 
 test('the US maps draw every district and every state', async ({ page }) => {
