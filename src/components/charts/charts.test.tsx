@@ -5,6 +5,7 @@ import { ChangeBars } from './change-bars'
 import { Choropleth } from './choropleth'
 import { Dumbbell } from './dumbbell'
 import { FlipClock } from './flip-clock'
+import { Hemicycle, hemicycleRows, hemicycleSeats } from './hemicycle'
 import { Legend } from './legend'
 import { Lines } from './lines'
 import { Plane } from './plane'
@@ -23,6 +24,74 @@ function withWidth(width: number) {
 }
 
 describe('chart kit', () => {
+  it('lays a hemicycle out with every seat once, left to right', () => {
+    expect(hemicycleRows(435)).toBe(12)
+    expect(hemicycleRows(100)).toBe(6)
+    for (const n of [435, 100, 7]) {
+      const seats = hemicycleSeats(n)
+      expect(seats).toHaveLength(n)
+      for (let i = 1; i < n; i++)
+        expect(seats[i].angle).toBeLessThanOrEqual(seats[i - 1].angle)
+      expect(seats[0].x).toBeLessThan(0)
+      expect(seats[n - 1].x).toBeGreaterThan(0)
+      expect(
+        seats.every((s) => s.y >= -1e-9 && Math.hypot(s.x, s.y) <= 1 + 1e-9),
+      ).toBe(true)
+    }
+    expect(hemicycleSeats(0)).toEqual([])
+  })
+
+  it('fills a hemicycle by segment, hatches seats not up and describes on focus', () => {
+    render(
+      <TipProvider>
+        <Hemicycle
+          seats={100}
+          majority={51}
+          segments={[
+            {
+              key: 'a',
+              label: 'A',
+              color: 'red',
+              n: 40,
+              describe: () => ({ title: 'A seats', lines: [] }),
+            },
+            {
+              key: 'a-up',
+              label: 'A not up',
+              color: 'stripes',
+              hatch: 'red',
+              n: 10,
+              describe: () => ({ title: 'A not up', lines: [] }),
+            },
+            {
+              key: 'b',
+              label: 'B',
+              color: 'blue',
+              n: 45,
+              describe: () => ({ title: 'B seats', lines: [] }),
+            },
+          ]}
+          center={<span>51 for a majority</span>}
+          ariaLabel="chamber"
+        />
+      </TipProvider>,
+    )
+    const svg = screen.getByRole('img', { name: 'chamber' })
+    expect(svg.querySelectorAll('circle')).toHaveLength(100)
+    const seg = (key: string) => svg.querySelector(`g[data-segment="${key}"]`)!
+    expect(seg('a').querySelectorAll('circle')).toHaveLength(40)
+    expect(seg('b').querySelectorAll('circle')).toHaveLength(45)
+    const hatched = seg('a-up').querySelector('circle')!
+    expect(hatched.style.fill).toMatch(/^url\("?#.+-hatch-1"?\)$/)
+    expect(svg.querySelectorAll('pattern')).toHaveLength(1)
+    expect(svg.querySelectorAll('g[tabindex="0"]')).toHaveLength(3)
+    expect(svg.querySelectorAll('line.viz-mark')).toHaveLength(1)
+    expect(screen.getByText('51 for a majority')).toBeInTheDocument()
+    expect(screen.getByText('A not up 10')).toBeInTheDocument()
+    fireEvent.focus(seg('b'))
+    expect(screen.getByRole('status')).toHaveTextContent('B seats')
+  })
+
   it('fills the map by division, rings yours and describes on focus', async () => {
     const { container } = render(
       <TipProvider>
