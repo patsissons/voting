@@ -113,13 +113,14 @@ describe('chamber stats', () => {
       majority: null,
       undecided: 0,
     })
+    // Before any count, only WI-02 (unopposed) is decided.
     expect(balanceOf(empty, chamber('house'), tiny)).toMatchObject({
       rows: [
-        { key: 'dem', called: 0, leading: 0, holdover: 0 },
+        { key: 'dem', called: 1, leading: 0, holdover: 0 },
         { key: 'gop', called: 0, leading: 0, holdover: 0 },
       ],
-      undecided: 4,
-      called: 0,
+      undecided: 3,
+      called: 1,
     })
   })
 
@@ -269,7 +270,7 @@ describe('chamber stats', () => {
     const t = chamberTimeline(rows, 'house', tiny)!
     expect(t.xs).toEqual([0, 60])
     expect(t.series.map((s) => [s.id, s.short, s.values])).toEqual([
-      ['dem', 'Dem', [0, 3]],
+      ['dem', 'Dem', [1, 3]], // WI-02 is unopposed
       ['gop', 'GOP', [0, 1]],
     ])
     expect(chamberTimeline([{ payload: counted }], 'house', tiny)).toBeNull()
