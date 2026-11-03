@@ -396,7 +396,33 @@ describe('ResultsView', () => {
       'Senate',
       'Governors',
     ])
-      expect(screen.getByRole('heading', { name })).toBeInTheDocument()
+      expect(
+        screen.getByRole('heading', { name, level: 2 }),
+      ).toBeInTheDocument()
+    // The seats of each chamber with a majority line, above the state picker.
+    const seats = document.getElementById('seats')!
+    expect(
+      seats.compareDocumentPosition(document.getElementById('mine')!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    const cycles = within(seats).getAllByRole('img')
+    expect(cycles.map((c) => c.getAttribute('aria-label'))).toEqual([
+      expect.stringMatching(
+        /^House of Representatives, 435 seats: .*; 218 for a majority$/,
+      ),
+      expect.stringMatching(/^Senate, 100 seats: .*; 51 for a majority$/),
+    ])
+    expect(cycles[0].querySelectorAll('circle')).toHaveLength(435)
+    expect(cycles[1].querySelectorAll('circle')).toHaveLength(100)
+    // The Senate's seats not up are striped.
+    expect(cycles[1].querySelectorAll('pattern')).toHaveLength(2)
+    expect(within(seats).queryByText('Governors')).toBeNull()
+    expect(
+      within(screen.getByRole('navigation', { name: 'Results sections' }))
+        .getAllByRole('link')
+        .map((a) => a.textContent)
+        .slice(0, 2),
+    ).toEqual(['Seats', 'Your state'])
     expect(
       screen.getAllByRole('heading', { name: 'Balance of power' }),
     ).toHaveLength(3)
@@ -554,6 +580,22 @@ describe('ResultsView', () => {
       target: { value: 'georgia' },
     })
     expect(groups().map((g) => g.state)).toEqual(['Georgia'])
+  })
+
+  it('clears the chosen state', () => {
+    localStorage.setItem('voting:us-2026:district', 'ak')
+    mount(us())
+    fireEvent.click(screen.getByRole('button', { name: 'Clear your state' }))
+    expect(
+      screen.getByRole('heading', { name: 'Your state', level: 2 }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('combobox', { name: 'Your state' }),
+    ).toHaveTextContent('Choose a state')
+    expect(localStorage.getItem('voting:us-2026:district')).toBeNull()
+    expect(
+      screen.queryByRole('button', { name: 'Clear your state' }),
+    ).toBeNull()
   })
 
   it('maps the first question with division rows on the Alberta map', async () => {

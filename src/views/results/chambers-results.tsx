@@ -1,13 +1,15 @@
-// A results-only election (the US midterms): the viewer's state, then for
+// A results-only election (the US midterms): every chamber with a majority
+// line as a semicircle of seats, the viewer's state (clearable), then for
 // every chamber its balance of power (called, leading and not up, with the
 // majority line, and the seats changing hands), the map, the folded
 // pre-election picture, every race by state with a filter, the closest
 // uncalled races and the seat timeline. Race calls are the feed's own.
 import { useMemo, useState } from 'react'
-import { Check, ChevronsUpDown } from 'lucide-react'
+import { Check, ChevronsUpDown, X } from 'lucide-react'
 import { GroupHead, Note, Section, Swatch } from '@/components/bits'
 import { SegmentBar, type Segment } from '@/components/charts/bars'
 import { Choropleth } from '@/components/charts/choropleth'
+import { Hemicycle } from '@/components/charts/hemicycle'
 import { Legend } from '@/components/charts/legend'
 import { Button } from '@/components/ui/button'
 import {
@@ -46,6 +48,7 @@ import {
   inState,
   ratingOf,
   type Balance,
+  type BalanceRow,
 } from '../../../shared/stats/chambers.ts'
 import {
   complete,
@@ -60,6 +63,9 @@ import type { SectionLink } from './results-view'
 import { TimelineSection } from './sections'
 
 export const chambersSections = (election: ChambersElection): SectionLink[] => [
+  ...(election.chambers.some((c) => c.majority != null)
+    ? [{ id: 'seats', label: 'Seats' }]
+    : []),
   { id: 'mine', label: 'Your state' },
   ...election.chambers.map((c) => ({ id: c.key, label: c.label })),
 ]
@@ -89,6 +95,10 @@ export function ChambersResults({
   const [mine, setMine] = useState(() =>
     readString(storageKeys.district(election.slug)),
   )
+  const choose = (key: string) => {
+    setMine(key)
+    writeString(storageKeys.district(election.slug), key)
+  }
   const state = election.regions.find((r) => r.key === mine)
   const own = state ? inState(latest, state.key) : []
   const share = latest.polls.total
@@ -126,19 +136,27 @@ export function ChambersResults({
         ) : null}
       </div>
 
+      <SeatsSection election={election} latest={latest} ctx={ctx} />
+
       <Section
         id="mine"
         title={state ? `Your state: ${state.label}` : 'Your state'}
         sub={state ? `${own.length} races` : 'pick one'}
       >
-        <StatePicker
-          election={election}
-          value={mine}
-          onChange={(key) => {
-            setMine(key)
-            writeString(storageKeys.district(election.slug), key)
-          }}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <StatePicker election={election} value={mine} onChange={choose} />
+          {state ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => choose('')}
+              aria-label="Clear your state"
+            >
+              <X className="size-4" />
+              Clear
+            </Button>
+          ) : null}
+        </div>
         {state ? (
           own.length ? (
             <div className="divide-y">
@@ -221,7 +239,7 @@ function StatePicker({
           role="combobox"
           aria-expanded={open}
           aria-label="Your state"
-          className="w-full justify-between sm:w-80"
+          className="min-w-0 flex-1 justify-between sm:w-80 sm:flex-none"
         >
           <span className="truncate">
             {current ? current.label : 'Choose a state'}
@@ -316,21 +334,19 @@ const mix = (color: string, pct: number) =>
 const hatch = (color: string) =>
   `repeating-linear-gradient(135deg, ${color} 0 5px, ${mix(color, 45)} 5px 9px)`
 
-function BalanceSection({
-  chamber,
-  balance,
-  contests,
-  ctx,
-}: {
-  chamber: Chamber
-  balance: Balance
-  contests: Contest[]
-  ctx: RaceContext
-}) {
-  const { P } = ctx
+const totalOf = (r: BalanceRow) => r.called + r.leading + r.holdover
+
+/**
+ * A chamber's seats as segments, called then leading then not up from each
+ * flank in: the election's parties at the ends, anyone else and the seats
+ * with no leader yet in the middle. The bar and the hemicycle share them.
+ */
+function balanceSegments(
+  balance: Balance,
+  contests: Contest[],
+  P: RaceContext['P'],
+): Segment[] {
   const rows = balance.rows
-  const total = (r: Balance['rows'][number]) =>
-    r.called + r.leading + r.holdover
   const names = (key: string, called: boolean) =>
     contests
       .filter((c) => {
@@ -364,7 +380,7 @@ function BalanceSection({
           .concat(change),
       }
     }
-  const side = (r: Balance['rows'][number], reverse: boolean): Segment[] => {
+  const side = (r: BalanceRow, reverse: boolean): Segment[] => {
     const color = partyColor(r.key === 'other' ? null : r.key)
     const short = partyShort(P, r.key)
     const parts: Segment[] = [
@@ -386,6 +402,7 @@ function BalanceSection({
         key: `${r.key}-holdover`,
         label: `${short} not up`,
         color: hatch(color),
+        hatch: color,
         n: r.holdover,
         describe: describe(r.key, 'holdover', r.holdover),
       },
@@ -397,7 +414,7 @@ function BalanceSection({
   const [first, ...rest] = majors
   const last = rest.length ? rest[rest.length - 1] : null
   const middle = rest.slice(0, -1).concat(rows.filter((r) => r.key === 'other'))
-  const segments: Segment[] = [
+  return [
     ...(first ? side(first, false) : []),
     ...middle.flatMap((r) => side(r, false)),
     {
@@ -412,11 +429,94 @@ function BalanceSection({
     },
     ...(last ? side(last, true) : []),
   ]
-  const ranked = rows.slice().sort((a, b) => total(b) - total(a))
-  const firm = (r: Balance['rows'][number]) => r.called + r.holdover
+}
+
+/** Every chamber with a majority line as a semicircle of its seats, side by side. */
+function SeatsSection({
+  election,
+  latest,
+  ctx,
+}: {
+  election: ChambersElection
+  latest: Payload
+  ctx: RaceContext
+}) {
+  const { P } = ctx
+  const chambers = election.chambers.filter((c) => c.majority != null)
+  if (!chambers.length) return null
+  return (
+    <Section
+      id="seats"
+      title="Seats"
+      sub="called, leading and not up this year"
+    >
+      <div className="grid gap-6 sm:grid-cols-2">
+        {chambers.map((chamber) => {
+          const contests = contestsOf(latest, chamber.key)
+          const balance = balanceOf(latest, chamber, election)
+          const counted = balance.rows
+            .filter((r) => totalOf(r))
+            .sort((a, b) => totalOf(b) - totalOf(a))
+          return (
+            <div key={chamber.key} className="space-y-2">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                <h3 className="text-sm font-medium">{chamber.label}</h3>
+                <span className="text-muted-foreground nums text-xs">
+                  {counted
+                    .map((r) => `${partyShort(P, r.key)} ${totalOf(r)}`)
+                    .concat(
+                      balance.undecided
+                        ? [`${balance.undecided} no leader yet`]
+                        : [],
+                    )
+                    .join(' · ')}
+                </span>
+              </div>
+              <Hemicycle
+                seats={balance.seats}
+                majority={balance.majority || undefined}
+                segments={balanceSegments(balance, contests, P)}
+                ariaLabel={`${chamber.label}, ${balance.seats} seats: ${balance.rows.map((r) => `${partyShort(P, r.key)} ${totalOf(r)} (${r.called} called, ${r.leading} leading, ${r.holdover} not up)`).join(', ')}; ${balance.undecided} undecided${balance.majority != null ? `; ${balance.majority} for a majority` : ''}`}
+                center={
+                  balance.majority != null ? (
+                    <>
+                      <div className="nums text-lg font-semibold sm:text-xl">
+                        {balance.majority}
+                      </div>
+                      <div className="text-muted-foreground text-xs">
+                        for a majority
+                      </div>
+                    </>
+                  ) : null
+                }
+              />
+            </div>
+          )
+        })}
+      </div>
+    </Section>
+  )
+}
+
+function BalanceSection({
+  chamber,
+  balance,
+  contests,
+  ctx,
+}: {
+  chamber: Chamber
+  balance: Balance
+  contests: Contest[]
+  ctx: RaceContext
+}) {
+  const { P } = ctx
+  const rows = balance.rows
+  const segments = balanceSegments(balance, contests, P)
+  const ranked = rows.slice().sort((a, b) => totalOf(b) - totalOf(a))
+  const firm = (r: BalanceRow) => r.called + r.holdover
   // The net change once a seat is called: firm seats against those held before.
-  const withNet = (r: Balance['rows'][number]) =>
-    `${partyShort(P, r.key)} ${total(r)}${balance.called && r.net != null ? ` (${signed(r.net)})` : ''}`
+  const withNet = (r: BalanceRow) =>
+    `${partyShort(P, r.key)} ${totalOf(r)}${balance.called && r.net != null ? ` (${signed(r.net)})` : ''}`
   const held = rows
     .filter((r) => r.before)
     .sort((a, b) => (b.before || 0) - (a.before || 0))
@@ -463,7 +563,7 @@ function BalanceSection({
       <SegmentBar
         caption="Called, leading and not up this year"
         majority={balance.majority || undefined}
-        ariaLabel={`${chamber.label}: ${rows.map((r) => `${partyShort(P, r.key)} ${total(r)} (${r.called} called, ${r.leading} leading, ${r.holdover} not up)`).join(', ')}; ${balance.undecided} undecided${balance.majority != null ? `; ${balance.majority} for a majority` : ''}`}
+        ariaLabel={`${chamber.label}: ${rows.map((r) => `${partyShort(P, r.key)} ${totalOf(r)} (${r.called} called, ${r.leading} leading, ${r.holdover} not up)`).join(', ')}; ${balance.undecided} undecided${balance.majority != null ? `; ${balance.majority} for a majority` : ''}`}
         segments={segments}
       />
     </Section>

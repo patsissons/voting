@@ -43,6 +43,8 @@ export type Segment = {
   color: string
   n: number
   describe: () => TipContent
+  /** The base colour when `color` is a hatch gradient; SVG charts stripe it themselves. */
+  hatch?: string
 }
 
 /**

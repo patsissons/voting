@@ -160,6 +160,20 @@ test('the results-only election has no tabs and shows every chamber', async ({
     ).toBeVisible()
   }
   await expect(page.getByText('Races called', { exact: true })).toBeVisible()
+  const seats = page.locator('#seats')
+  await expect(
+    seats.getByRole('img', {
+      name: /^House of Representatives, 435 seats: .*218 for a majority$/,
+    }),
+  ).toBeVisible()
+  await expect(
+    seats.getByRole('img', {
+      name: /^Senate, 100 seats: .*51 for a majority$/,
+    }),
+  ).toBeVisible()
+  await expect(seats.locator('circle')).toHaveCount(535)
+  await seats.locator('g[data-segment="dem-holdover"]').focus()
+  await expect(page.getByRole('status')).toContainText('not up this year')
   const house = page.locator('#house-balance')
   await expect(
     house.getByRole('img', { name: /218 for a majority/ }),
@@ -186,6 +200,14 @@ test('the results-only election has no tabs and shows every chamber', async ({
   await page.reload()
   await expect(
     page.getByRole('heading', { name: 'Your state: Alaska', level: 2 }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Clear your state' }).click()
+  await expect(page.getByRole('combobox', { name: 'Your state' })).toHaveText(
+    'Choose a state',
+  )
+  await page.reload()
+  await expect(
+    page.getByRole('heading', { name: 'Your state', exact: true, level: 2 }),
   ).toBeVisible()
 })
 

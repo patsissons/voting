@@ -67,7 +67,9 @@ What each ballot mode needs:
   pre-election rating of every division as `tossup` or `safe`/`likely`/`lean`
   and a party key, with the forecaster's `label`, `url` and the `asOf` day),
   an optional `boundaries` set and `divisions` (the feed's region keys to
-  short names; divisions plus holdovers equal `seats`). With `holders` and
+  short names; divisions plus holdovers equal `seats`). Every chamber with a
+  `majority` also gets a semicircle of its seats at the top of the page,
+  filled like its balance bar. With `holders` and
   `ratings` the page shows each chamber before the night (the held seats, a
   bar of the rating bands against the majority line, a map that colours by
   rating or by holder, the seats rated to change hands) and, once the counts
