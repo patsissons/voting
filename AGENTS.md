@@ -215,7 +215,8 @@ After making changes from a prompt and BEFORE committing:
    from a laptop instead.
 4. Official count: `pnpm relay --election <slug> --source <url> --official --once`.
    `us-2026` (civicAPI, three race documents per fetch) has no official
-   step: the winners are civicAPI's calls. Its source is the base URL,
+   step: the winners are civicAPI's calls, and a race with one candidate
+   counts as won without one. Its source is the base URL,
    `POST /_voting/source/us-2026?url=https://civicapi.org/api/v2/race/`;
    the fetch starts at pollsClose (23:00 UTC Nov 3) and runs 336 hours (to
    23:00 UTC Nov 17, for the slow House counts), so the webhook

@@ -548,7 +548,8 @@ describe('elections alberta dashboard (eab-dash)', () => {
 
 describe('civicapi race documents', () => {
   // The three real documents of 2026-10-23, trimmed to a few regions. Taken
-  // before voting day, so every count is zero and nothing is called.
+  // before voting day, so every count is zero and nothing is called but
+  // WI-02, where Mark Pocan runs unopposed.
   const sample = fixture('voting-2026-civicapi-sample.json')
   const tiny = tinyChambers()
   const wrapper = () =>
@@ -594,10 +595,21 @@ describe('civicapi race documents', () => {
     ])
     expect(r.contests[3].acclaimed).toBe(true)
     expect(r.contests[3].choices[0].name).toBe('Mark Pocan')
+    // Unopposed is won, called by civicAPI or not, with no votes counted.
+    expect(r.contests[3].choices[0].winner).toBe(true)
+    expect(r.contests[3].ballots).toBe(0)
+    expect(r.chambers!.house.called).toBe(1)
+    // ... and led, so the balance does not count it undecided.
+    expect(r.chambers!.house.parties[0]).toMatchObject({
+      key: 'dem',
+      called: 1,
+      leading: 1,
+    })
+    expect(ak.choices.some((c) => c.winner)).toBe(false)
     const sen = r.contests[4]
     expect(sen.label).toBe('Alaska')
     expect(sen.choices.some((c) => c.incumbent)).toBe(true)
-    expect(r.polls).toEqual({ closed: 0, total: 8 })
+    expect(r.polls).toEqual({ closed: 1, total: 8 })
     expect(r.eligible).toBe(217223010)
     expect(r.ballots).toBe(0)
     expect(r.turnout).toBe(0)
@@ -650,10 +662,10 @@ describe('civicapi race documents', () => {
       parties: [
         {
           key: 'dem',
-          leading: 0,
+          leading: 1,
           votes: 130000,
           pct: expect.any(Number),
-          called: 0,
+          called: 1, // Pocan, unopposed
         },
         {
           key: 'gop',
@@ -671,9 +683,9 @@ describe('civicapi race documents', () => {
         },
       ],
       reporting: 40,
-      called: 1,
+      called: 2,
     })
-    expect(r.polls).toEqual({ closed: 1, total: 8 })
+    expect(r.polls).toEqual({ closed: 2, total: 8 })
     expect(r.ballots).toBe(305000)
     expect(r.turnout).toBeCloseTo(305000 / 217223010, 9)
     expect(r.summary!.reporting).toBe('40%')

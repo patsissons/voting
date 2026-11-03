@@ -13,7 +13,9 @@
 // keys as they are and "<state>-<first three letters of the chamber key>"
 // elsewhere ("ak-sen", "ak-gov"), so a state's Senate and Governor races
 // never share an id. The feed's winner flag is civicAPI's own race call and
-// flows straight into Choice.winner; markOfficial leaves these kinds alone.
+// flows straight into Choice.winner, except that a race with one candidate
+// is won whether or not civicAPI calls it; markOfficial leaves these kinds
+// alone.
 import type {
   ChamberTally,
   Choice,
@@ -126,17 +128,22 @@ export function normalizeCivicapi(
         })
       }
       choices.sort((a, b) => b.votes - a.votes || a.name.localeCompare(b.name))
+      // Unopposed: the seat is theirs, and some states never count the votes.
+      const acclaimed = choices.length === 1
+      if (acclaimed) choices[0].winner = true
       const ballots = choices.reduce((n, c) => n + c.votes, 0)
       chamberVotes += ballots
       for (const c of choices) bucket(c.party || 'other').votes += c.votes
-      const lead = choices[0]
-      if (
-        lead &&
-        lead.votes > 0 &&
-        !(choices[1] && choices[1].votes === lead.votes)
-      )
-        bucket(lead.party || 'other').leading++
+      // A called race is led by its winner, counted or not: balanceOf takes
+      // the undecided seats as those nobody leads.
       const winner = choices.filter((c) => c.winner)[0]
+      const top = choices[0]
+      const lead =
+        winner ||
+        (top && top.votes > 0 && !(choices[1] && choices[1].votes === top.votes)
+          ? top
+          : null)
+      if (lead) bucket(lead.party || 'other').leading++
       if (winner) {
         bucket(winner.party || 'other').called!++
         chamberCalled++
@@ -149,7 +156,7 @@ export function normalizeCivicapi(
         region: code.split('-')[0],
         voteFor: 1,
         ballots,
-        acclaimed: choices.length === 1,
+        acclaimed,
         sort: contests.length,
         reporting: num(region.percent_reporting),
         choices,
