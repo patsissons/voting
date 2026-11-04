@@ -271,7 +271,7 @@ describe('fetchTick', () => {
     expect(out[0].error).toMatch(/some pages failed: Q9 500/)
   })
 
-  it('fetches every chamber’s race document together, or not at all', () => {
+  it('fetches every chamber’s race document, keeping a failed one’s last count', () => {
     const db = memoryDb()
     const tiny = tinyChambers()
     db.addElection(tiny, {
@@ -295,8 +295,11 @@ describe('fetchTick', () => {
     expect(db.results[0].get('polls_total')).toBe(8)
 
     down = 'senate'
-    const failed = fetchTick(db, http, { now: close + 240000 })
-    expect(failed[0].error).toBe('race fetch failed: senate 500')
+    const kept = fetchTick(db, http, { now: close + 240000 })
+    expect(kept[0]).toMatchObject({ status: 200, unchanged: true })
+    expect(kept[0].error).toBe(
+      'some races failed, kept their last count: senate 500',
+    )
     expect(db.results.length).toBe(1)
     expect(db.elections[0].get('results_error')).toMatch(/senate 500/)
 
@@ -318,6 +321,63 @@ describe('fetchTick', () => {
       'governor',
     ])
     expect(payloadOf(db.results[1])!.contests.length).toBe(8)
+  })
+
+  it('stores the chambers that answered when another fails, and nothing when all do', () => {
+    const db = memoryDb()
+    const tiny = tinyChambers()
+    db.addElection(tiny, {
+      results_source: 'https://civicapi.org/api/v2/race/',
+    })
+    let races = civicSample().races
+    let down: string[] = ['senate']
+    const http = fakeHttp((url) => {
+      const key = Object.entries(tiny.results.races).find(([, id]) =>
+        url.startsWith(`https://civicapi.org/api/v2/race/${id}?`),
+      )![0]
+      if (down.includes(key)) return { status: 502, text: 'error code: 502' }
+      return { status: 200, text: JSON.stringify(races[key]) }
+    })
+    const close = Date.parse(tiny.pollsClose)
+
+    // Nothing stored yet: a missing chamber has no last count to keep.
+    const first = fetchTick(db, http, { now: close + 60000 })
+    expect(first[0].error).toMatch(/^bad_feed: no race document for senate/)
+    expect(db.results.length).toBe(0)
+
+    down = []
+    fetchTick(db, http, { now: close + 240000 })
+    expect(db.results.length).toBe(1)
+    const before = payloadOf(db.results[0])!
+
+    // The House and Governors move on while the Senate keeps its last count,
+    // and the row stamps after the one before even though the documents'
+    // own stamps have not moved.
+    const counted = civicCounted().races
+    races = { ...counted, senate: races.senate }
+    down = ['senate']
+    const moved = fetchTick(db, http, { now: close + 420000 })
+    expect(moved[0]).toMatchObject({ status: 201 })
+    expect(moved[0].error).toMatch(/kept their last count: senate 502/)
+    expect(db.results.length).toBe(2)
+    const after = payloadOf(db.results[1])!
+    expect(after.asOf > before.asOf).toBe(true)
+    expect(after.contests.length).toBe(8)
+    expect(after.contests.map((c) => c.sort)).toEqual([0, 1, 2, 3, 4, 5, 6, 7])
+    const senate = (p: typeof after) =>
+      p.contests.filter((c) => c.kind === 'senate')
+    expect(senate(after)).toEqual(senate(before))
+    expect(after.chambers!.senate).toEqual(before.chambers!.senate)
+    expect(
+      after.contests.find((c) => c.id === 'ak-al')!.choices[0],
+    ).toMatchObject({ votes: 120000, winner: true })
+
+    down = ['house', 'senate', 'governor']
+    const none = fetchTick(db, http, { now: close + 600000 })
+    expect(none[0].error).toBe(
+      'race fetch failed: house 502, senate 502, governor 502',
+    )
+    expect(db.results.length).toBe(2)
   })
 
   it('follows a retired Alberta dashboard version to the current one', () => {

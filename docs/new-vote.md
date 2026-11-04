@@ -138,7 +138,9 @@ later is a document change; the next fetch catches up to the feed's current
 state, not the steps in between. For a
 `civicapi` election the source is the base URL
 (`https://civicapi.org/api/v2/race/`) and the fetch appends each id in
-`results.races`, storing the chambers together or not at all:
+`results.races`; a chamber whose request fails keeps its last stored count
+while the others move on (civicAPI answers some requests with a 502), and
+only a tick where every chamber fails stores nothing:
 
 ```sh
 curl -X POST -H "Authorization: Bearer $VOTING_INGEST_TOKEN" \
