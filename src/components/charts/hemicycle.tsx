@@ -1,11 +1,13 @@
 // A chamber as a semicircle of seats, one dot each, filled left to right in
 // segment order so each party reads as a wedge, with a tick at the majority
-// and a legend beneath. Each segment is one tooltip target and one tab stop;
-// a hatched segment (seats not up) stripes its dots with an SVG pattern.
+// and a legend beneath. Each seat is its own pointer target (its segment's
+// per-seat describe, else the segment's) and each segment one tab stop with
+// the segment's summary; a hatched segment (seats not up) stripes its dots
+// with an SVG pattern.
 import { useId, type ReactNode } from 'react'
 import type { Segment } from './bars'
 import { Legend } from './legend'
-import { useTip, tipHandlersFor } from './tooltip'
+import { useTip, tipHandlersFor, type TipContent } from './tooltip'
 
 export type Seat = { x: number; y: number; angle: number }
 
@@ -97,7 +99,12 @@ export function Hemicycle({
     s,
     own: places.slice(starts[i], starts[i] + s.n),
     pattern: s.hatch ? `${id}-hatch-${i}` : null,
+    focus: tipHandlersFor(tip, s.describe),
   }))
+  const pointer = (describe: () => TipContent) => {
+    const { onPointerMove, onPointerLeave } = tipHandlersFor(tip, describe)
+    return { onPointerMove, onPointerLeave }
+  }
   const rest = places.slice(filled.reduce((a, s) => a + s.n, 0))
   const tick =
     majority && majority < places.length
@@ -149,16 +156,18 @@ export function Hemicycle({
               style={{ fill: 'var(--muted)' }}
             />
           ))}
-          {groups.map(({ s, own, pattern }) => (
+          {groups.map(({ s, own, pattern, focus }) => (
             <g
               key={s.key}
               tabIndex={0}
               data-segment={s.key}
-              {...tipHandlersFor(tip, s.describe)}
+              onFocus={focus.onFocus}
+              onBlur={focus.onBlur}
             >
               {own.map((p, i) => (
                 <circle
                   key={i}
+                  {...pointer(s.seats?.[i] || s.describe)}
                   cx={p.x * S}
                   cy={-p.y * S}
                   r={r}
@@ -172,12 +181,16 @@ export function Hemicycle({
             </g>
           ))}
           {tick != null ? (
+            // A faint hairline over the seats that lets the pointer through to them.
             <line
               className="viz-mark"
               x1={(INNER * S - pad) * Math.cos(tick)}
               y1={-(INNER * S - pad) * Math.sin(tick)}
               x2={(S + pad) * Math.cos(tick)}
               y2={-(S + pad) * Math.sin(tick)}
+              style={{ strokeWidth: 1, strokeOpacity: 0.5 }}
+              vectorEffect="non-scaling-stroke"
+              pointerEvents="none"
               aria-hidden="true"
             />
           ) : null}

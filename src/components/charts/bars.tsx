@@ -43,6 +43,8 @@ export type Segment = {
   color: string
   n: number
   describe: () => TipContent
+  /** One describe per seat, in seat order, for charts that draw each seat (the hemicycle); the rest fall back to describe. */
+  seats?: (() => TipContent)[]
   /** The base colour when `color` is a hatch gradient; SVG charts stripe it themselves. */
   hatch?: string
 }

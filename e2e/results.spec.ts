@@ -160,6 +160,9 @@ test('the results-only election has no tabs and shows every chamber', async ({
     ).toBeVisible()
   }
   await expect(page.getByText('Races called', { exact: true })).toBeVisible()
+  await expect(
+    page.getByText('Expected vote in', { exact: true }),
+  ).toBeVisible()
   const seats = page.locator('#seats')
   await expect(
     seats.getByRole('img', {
@@ -174,6 +177,10 @@ test('the results-only election has no tabs and shows every chamber', async ({
   await expect(seats.locator('circle')).toHaveCount(535)
   await seats.locator('g[data-segment="dem-holdover"]').focus()
   await expect(page.getByRole('status')).toContainText('not up this year')
+  // A called seat names its race's candidates with their share.
+  await seats.locator('g[data-segment$="-called"] circle').first().hover()
+  await expect(page.getByRole('status')).toContainText(/\((Dem|GOP)\)/)
+  await expect(page.getByRole('status')).toContainText(/\d+\.\d%/)
   const house = page.locator('#house-balance')
   await expect(
     house.getByRole('img', { name: /218 for a majority/ }),

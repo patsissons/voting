@@ -11,6 +11,7 @@ import { SegmentBar, type Segment } from '@/components/charts/bars'
 import { Choropleth } from '@/components/charts/choropleth'
 import { Hemicycle } from '@/components/charts/hemicycle'
 import { Legend } from '@/components/charts/legend'
+import type { TipContent } from '@/components/charts/tooltip'
 import { Button } from '@/components/ui/button'
 import {
   Command,
@@ -105,6 +106,9 @@ export function ChambersResults({
     ? latest.polls.closed / latest.polls.total
     : 0
   const source = election.results.label || 'the feed'
+  // The feed's own estimate of the expected vote counted, House first.
+  const counter = chamberOf(election, 'house') || election.chambers[0]
+  const tally = latest.chambers ? latest.chambers[counter.key] : null
   return (
     <div className="space-y-6">
       <StatusLine
@@ -115,13 +119,21 @@ export function ChambersResults({
         owner={`${source}'s`}
         timeZone={election.timeZone}
       />
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Tile
           label="Races called"
           value={fmt(latest.polls.closed)}
           sub={`of ${fmt(latest.polls.total)} · ${pct1(share * 100)}`}
           share={share}
         />
+        {tally ? (
+          <Tile
+            label="Expected vote in"
+            value={pct1(tally.reporting)}
+            sub={`est., ${counter.short} races`}
+            share={tally.reporting / 100}
+          />
+        ) : null}
         <Tile
           label="Votes counted"
           value={fmt(latest.ballots)}
@@ -339,26 +351,32 @@ const totalOf = (r: BalanceRow) => r.called + r.leading + r.holdover
 /**
  * A chamber's seats as segments, called then leading then not up from each
  * flank in: the election's parties at the ends, anyone else and the seats
- * with no leader yet in the middle. The bar and the hemicycle share them.
+ * with no leader yet in the middle. The bar and the hemicycle share them;
+ * the hemicycle also describes each called, leading or undecided seat as its
+ * race, in division order.
  */
 function balanceSegments(
   balance: Balance,
   contests: Contest[],
+  chamber: Chamber,
   P: RaceContext['P'],
 ): Segment[] {
   const rows = balance.rows
-  const names = (key: string, called: boolean) =>
-    contests
-      .filter((c) => {
-        const w = calledOf(c)
-        if (called) return !!w && (w.party || 'other') === key
-        const lead = leaderOf(c)
-        return !w && !!lead && (lead.party || 'other') === key
-      })
-      .map((c) => c.label)
+  const racesOf = (key: string, called: boolean) =>
+    contests.filter((c) => {
+      const w = calledOf(c)
+      if (called) return !!w && (w.party || 'other') === key
+      const lead = leaderOf(c)
+      return !w && !!lead && (lead.party || 'other') === key
+    })
+  const seatsOf = (races: Contest[]) =>
+    races.map((c) => () => raceTip(chamber, c, P))
   const describe =
     (key: string, kind: 'called' | 'leading' | 'holdover', n: number) => () => {
-      const list = kind === 'holdover' ? [] : names(key, kind === 'called')
+      const list =
+        kind === 'holdover'
+          ? []
+          : racesOf(key, kind === 'called').map((c) => c.label)
       const r = rows.find((x) => x.key === key)
       const change =
         kind === 'called' && r && r.net != null
@@ -390,6 +408,7 @@ function balanceSegments(
         color,
         n: r.called,
         describe: describe(r.key, 'called', r.called),
+        seats: seatsOf(racesOf(r.key, true)),
       },
       {
         key: `${r.key}-leading`,
@@ -397,6 +416,7 @@ function balanceSegments(
         color: mix(color, 62),
         n: r.leading,
         describe: describe(r.key, 'leading', r.leading),
+        seats: seatsOf(racesOf(r.key, false)),
       },
       {
         key: `${r.key}-holdover`,
@@ -426,9 +446,80 @@ function balanceSegments(
         title: `${balance.undecided} races with no votes counted yet`,
         lines: [],
       }),
+      seats: seatsOf(contests.filter((c) => !calledOf(c) && !leaderOf(c))),
     },
     ...(last ? side(last, true) : []),
   ]
+}
+
+/**
+ * One race for a tooltip: its candidates by share of the vote (incumbents
+ * marked), the call or the leader, the expected vote in, who held the seat
+ * and the forecaster's rating. The map and the hemicycle seats share it.
+ */
+function raceTip(
+  chamber: Chamber,
+  c: Contest,
+  P: RaceContext['P'],
+): TipContent {
+  const counted = c.ballots > 0
+  const candidates = c.choices.slice(0, 5).map((ch) => ({
+    label: `${ch.name} (${labelOf(P, ch)})${ch.incumbent ? ' · incumbent' : ''}`,
+    value: counted ? pct1((100 * ch.votes) / c.ballots) : '',
+    color: partyColor(ch.party),
+  }))
+  const more =
+    c.choices.length > 5
+      ? [{ label: `and ${c.choices.length - 5} more`, value: '' }]
+      : []
+  const w = calledOf(c)
+  const lead = leaderOf(c)
+  const held = holderOf(chamber, c)
+  const flip = flipOf(chamber, c)
+  const rating = ratingOf(chamber, divisionOf(chamber, c))
+  return {
+    title: c.label,
+    lines: [
+      ...candidates,
+      ...more,
+      ...(w
+        ? [
+            {
+              label: flip
+                ? `Called, gained from ${partyShort(P, flip.from)}`
+                : c.acclaimed
+                  ? 'Unopposed'
+                  : 'Called',
+              value: w.name,
+            },
+          ]
+        : lead
+          ? [{ label: 'Leading', value: lead.name }]
+          : []),
+      counted
+        ? { label: 'Expected vote in', value: pct1(c.reporting || 0) }
+        : { label: 'Votes', value: 'none counted yet' },
+      ...(held !== undefined
+        ? [
+            {
+              label: 'Held before',
+              value: held ? partyShort(P, held) : 'no one',
+            },
+          ]
+        : []),
+      ...(rating
+        ? [
+            {
+              label: 'Rated',
+              value:
+                rating.grade === 'tossup'
+                  ? 'Toss-up'
+                  : `${rating.grade[0].toUpperCase()}${rating.grade.slice(1)} ${partyShort(P, rating.party)}`,
+            },
+          ]
+        : []),
+    ],
+  }
 }
 
 /** Every chamber with a majority line as a semicircle of its seats, side by side. */
@@ -475,7 +566,7 @@ function SeatsSection({
               <Hemicycle
                 seats={balance.seats}
                 majority={balance.majority || undefined}
-                segments={balanceSegments(balance, contests, P)}
+                segments={balanceSegments(balance, contests, chamber, P)}
                 ariaLabel={`${chamber.label}, ${balance.seats} seats: ${balance.rows.map((r) => `${partyShort(P, r.key)} ${totalOf(r)} (${r.called} called, ${r.leading} leading, ${r.holdover} not up)`).join(', ')}; ${balance.undecided} undecided${balance.majority != null ? `; ${balance.majority} for a majority` : ''}`}
                 center={
                   balance.majority != null ? (
@@ -511,7 +602,7 @@ function BalanceSection({
 }) {
   const { P } = ctx
   const rows = balance.rows
-  const segments = balanceSegments(balance, contests, P)
+  const segments = balanceSegments(balance, contests, chamber, P)
   const ranked = rows.slice().sort((a, b) => totalOf(b) - totalOf(a))
   const firm = (r: BalanceRow) => r.called + r.holdover
   // The net change once a seat is called: firm seats against those held before.
@@ -623,62 +714,11 @@ function MapSection({
         ariaLabel={`${chamber.label}: each ${byState ? 'state' : 'district'} coloured by its leader, blended by vote share until called`}
         describe={(code) => {
           const c = byCode.get(code)
+          if (c) return raceTip(chamber, c, P)
           const stateName = names.find((r) => r.key === code.split('-')[0])
-          const title = c ? c.label : stateName ? stateName.label : code
-          const shares = c ? voteShares(c).filter((s) => s.share > 0) : []
-          if (!c)
-            return { title, lines: [{ label: 'No race this year', value: '' }] }
-          if (!shares.length)
-            return {
-              title,
-              lines: [{ label: 'Votes', value: 'none counted yet' }],
-            }
-          const w = calledOf(c)
-          const lead = leaderOf(c)
-          const held = holderOf(chamber, c)
-          const flip = flipOf(chamber, c)
-          const rating = ratingOf(chamber, code)
           return {
-            title,
-            lines: [
-              ...shares.slice(0, 5).map((s) => ({
-                label: partyShort(P, s.key),
-                value: pct1(s.share),
-                color: partyColor(s.key),
-              })),
-              ...(w
-                ? [
-                    {
-                      label: flip
-                        ? `Called, gained from ${partyShort(P, flip.from)}`
-                        : 'Called',
-                      value: w.name,
-                    },
-                  ]
-                : lead
-                  ? [{ label: 'Leading', value: lead.name }]
-                  : []),
-              { label: 'Expected vote in', value: pct1(c.reporting || 0) },
-              ...(held !== undefined
-                ? [
-                    {
-                      label: 'Held before',
-                      value: held ? partyShort(P, held) : 'no one',
-                    },
-                  ]
-                : []),
-              ...(rating
-                ? [
-                    {
-                      label: 'Rated',
-                      value:
-                        rating.grade === 'tossup'
-                          ? 'Toss-up'
-                          : `${rating.grade[0].toUpperCase()}${rating.grade.slice(1)} ${partyShort(P, rating.party)}`,
-                    },
-                  ]
-                : []),
-            ],
+            title: stateName ? stateName.label : code,
+            lines: [{ label: 'No race this year', value: '' }],
           }
         }}
       />

@@ -89,11 +89,60 @@ describe('chart kit', () => {
     expect(seat.style.stroke).toBe('transparent')
     expect(parseFloat(seat.style.strokeWidth)).toBeGreaterThan(0)
     expect(svg.querySelectorAll('g[tabindex="0"]')).toHaveLength(3)
-    expect(svg.querySelectorAll('line.viz-mark')).toHaveLength(1)
+    const tick = svg.querySelectorAll('line.viz-mark')
+    expect(tick).toHaveLength(1)
+    // The majority tick never takes the pointer from the seats under it.
+    expect(tick[0].getAttribute('pointer-events')).toBe('none')
     expect(screen.getByText('51 for a majority')).toBeInTheDocument()
     expect(screen.getByText('A not up 10')).toBeInTheDocument()
     fireEvent.focus(seg('b'))
     expect(screen.getByRole('status')).toHaveTextContent('B seats')
+  })
+
+  it('describes each seat on pointer, falling back to its segment', () => {
+    render(
+      <TipProvider>
+        <Hemicycle
+          seats={10}
+          segments={[
+            {
+              key: 'a',
+              label: 'A',
+              color: 'red',
+              n: 3,
+              describe: () => ({ title: 'A seats', lines: [] }),
+              seats: [
+                () => ({ title: 'Seat one', lines: [] }),
+                () => ({ title: 'Seat two', lines: [] }),
+              ],
+            },
+            {
+              key: 'b',
+              label: 'B',
+              color: 'blue',
+              n: 2,
+              describe: () => ({ title: 'B seats', lines: [] }),
+            },
+          ]}
+          ariaLabel="chamber"
+        />
+      </TipProvider>,
+    )
+    const svg = screen.getByRole('img', { name: 'chamber' })
+    const dots = (key: string) =>
+      svg.querySelectorAll(`g[data-segment="${key}"] circle`)
+    fireEvent.pointerMove(dots('a')[1])
+    expect(screen.getByRole('status')).toHaveTextContent('Seat two')
+    // A seat past the segment's describes, and a segment without any.
+    fireEvent.pointerMove(dots('a')[2])
+    expect(screen.getByRole('status')).toHaveTextContent('A seats')
+    fireEvent.pointerMove(dots('b')[0])
+    expect(screen.getByRole('status')).toHaveTextContent('B seats')
+    fireEvent.pointerLeave(dots('b')[0])
+    expect(screen.queryByRole('status')).toBeNull()
+    // Focus still summarises the whole segment.
+    fireEvent.focus(svg.querySelector('g[data-segment="a"]')!)
+    expect(screen.getByRole('status')).toHaveTextContent('A seats')
   })
 
   it('fills the map by division, rings yours and describes on focus', async () => {

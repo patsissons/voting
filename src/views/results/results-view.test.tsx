@@ -414,6 +414,26 @@ describe('ResultsView', () => {
     ])
     expect(cycles[0].querySelectorAll('circle')).toHaveLength(435)
     expect(cycles[1].querySelectorAll('circle')).toHaveLength(100)
+    // Each called seat names its race's candidates with their share of the vote.
+    const calledSeat = cycles[0].querySelector(
+      'g[data-segment$="-called"] circle',
+    )!
+    fireEvent.pointerMove(calledSeat)
+    const seatTip = screen.getByRole('status')
+    expect(seatTip).toHaveTextContent(/\((Dem|GOP)\)/)
+    expect(seatTip).toHaveTextContent(/\d+\.\d%/)
+    expect(seatTip).toHaveTextContent(/Called/)
+    fireEvent.pointerLeave(calledSeat)
+    // Somewhere among them an incumbent is marked.
+    const incumbent = Array.from(cycles[0].querySelectorAll('circle')).some(
+      (dot) => {
+        fireEvent.pointerMove(dot)
+        const tip = screen.queryByRole('status')
+        return !!tip && /· incumbent/.test(tip.textContent || '')
+      },
+    )
+    expect(incumbent).toBe(true)
+    fireEvent.pointerLeave(calledSeat)
     // The Senate's seats not up are striped.
     expect(cycles[1].querySelectorAll('pattern')).toHaveLength(2)
     expect(within(seats).queryByText('Governors')).toBeNull()
@@ -443,6 +463,14 @@ describe('ResultsView', () => {
       within(house).getByText(/^(Dem|GOP) \d+ \([+−]\d+\) · /),
     ).toBeInTheDocument()
     expect(screen.getByText('Races called')).toBeInTheDocument()
+    // The feed's estimate of the House's expected vote in, from the newest night.
+    const nights = night(us())
+    const reporting =
+      nights[nights.length - 1].payload.chambers!.house.reporting
+    const estimate = screen.getByText('Expected vote in').parentElement!
+    expect(estimate).toHaveTextContent(
+      `${reporting.toFixed(1)}%est., House races`,
+    )
     expect(
       screen.getByRole('combobox', { name: 'Your state' }),
     ).toHaveTextContent('Choose a state')
