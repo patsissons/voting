@@ -14,6 +14,7 @@ import type { EarlyVote } from '../../../shared/early-vote.ts'
 import { parseEarlyVote } from '../../../shared/parsers/early-vote.ts'
 import { normalize } from '../../../shared/parsers/index.ts'
 import type { Election } from '../../../shared/schema/election.ts'
+import { paceOf } from '../../../shared/stats/chambers.ts'
 import { ResultsView } from './results-view'
 
 const night = (e: Election) =>
@@ -440,9 +441,15 @@ describe('ResultsView', () => {
     expect(
       within(screen.getByRole('navigation', { name: 'Results sections' }))
         .getAllByRole('link')
-        .map((a) => a.textContent)
-        .slice(0, 2),
-    ).toEqual(['Seats', 'Your state'])
+        .map((a) => a.textContent),
+    ).toEqual([
+      'Seats',
+      'Your state',
+      'House of Representatives',
+      'Senate',
+      'Governors',
+      'The count',
+    ])
     expect(
       screen.getAllByRole('heading', { name: 'Balance of power' }),
     ).toHaveLength(3)
@@ -462,15 +469,43 @@ describe('ResultsView', () => {
     expect(
       within(house).getByText(/^(Dem|GOP) \d+ \([+−]\d+\) · /),
     ).toBeInTheDocument()
-    expect(screen.getByText('Races called')).toBeInTheDocument()
+    // The header tiles come first; the count's charts repeat their names below.
+    expect(screen.getAllByText('Races called')[0]).toBeInTheDocument()
     // The feed's estimate of the House's expected vote in, from the newest night.
     const nights = night(us())
     const reporting =
       nights[nights.length - 1].payload.chambers!.house.reporting
-    const estimate = screen.getByText('Expected vote in').parentElement!
+    const estimate = screen.getAllByText('Expected vote in')[0].parentElement!
     expect(estimate).toHaveTextContent(
       `${reporting.toFixed(1)}%est., House races`,
     )
+    // The seat timelines run on the clock and carry each chamber's expected vote in.
+    const seatsOverTime = document.getElementById('house-timeline')!
+    expect(
+      within(seatsOverTime).getByText('seats led over time'),
+    ).toBeInTheDocument()
+    expect(
+      within(seatsOverTime).getByRole('columnheader', {
+        name: 'Expected vote in',
+      }),
+    ).toBeInTheDocument()
+    // The count: each tile over time, and the pace of the last hour when there is one.
+    for (const name of [
+      'Votes counted over time',
+      'Expected vote in over time',
+      'Races called over time',
+    ])
+      expect(screen.getByRole('heading', { name })).toBeInTheDocument()
+    const votes = document.getElementById('count-votes')!
+    expect(
+      within(votes).queryByRole('columnheader', { name: 'Reported' }),
+    ).toBeNull()
+    expect(paceOf(nights)).not.toBeNull()
+    expect(
+      within(votes).getByText(
+        'In the hour to 8:40 pm, the House count grew by 28,404,003 votes, against 75,906,145 the hour before.',
+      ),
+    ).toBeInTheDocument()
     expect(
       screen.getByRole('combobox', { name: 'Your state' }),
     ).toHaveTextContent('Choose a state')

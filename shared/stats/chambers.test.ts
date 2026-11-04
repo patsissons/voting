@@ -7,18 +7,24 @@ import {
 import { normalize } from '../parsers/index.ts'
 import {
   balanceOf,
+  calledClock,
   calledOf,
   chamberTimeline,
   closestIn,
   contestsOf,
+  counterOf,
   divisionOf,
   flipOf,
   goingIn,
   holderOf,
   inState,
+  paceOf,
   ratingOf,
+  reportingClock,
+  votesClock,
 } from './chambers.ts'
-import { voteShares } from './results.ts'
+import { voteShares, wallMs } from './results.ts'
+import type { Payload } from '../payload.ts'
 
 const tiny = tinyChambers()
 const empty = normalize(civicSample(), tiny)
@@ -268,7 +274,7 @@ describe('chamber stats', () => {
   it('draws seats led per chamber over the night', () => {
     const rows = [{ payload: empty }, { payload: counted }]
     const t = chamberTimeline(rows, 'house', tiny)!
-    expect(t.xs).toEqual([0, 60])
+    expect(t.xs).toEqual([wallMs(empty.asOf), wallMs(counted.asOf)])
     expect(t.series.map((s) => [s.id, s.short, s.values])).toEqual([
       ['dem', 'Dem', [1, 3]], // WI-02 is unopposed
       ['gop', 'GOP', [0, 1]],
@@ -282,5 +288,92 @@ describe('chamber stats', () => {
         tiny,
       )!.series[1].values,
     ).toEqual([0, 1])
+  })
+
+  // The count at a stamp: House votes, the House's expected vote in and races called.
+  const at = (
+    asOf: string,
+    ballots: number,
+    reporting: number,
+    closed: number,
+  ): { payload: Payload } => ({
+    payload: {
+      ...counted,
+      asOf,
+      ballots,
+      polls: { ...counted.polls, closed },
+      chambers: {
+        ...counted.chambers,
+        house: { ...counted.chambers!.house, reporting },
+      },
+      contests: [],
+    },
+  })
+
+  it('follows the count against the clock, even when the feed runs backwards', () => {
+    const rows = [
+      at('2026-11-04 14:00:00', 1000, 90, 3),
+      at('2026-11-04 14:44:00', 1200, 92, 4),
+      // The feed restates a state: fewer votes, a lower estimate.
+      at('2026-11-04 14:46:00', 900, 83, 4),
+    ]
+    const votes = votesClock(rows)!
+    expect(votes.xs).toEqual(rows.map((r) => wallMs(r.payload.asOf)))
+    expect(votes.xs[2]).toBeGreaterThan(votes.xs[1])
+    expect(votes.series.map((s) => [s.id, s.party, s.values])).toEqual([
+      ['votes', null, [1000, 1200, 900]],
+    ])
+    expect(reportingClock(rows, tiny)!.series[0].values).toEqual([90, 92, 83])
+    expect(calledClock(rows)!.series[0].values).toEqual([3, 4, 4])
+    const t = chamberTimeline(rows, 'house', tiny)!
+    expect(t.xs[2]).toBeGreaterThan(t.xs[1])
+    expect(votesClock(rows.slice(0, 1))).toBeNull()
+    expect(
+      votesClock([...rows, { payload: { ...counted, asOf: 'soon' } }])!.rows,
+    ).toHaveLength(3)
+  })
+
+  it('reads the expected vote in from the House, else the first chamber', () => {
+    expect(counterOf(tiny).key).toBe('house')
+    const noHouse = {
+      ...tiny,
+      chambers: tiny.chambers.filter((c) => c.key !== 'house'),
+    }
+    expect(counterOf(noHouse).key).toBe(noHouse.chambers[0].key)
+    const rows = [{ payload: empty }, { payload: counted }]
+    expect(reportingClock(rows, noHouse)!.series[0].values).toEqual([
+      0,
+      counted.chambers![noHouse.chambers[0].key].reporting,
+    ])
+  })
+
+  it('measures the pace of the House count by the hour', () => {
+    const rows = [
+      at('2026-11-04 12:00:00', 1000, 80, 1),
+      at('2026-11-04 12:40:00', 1500, 85, 2),
+      at('2026-11-04 13:00:00', 1800, 88, 3),
+      at('2026-11-04 13:30:00', 1900, 89, 3),
+      at('2026-11-04 14:05:00', 2000, 90, 3),
+    ]
+    // The hour to 14:05 measures from 13:00, the hour before from 12:00.
+    expect(paceOf(rows)).toEqual({
+      to: '2026-11-04 14:05:00',
+      recent: 200,
+      before: 800,
+    })
+    // A restated count reads as votes taken back.
+    expect(paceOf([...rows, at('2026-11-04 14:20:00', 1700, 84, 3)])).toEqual({
+      to: '2026-11-04 14:20:00',
+      recent: -100,
+      before: 800,
+    })
+    // Without the hour before, only the last hour.
+    expect(paceOf(rows.slice(2))).toEqual({
+      to: '2026-11-04 14:05:00',
+      recent: 200,
+      before: null,
+    })
+    expect(paceOf(rows.slice(3))).toBeNull()
+    expect(paceOf(rows.slice(4))).toBeNull()
   })
 })
