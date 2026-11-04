@@ -19,7 +19,11 @@ export { normalizeEnr, parseAsOf } from './enr.ts'
 export { normalizeVancouver } from './vancouver.ts'
 export { parseChoiceName, titleCase, wallStamp } from './common.ts'
 
-export function normalize(raw: unknown, election: Election): Payload {
+export function normalize(
+  raw: unknown,
+  election: Election,
+  previous?: Payload | null,
+): Payload {
   const format = (election.results && election.results.format) || 'vancouver'
   if (election.ballot === 'district' && format === 'ebc-enr')
     return normalizeEnr(raw, election)
@@ -30,7 +34,7 @@ export function normalize(raw: unknown, election: Election): Payload {
   if (election.ballot === 'referendum' && format === 'eab-dash')
     return normalizeEabDash(raw, election)
   if (election.ballot === 'chambers' && format === 'civicapi')
-    return normalizeCivicapi(raw, election)
+    return normalizeCivicapi(raw, election, previous)
   throw new FeedError(
     'bad_config',
     `unknown results format "${format}" for a ${election.ballot} ballot`,
