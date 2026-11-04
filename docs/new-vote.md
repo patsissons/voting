@@ -69,7 +69,8 @@ What each ballot mode needs:
   an optional `boundaries` set and `divisions` (the feed's region keys to
   short names; divisions plus holdovers equal `seats`). Every chamber with a
   `majority` also gets a semicircle of its seats at the top of the page,
-  filled like its balance bar. With `holders` and
+  filled like its balance bar; hovering a seat that is up shows its race's
+  candidates and their share of the vote. With `holders` and
   `ratings` the page shows each chamber before the night (the held seats, a
   bar of the rating bands against the majority line, a map that colours by
   rating or by holder, the seats rated to change hands) and, once the counts
