@@ -106,6 +106,9 @@ export function ChambersResults({
     ? latest.polls.closed / latest.polls.total
     : 0
   const source = election.results.label || 'the feed'
+  // The feed's own estimate of the expected vote counted, House first.
+  const counter = chamberOf(election, 'house') || election.chambers[0]
+  const tally = latest.chambers ? latest.chambers[counter.key] : null
   return (
     <div className="space-y-6">
       <StatusLine
@@ -116,13 +119,21 @@ export function ChambersResults({
         owner={`${source}'s`}
         timeZone={election.timeZone}
       />
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Tile
           label="Races called"
           value={fmt(latest.polls.closed)}
           sub={`of ${fmt(latest.polls.total)} · ${pct1(share * 100)}`}
           share={share}
         />
+        {tally ? (
+          <Tile
+            label="Expected vote in"
+            value={pct1(tally.reporting)}
+            sub={`est., ${counter.short} races`}
+            share={tally.reporting / 100}
+          />
+        ) : null}
         <Tile
           label="Votes counted"
           value={fmt(latest.ballots)}

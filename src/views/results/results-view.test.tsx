@@ -463,6 +463,14 @@ describe('ResultsView', () => {
       within(house).getByText(/^(Dem|GOP) \d+ \([+−]\d+\) · /),
     ).toBeInTheDocument()
     expect(screen.getByText('Races called')).toBeInTheDocument()
+    // The feed's estimate of the House's expected vote in, from the newest night.
+    const nights = night(us())
+    const reporting =
+      nights[nights.length - 1].payload.chambers!.house.reporting
+    const estimate = screen.getByText('Expected vote in').parentElement!
+    expect(estimate).toHaveTextContent(
+      `${reporting.toFixed(1)}%est., House races`,
+    )
     expect(
       screen.getByRole('combobox', { name: 'Your state' }),
     ).toHaveTextContent('Choose a state')
