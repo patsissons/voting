@@ -20,7 +20,7 @@ import {
   partyShort,
   type PartyLookup,
 } from '@/lib/party'
-import { atClock, timeTicks } from '@/lib/time'
+import { clockTick, timeTicks } from '@/lib/time'
 import {
   clockOf,
   fmt,
@@ -28,6 +28,7 @@ import {
   signed,
   wallClock,
 } from '../../../shared/format.ts'
+import type { Payload } from '../../../shared/payload.ts'
 import type { CompassElection } from '../../../shared/schema/election.ts'
 import type {
   Momentum,
@@ -292,7 +293,12 @@ export function CompassSection({
   )
 }
 
-/** A timeline against the clock (xs in wall-clock ms): one line per series, a legend for two or more, and the table under it. */
+/**
+ * A timeline against the clock (xs in wall-clock ms): one line per series, a
+ * legend for two or more, and the table under it. `reported` replaces the
+ * polls reported in the tooltip and the table (null leaves it out); a night
+ * that runs past midnight shows the day on its times.
+ */
 export function ClockSection({
   id,
   t,
@@ -303,6 +309,7 @@ export function ClockSection({
   valueFormat,
   yTicks,
   color = (s) => partyColor(s.party),
+  reported,
   children,
 }: {
   id: string
@@ -314,9 +321,19 @@ export function ClockSection({
   valueFormat?: (v: number) => string
   yTicks?: number[]
   color?: (s: Timeline['series'][number]) => string
+  reported?: { head: string; value: (p: Payload) => string } | null
   children?: ReactNode
 }) {
   if (!t) return null
+  const report =
+    reported === undefined
+      ? {
+          head: 'Reported',
+          value: (p: Payload) => `${fmt(p.polls.closed)}/${fmt(p.polls.total)}`,
+          tip: (p: Payload) =>
+            `${fmt(p.polls.closed)} of ${fmt(p.polls.total)} reported`,
+        }
+      : reported && { ...reported, tip: reported.value }
   const series = t.series.map((s) => ({
     label: s.label,
     short: s.short,
@@ -325,6 +342,9 @@ export function ClockSection({
   }))
   const start = t.xs[0]
   const end = t.xs[t.xs.length - 1]
+  const day = (i: number) => t.rows[i].payload.asOf.slice(0, 10)
+  const multiDay = day(0) !== day(t.rows.length - 1)
+  const when = multiDay ? wallClock : clockOf
   return (
     <Section id={id} title={title} sub={sub}>
       {series.length > 1 ? (
@@ -341,22 +361,28 @@ export function ClockSection({
         xMin={start}
         xMax={end}
         xTicks={timeTicks(start, end)}
-        xFormat={atClock}
+        xFormat={(v) => clockTick(v, multiDay)}
         yFormat={yFormat}
         yTicks={yTicks}
         valueFormat={valueFormat}
         lines={series}
         title={(i) =>
-          `${clockOf(t.rows[i].payload.asOf)} · ${fmt(t.rows[i].payload.polls.closed)} of ${fmt(t.rows[i].payload.polls.total)} reported`
+          [when(t.rows[i].payload.asOf)]
+            .concat(report ? [report.tip(t.rows[i].payload)] : [])
+            .join(' · ')
         }
         ariaLabel={ariaLabel}
       />
       {children}
       <DataTable
-        heads={['As of', 'Reported', ...series.map((s) => s.short)]}
+        heads={[
+          'As of',
+          ...(report ? [report.head] : []),
+          ...series.map((s) => s.short),
+        ]}
         rows={t.rows.map((r, i) => [
-          clockOf(r.payload.asOf),
-          `${fmt(r.payload.polls.closed)}/${fmt(r.payload.polls.total)}`,
+          when(r.payload.asOf),
+          ...(report ? [report.value(r.payload)] : []),
           ...series.map((s) => (valueFormat || yFormat)(s.values[i] as number)),
         ])}
       />
