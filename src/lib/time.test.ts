@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   atClock,
+  clockTick,
   instantText,
   spanText,
   stampToEpoch,
@@ -53,5 +54,14 @@ describe('time', () => {
     expect(ticks[ticks.length - 1]).toBe(end)
     expect(ticks.length).toBeGreaterThan(2)
     expect(ticks.length).toBeLessThanOrEqual(7)
+  })
+
+  it('labels midnight with the day on an axis that spans days', () => {
+    const midnight = Date.UTC(2026, 10, 4)
+    expect(clockTick(midnight, true)).toBe('Nov 4')
+    expect(clockTick(midnight, false)).toBe(atClock(midnight))
+    expect(clockTick(midnight + 4 * 3600000, true)).toBe(
+      atClock(midnight + 4 * 3600000),
+    )
   })
 })

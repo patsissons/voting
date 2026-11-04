@@ -81,6 +81,19 @@ export function atClock(wallMs: number): string {
     .replace(/\./g, '')
 }
 
+/**
+ * A clock-axis label: "8:05 pm", or "Nov 4" at midnight when the axis spans
+ * more than one day, so a night that runs into the next morning says so.
+ */
+export function clockTick(wallMs: number, multiDay: boolean): string {
+  if (!multiDay || wallMs % 86400000) return atClock(wallMs)
+  return new Date(wallMs).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })
+}
+
 /** Clock ticks for a wall-ms axis: the ends plus round times between. */
 export function timeTicks(start: number, end: number): number[] {
   const span = Math.max(1, end - start)

@@ -1,9 +1,11 @@
 // Pure statistics for a results-only (chambers) election: the balance of
 // each chamber, a state's races, the closest uncalled races and a chamber's
-// seats over the night. The page, the markdown page and the MCP tools share
-// them. Nothing here touches the DOM or Intl.
+// seats over the night, and the count itself (votes, the expected vote in and
+// races called) against the clock. The page, the markdown page and the MCP
+// tools share them. Nothing here touches the DOM or Intl.
 import type { Choice, Contest, Payload } from '../payload.ts'
 import type { Chamber, ChambersElection } from '../schema/election.ts'
+import { wallMs } from './results.ts'
 import type { CloseRiding, PayloadRow, Timeline } from './results.ts'
 
 /** The contests of one chamber, in the document's division order. */
@@ -260,14 +262,27 @@ export function closestIn(contests: Contest[], n = 8): CloseRiding[] {
     .slice(0, n)
 }
 
-/** Seats led per party in one chamber at every snapshot, against the chamber's share of the expected vote. */
+/** Snapshots with a stamp and chamber tallies, oldest first. */
+const clockRows = (snapshots: PayloadRow[]) =>
+  snapshots.filter(
+    (r) =>
+      r.payload &&
+      r.payload.chambers &&
+      Number.isFinite(wallMs(r.payload.asOf)),
+  )
+
+/**
+ * Seats led per party in one chamber at every snapshot, against the clock
+ * (xs are wall-clock ms). Not against the expected vote in: the feed revises
+ * that estimate, and restates counts, so it can run backwards.
+ */
 export function chamberTimeline(
   snapshots: PayloadRow[],
   chamber: string,
   election: ChambersElection,
 ): Timeline | null {
-  const points = snapshots.filter(
-    (r) => r.payload && r.payload.chambers && r.payload.chambers[chamber],
+  const points = clockRows(snapshots).filter(
+    (r) => r.payload.chambers![chamber],
   )
   if (points.length < 2) return null
   const tally = (payload: Payload) => {
@@ -285,7 +300,7 @@ export function chamberTimeline(
   for (const p of election.parties) names[p.key] = p
   return {
     rows: points,
-    xs: points.map((r) => r.payload.chambers![chamber].reporting),
+    xs: points.map((r) => wallMs(r.payload.asOf)),
     series: keys.map((k) => ({
       id: k,
       label: k === 'other' || !names[k] ? 'Others' : names[k].name,
@@ -293,5 +308,90 @@ export function chamberTimeline(
       party: k === 'other' || !names[k] ? null : k,
       values: points.map((r) => tally(r.payload)[k] || 0),
     })),
+  }
+}
+
+/** The chamber whose expected vote in stands for the count: the House, else the first. */
+export const counterOf = (election: ChambersElection): Chamber =>
+  election.chambers.find((c) => c.key === 'house') || election.chambers[0]
+
+/** One line of the count against the clock; null with fewer than two snapshots. */
+function countClock(
+  snapshots: PayloadRow[],
+  id: string,
+  label: string,
+  value: (payload: Payload) => number | null,
+): Timeline | null {
+  const rows = clockRows(snapshots).filter((r) => value(r.payload) != null)
+  if (rows.length < 2) return null
+  return {
+    rows,
+    xs: rows.map((r) => wallMs(r.payload.asOf)),
+    series: [
+      {
+        id,
+        label,
+        short: label,
+        party: null,
+        values: rows.map((r) => value(r.payload) as number),
+      },
+    ],
+  }
+}
+
+/** Votes counted in House races (the payload's ballots) at every snapshot. */
+export const votesClock = (snapshots: PayloadRow[]) =>
+  countClock(snapshots, 'votes', 'Votes counted', (p) => p.ballots)
+
+/** The feed's estimate of the expected vote in for the counter chamber at every snapshot. */
+export function reportingClock(
+  snapshots: PayloadRow[],
+  election: ChambersElection,
+): Timeline | null {
+  const key = counterOf(election).key
+  return countClock(snapshots, 'reporting', 'Expected vote in', (p) =>
+    p.chambers![key] ? p.chambers![key].reporting : null,
+  )
+}
+
+/** Races called across every chamber at every snapshot. */
+export const calledClock = (snapshots: PayloadRow[]) =>
+  countClock(snapshots, 'called', 'Races called', (p) => p.polls.closed)
+
+export type Pace = {
+  /** The newest snapshot's stamp. */
+  to: string
+  /** House votes added in the last `minutes` (negative when the feed took votes back). */
+  recent: number
+  /** The same over the `minutes` before that, or null without that much history. */
+  before: number | null
+}
+
+/**
+ * How fast the House votes are coming in: the change over the last
+ * `minutes` and the window before it, each from the newest snapshot at or
+ * before its cutoff. Null without `minutes` of history.
+ */
+export function paceOf(snapshots: PayloadRow[], minutes = 60): Pace | null {
+  const rows = clockRows(snapshots)
+  if (rows.length < 2) return null
+  const last = rows[rows.length - 1]
+  const end = wallMs(last.payload.asOf)
+  const span = minutes * 60000
+  const at = (cutoff: number) => {
+    let hit: PayloadRow | null = null
+    for (const r of rows) {
+      if (wallMs(r.payload.asOf) <= cutoff) hit = r
+      else break
+    }
+    return hit
+  }
+  const mid = at(end - span)
+  if (!mid) return null
+  const start = at(end - 2 * span)
+  return {
+    to: last.payload.asOf,
+    recent: last.payload.ballots - mid.payload.ballots,
+    before: start ? mid.payload.ballots - start.payload.ballots : null,
   }
 }

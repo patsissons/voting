@@ -3,7 +3,9 @@
 // every chamber its balance of power (called, leading and not up, with the
 // majority line, and the seats changing hands), the map, the folded
 // pre-election picture, every race by state with a filter, the closest
-// uncalled races and the seat timeline. Race calls are the feed's own.
+// uncalled races and the seat timeline; last, the count itself (votes, the
+// expected vote in and races called) against the clock. Race calls are the
+// feed's own.
 import { useMemo, useState } from 'react'
 import { Check, ChevronsUpDown, X } from 'lucide-react'
 import { GroupHead, Note, Section, Swatch } from '@/components/bits'
@@ -30,7 +32,7 @@ import {
 import { blendCss } from '@/lib/blend'
 import { partyColor, partyLookup, partyName, partyShort } from '@/lib/party'
 import { keys as storageKeys, readString, writeString } from '@/lib/storage'
-import { fmt, pct1 } from '../../../shared/format.ts'
+import { clockOf, compact, fmt, pct1 } from '../../../shared/format.ts'
 import type { Contest, Payload, Snapshot } from '../../../shared/payload.ts'
 import type {
   Chamber,
@@ -39,17 +41,23 @@ import type {
 import { blendWeights, LEADER } from '../../../shared/stats/blend.ts'
 import {
   balanceOf,
+  calledClock,
   calledOf,
   chamberTimeline,
   closestIn,
   contestsOf,
+  counterOf,
   divisionOf,
   flipOf,
   holderOf,
   inState,
+  paceOf,
   ratingOf,
+  reportingClock,
+  votesClock,
   type Balance,
   type BalanceRow,
+  type Pace,
 } from '../../../shared/stats/chambers.ts'
 import {
   complete,
@@ -61,7 +69,7 @@ import { GoingInFold } from './going-in'
 import { RaceBody, RaceRow, labelOf, type RaceContext } from './race'
 import { SourceNote, StatusLine, Tile } from './results-header'
 import type { SectionLink } from './results-view'
-import { TimelineSection } from './sections'
+import { ClockSection } from './sections'
 
 export const chambersSections = (election: ChambersElection): SectionLink[] => [
   ...(election.chambers.some((c) => c.majority != null)
@@ -69,6 +77,7 @@ export const chambersSections = (election: ChambersElection): SectionLink[] => [
     : []),
   { id: 'mine', label: 'Your state' },
   ...election.chambers.map((c) => ({ id: c.key, label: c.label })),
+  { id: 'count', label: 'The count' },
 ]
 
 /** The newest snapshot that still carries its contests (older rows keep only the chamber tallies). */
@@ -107,7 +116,7 @@ export function ChambersResults({
     : 0
   const source = election.results.label || 'the feed'
   // The feed's own estimate of the expected vote counted, House first.
-  const counter = chamberOf(election, 'house') || election.chambers[0]
+  const counter = counterOf(election)
   const tally = latest.chambers ? latest.chambers[counter.key] : null
   return (
     <div className="space-y-6">
@@ -203,6 +212,8 @@ export function ChambersResults({
           mine={state ? state.key : ''}
         />
       ))}
+
+      <CountGroup election={election} snapshots={snapshots} latest={latest} />
 
       <SourceNote>
         Results and race calls: {election.results.label || 'the feed'}
@@ -327,15 +338,118 @@ function ChamberBlock({
         up={up}
       />
       <ClosestSection chamber={chamber} contests={contests} ctx={ctx} />
-      <TimelineSection
+      <ClockSection
         id={`${chamber.key}-timeline`}
         t={chamberTimeline(snapshots, chamber.key, election)}
         title={`How the ${chamber.short} count moved`}
-        sub="seats led by share of the expected vote in"
+        sub="seats led over time"
         yFormat={(v) => String(Math.round(v))}
-        ariaLabel={`${chamber.label}: seats led by party as the expected vote came in`}
+        reported={{
+          head: 'Expected vote in',
+          value: (p) =>
+            p.chambers && p.chambers[chamber.key]
+              ? pct1(p.chambers[chamber.key].reporting)
+              : '',
+        }}
+        ariaLabel={`${chamber.label}: seats led by party over time`}
       />
     </>
+  )
+}
+
+/**
+ * How the count moved: each header tile (votes counted, the expected vote in,
+ * races called) against the clock, with the pace of the last hour. The feed
+ * can restate a state's count, so the lines can step down.
+ */
+function CountGroup({
+  election,
+  snapshots,
+  latest,
+}: {
+  election: ChambersElection
+  snapshots: Snapshot[]
+  latest: Payload
+}) {
+  const votes = votesClock(snapshots)
+  const reporting = reportingClock(snapshots, election)
+  const called = calledClock(snapshots)
+  if (!votes && !reporting && !called) return null
+  const pace = paceOf(snapshots)
+  const counter = counterOf(election)
+  const total = latest.polls.total
+  const line = () => 'var(--primary)'
+  return (
+    <>
+      <GroupHead id="count">The count</GroupHead>
+      <ClockSection
+        id="count-votes"
+        t={votes}
+        title="Votes counted over time"
+        sub="House races"
+        yFormat={compact}
+        valueFormat={fmt}
+        color={line}
+        reported={null}
+        ariaLabel="Votes counted in House races over time"
+      >
+        {pace ? <PaceNote pace={pace} /> : null}
+        <Note>
+          The line can step down: the feed sometimes takes votes back when a
+          state restates its count.
+        </Note>
+      </ClockSection>
+      <ClockSection
+        id="count-reporting"
+        t={reporting}
+        title="Expected vote in over time"
+        sub={`the feed's estimate, ${counter.short} races`}
+        yTicks={[0, 25, 50, 75, 100]}
+        yFormat={(v) => `${Math.round(v)}%`}
+        valueFormat={pct1}
+        color={line}
+        reported={null}
+        ariaLabel={`The feed's estimate of the expected vote in for ${counter.short} races over time`}
+      >
+        <Note>
+          An estimate, revised as states report: when the expected total grows
+          or a count is restated, the share in steps down.
+        </Note>
+      </ClockSection>
+      <ClockSection
+        id="count-called"
+        t={called}
+        title="Races called over time"
+        sub={`of ${fmt(total)}`}
+        yFormat={(v) => String(Math.round(v))}
+        valueFormat={(v) => `${fmt(v)} of ${fmt(total)}`}
+        color={line}
+        reported={null}
+        ariaLabel={`Races called over time, of ${fmt(total)}`}
+      />
+    </>
+  )
+}
+
+/** The last hour's House votes, and the hour before, in words: grew or fell, never a sign. */
+function PaceNote({ pace }: { pace: Pace }) {
+  const change = (n: number) =>
+    n < 0
+      ? `fell by ${fmt(-n)} votes`
+      : n > 0
+        ? `grew by ${fmt(n)} votes`
+        : 'did not move'
+  const before =
+    pace.before == null
+      ? ''
+      : pace.before < 0
+        ? `, after falling by ${fmt(-pace.before)} the hour before`
+        : `, against ${fmt(pace.before)} the hour before`
+  return (
+    <p className="font-medium">
+      In the hour to {clockOf(pace.to)}, the House count {change(pace.recent)}
+      {before}.
+    </p>
   )
 }
 

@@ -159,9 +159,12 @@ test('the results-only election has no tabs and shows every chamber', async ({
       page.getByRole('heading', { name, exact: true, level: 2 }),
     ).toBeVisible()
   }
-  await expect(page.getByText('Races called', { exact: true })).toBeVisible()
+  // The header tiles; the count's charts repeat their names further down.
   await expect(
-    page.getByText('Expected vote in', { exact: true }),
+    page.getByText('Races called', { exact: true }).first(),
+  ).toBeVisible()
+  await expect(
+    page.getByText('Expected vote in', { exact: true }).first(),
   ).toBeVisible()
   const seats = page.locator('#seats')
   await expect(
@@ -216,6 +219,32 @@ test('the results-only election has no tabs and shows every chamber', async ({
   await expect(
     page.getByRole('heading', { name: 'Your state', exact: true, level: 2 }),
   ).toBeVisible()
+})
+
+test('the US page charts the count and the seats against the clock', async ({
+  page,
+}) => {
+  await page.goto('/us-2026')
+  const nav = page.getByRole('navigation', { name: 'Results sections' })
+  await nav.getByRole('link', { name: 'The count' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'The count', level: 2 }),
+  ).toBeVisible()
+  const votes = page.locator('#count-votes')
+  await expect(
+    votes.getByRole('heading', { name: 'Votes counted over time' }),
+  ).toBeVisible()
+  await expect(
+    votes.getByText(/^In the hour to .+, the House count /),
+  ).toBeVisible()
+  await expect(
+    votes.getByRole('img', { name: 'Votes counted in House races over time' }),
+  ).toBeVisible()
+  for (const id of ['#count-reporting', '#count-called'])
+    await expect(page.locator(id).getByRole('img')).toBeVisible()
+  const seats = page.locator('#house-timeline')
+  await seats.scrollIntoViewIfNeeded()
+  await expect(seats.getByText('seats led over time')).toBeVisible()
 })
 
 test('the US maps draw every district and every state', async ({ page }) => {

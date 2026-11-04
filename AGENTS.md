@@ -80,7 +80,10 @@ After making changes from a prompt and BEFORE committing:
   (`views/compass/`), the referendum ballot (`views/ballot/`) and the four
   results views (`views/results/`) sit on the shared stats. A `chambers`
   election (results only, e.g. `us-2026`) shows no tabs and always carries
-  `#/results`. Charts are `components/charts/` (one tooltip context,
+  `#/results`; its seat timelines and its closing "The count" group (votes
+  counted, expected vote in and races called, with the last hour's pace)
+  run on the clock (`ClockSection`), never on the feed's expected vote in,
+  which the feed revises and can restate downwards. Charts are `components/charts/` (one tooltip context,
   `useMeasure` for width).
 - **Results maps**: `pnpm geo` (`scripts/geo/build.ts`, mapshaper) turns the
   official boundary files into `src/geo/<set>.json` (generated and
