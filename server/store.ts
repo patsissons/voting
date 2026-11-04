@@ -15,7 +15,8 @@
 // a results source (or just the one a webhook's ?slug= names, which
 // scopeProblem checks) and fetches the ones due: one page per question for an
 // eab-ref election, one race document per chamber for a civicapi election
-// (all or nothing: a chamber that fails fails the tick), else the source
+// (a chamber that fails keeps the last stored count, and the tick fails only
+// when every chamber does), else the source
 // itself, following a retired Alberta dashboard version to the current one.
 import { checkSource, shouldFetch } from '../shared/fetch-policy.ts'
 import {
@@ -72,7 +73,13 @@ export function storeSnapshot(
   db: Db,
   slug: string,
   raw: unknown,
-  opts: { official?: boolean; log?: Logger; now?: number } = {},
+  opts: {
+    official?: boolean
+    log?: Logger
+    now?: number
+    /** Fill a missing civicapi chamber from the newest stored row. */
+    carry?: boolean
+  } = {},
 ): Reply {
   const election = db.electionBySlug(slug)
   if (!election)
@@ -81,9 +88,10 @@ export function storeSnapshot(
   if ('error' in loaded) return loaded.error
   const config = loaded.config
 
+  const latest = opts.carry ? db.latestResult(election.id) : null
   let payload: Payload
   try {
-    payload = normalize(raw, config)
+    payload = normalize(raw, config, latest ? payloadOf(latest) : null)
   } catch (err) {
     const code = isFeedError(err) ? err.code : 'bad_feed'
     const status = code === 'project_mismatch' ? 409 : 400
@@ -236,7 +244,8 @@ export function fetchTick(
             error = `some pages failed: ${failed.join(', ')}`
         }
       } else if (results.format === 'civicapi') {
-        // One document per chamber, stored together or not at all.
+        // One document per chamber; civicAPI 502s often, so a chamber that
+        // fails keeps its last stored count while the others move on.
         const races: Record<string, unknown> = {}
         const failed: string[] = []
         for (const key of Object.keys(results.races)) {
@@ -249,18 +258,20 @@ export function fetchTick(
             failed.push(`${key} ${(err as Error).message || err}`)
           }
         }
-        if (failed.length) {
+        if (!Object.keys(races).length) {
           error = `race fetch failed: ${failed.join(', ')}`
         } else {
           const stored = storeSnapshot(
             db,
             slug,
             { fetchedAt: new Date(now).toISOString(), races },
-            { now, log },
+            { now, log, carry: failed.length > 0 },
           )
           row = { ...row, status: stored.status, ...stored.body }
           if (stored.status >= 300)
             error = `${stored.body.code}: ${stored.body.message}`
+          else if (failed.length)
+            error = `some races failed, kept their last count: ${failed.join(', ')}`
         }
       } else {
         let res = http.get(bust(state.source, now), 30)

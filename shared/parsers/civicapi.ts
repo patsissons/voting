@@ -16,6 +16,12 @@
 // flows straight into Choice.winner, except that a race with one candidate
 // is won whether or not civicAPI calls it; markOfficial leaves these kinds
 // alone.
+//
+// civicAPI answers some requests with a 502, so the fetch may come back
+// without a chamber's document. Given the previous payload, a missing
+// chamber keeps that payload's contests and tally (its last good count) and
+// the snapshot stamps at least a second after the previous one, so the
+// newest row stays the newest; without one a missing chamber is an error.
 import type {
   ChamberTally,
   Choice,
@@ -72,9 +78,31 @@ function raceOf(wrapper: Wrapper, chamber: Chamber): RaceDoc {
   return doc
 }
 
+/** A chamber's contests and tally in the previous payload, or null when it has none. */
+function keptChamber(
+  previous: Payload | null | undefined,
+  chamber: Chamber,
+): { contests: Contest[]; tally: ChamberTally } | null {
+  if (!previous || previous.format !== 'civicapi' || !previous.chambers)
+    return null
+  const tally = previous.chambers[chamber.key]
+  const contests = (previous.contests || []).filter(
+    (c) => c.kind === chamber.key,
+  )
+  return tally && contests.length ? { contests, tally } : null
+}
+
+/** A wall stamp ("2026-11-03 19:00:00") a second later. */
+const secondAfter = (stamp: string) =>
+  new Date(Date.parse(`${stamp.replace(' ', 'T')}Z`) + 1000)
+    .toISOString()
+    .slice(0, 19)
+    .replace('T', ' ')
+
 export function normalizeCivicapi(
   raw: unknown,
   election: ChambersElection,
+  previous?: Payload | null,
 ): Payload {
   const wrapper = parseJson(raw) as Wrapper
   if (!wrapper || typeof wrapper !== 'object' || !wrapper.races)
@@ -88,7 +116,22 @@ export function normalizeCivicapi(
   let houseVotes = 0
   let eligible = 0
   let called = 0
+  let carried = false
   for (const chamber of election.chambers) {
+    const kept =
+      wrapper.races[chamber.key] == null ? keptChamber(previous, chamber) : null
+    if (kept) {
+      carried = true
+      for (const c of kept.contests)
+        contests.push({ ...c, sort: contests.length })
+      chambers[chamber.key] = kept.tally
+      called += kept.tally.called
+      if (chamber.key === 'house' || !eligible) {
+        houseVotes = kept.contests.reduce((n, c) => n + c.ballots, 0)
+        eligible = previous!.eligible || 0
+      }
+      continue
+    }
     const doc = raceOf(wrapper, chamber)
     const regions = doc.region_results || {}
     const updated = Date.parse(String(doc.last_updated || ''))
@@ -184,8 +227,11 @@ export function normalizeCivicapi(
   const fetchedAt = Date.parse(String(wrapper.fetchedAt || ''))
   const at = latest || (Number.isFinite(fetchedAt) ? fetchedAt : Date.now())
   const house = chambers.house || chambers[election.chambers[0].key]
+  let asOf = wallStamp(at, election.pollsClose)
+  if (carried && previous!.asOf && asOf <= previous!.asOf)
+    asOf = secondAfter(previous!.asOf)
   return {
-    asOf: wallStamp(at, election.pollsClose),
+    asOf,
     project: election.title,
     format: 'civicapi',
     official: false,
