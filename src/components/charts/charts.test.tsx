@@ -89,7 +89,10 @@ describe('chart kit', () => {
     expect(seat.style.stroke).toBe('transparent')
     expect(parseFloat(seat.style.strokeWidth)).toBeGreaterThan(0)
     expect(svg.querySelectorAll('g[tabindex="0"]')).toHaveLength(3)
-    expect(svg.querySelectorAll('line.viz-mark')).toHaveLength(1)
+    const tick = svg.querySelectorAll('line.viz-mark')
+    expect(tick).toHaveLength(1)
+    // The majority tick never takes the pointer from the seats under it.
+    expect(tick[0].getAttribute('pointer-events')).toBe('none')
     expect(screen.getByText('51 for a majority')).toBeInTheDocument()
     expect(screen.getByText('A not up 10')).toBeInTheDocument()
     fireEvent.focus(seg('b'))

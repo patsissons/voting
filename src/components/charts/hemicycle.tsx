@@ -172,12 +172,16 @@ export function Hemicycle({
             </g>
           ))}
           {tick != null ? (
+            // A faint hairline over the seats that lets the pointer through to them.
             <line
               className="viz-mark"
               x1={(INNER * S - pad) * Math.cos(tick)}
               y1={-(INNER * S - pad) * Math.sin(tick)}
               x2={(S + pad) * Math.cos(tick)}
               y2={-(S + pad) * Math.sin(tick)}
+              style={{ strokeWidth: 1, strokeOpacity: 0.5 }}
+              vectorEffect="non-scaling-stroke"
+              pointerEvents="none"
               aria-hidden="true"
             />
           ) : null}
