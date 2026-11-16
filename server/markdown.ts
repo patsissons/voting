@@ -4,6 +4,7 @@
 // page. Pure: the hooks and the MCP summary tool call these with rows the
 // Db already filtered to published.
 import type { EarlyVote } from '../shared/early-vote.ts'
+import { windowClosed } from '../shared/fetch-policy.ts'
 import { dayShort, fmt, pct1, signed, wallClock } from '../shared/format.ts'
 import type { Payload, Snapshot } from '../shared/payload.ts'
 import type {
@@ -410,14 +411,18 @@ export function electionMarkdown(
   snapshot: Snapshot | null,
   origin: string,
   earlyVote: EarlyVote | null = null,
+  now: number = Date.now(),
 ): string {
+  // An archived election (count complete or window closed) has results, not live ones.
+  const done =
+    complete(snapshot && snapshot.payload) || windowClosed(election, now)
   const head = [
     `# ${election.title}`,
     '',
     `> ${election.description}`,
     '',
     `- Page: ${origin}/${election.slug}`,
-    `- Live results: ${origin}/${election.slug}#/results`,
+    `- ${done ? 'Results' : 'Live results'}: ${origin}/${election.slug}#/results`,
     `- MCP: POST ${origin}/mcp (tools list_elections, get_election, latest_results, results_series, closest_districts, changing_hands, question_divisions, summary)`,
     '',
     election.eyebrow,

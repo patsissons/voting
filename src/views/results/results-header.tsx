@@ -1,6 +1,6 @@
 // The top of the results page: official/unofficial, live (until the count is
-// done), how old the newest count is (a split-flap clock while counting), and
-// the headline tiles.
+// done or the election archived), how old the newest count is (a split-flap
+// clock while counting), and the headline tiles.
 import type { ReactNode } from 'react'
 import { useCallback } from 'react'
 import { Note } from '@/components/bits'
@@ -19,6 +19,7 @@ import type { Payload } from '../../../shared/payload.ts'
 export function StatusLine({
   latest,
   live,
+  archived = false,
   done,
   doneText,
   owner,
@@ -27,6 +28,8 @@ export function StatusLine({
 }: {
   latest: Payload
   live: boolean
+  /** History: nothing more is coming, so no Live and no running clock. */
+  archived?: boolean
   done: boolean
   doneText: string
   owner: string
@@ -45,7 +48,7 @@ export function StatusLine({
       <Badge variant={latest.official ? 'default' : 'outline'}>
         {latest.official ? 'Official' : 'Unofficial'}
       </Badge>
-      {live && !done ? (
+      {live && !done && !archived ? (
         <span className="inline-flex items-center gap-1.5 text-xs font-medium">
           <i
             className="bg-brand inline-block size-1.5 animate-pulse rounded-full"
@@ -57,6 +60,8 @@ export function StatusLine({
       <span className="text-muted-foreground nums">
         {done ? (
           `${doneText} · last update ${when}`
+        ) : archived ? (
+          `No longer updating · last update ${when}`
         ) : !Number.isFinite(at) ? (
           `as of ${when}`
         ) : (

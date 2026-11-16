@@ -30,17 +30,20 @@ export function ElectionHeader({
   election,
   latest,
   live,
+  archived = false,
   shareHash,
 }: {
   election: Election
   latest: Payload | null
   live: boolean
+  /** History: no pulse, and no "live" in the share title. */
+  archived?: boolean
   shareHash: string
 }) {
   const today = todayIn(election.timeZone)
   const d = election.dates
   const advance = d.advance.filter((day) => day < d.final)
-  const status = electionStatus(d.advance, d.final, today, latest)
+  const status = electionStatus(d.advance, d.final, today, latest, archived)
   const url = `${window.location.origin}/${election.slug}${shareHash}`
   return (
     <header className="space-y-4">
@@ -63,7 +66,7 @@ export function ElectionHeader({
             url={url}
             title={
               shareHash === '#/results'
-                ? `${election.title}: live results`
+                ? `${election.title}: ${archived ? 'results' : 'live results'}`
                 : shareHash === '#/analysis'
                   ? `${election.title}: analysis`
                   : election.title

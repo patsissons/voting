@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Shell } from '@/components/shell'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { archived as isArchived } from '@/lib/election-status'
 import { partyCss } from '@/lib/party'
 import { consumeImport, keys, readJson } from '@/lib/storage'
 import { useElection } from '@/lib/use-election'
@@ -107,7 +108,11 @@ function ElectionView({
   // cubby.fyi stores its state and becomes the plain permalink.
   useState(() => consumeImport(election))
   const hash = useHash()
-  const results = useResults(id)
+  // Read once at mount: a page left open across the window's close keeps its
+  // stream until the next visit.
+  const [mountedAt] = useState(() => Date.now())
+  const closed = isArchived(election, null, mountedAt)
+  const results = useResults(id, { stream: !closed })
   const referendum = election.ballot === 'referendum'
   // A results-only election has no compass tab: the page is the results.
   const resultsOnly = election.ballot === 'chambers'
@@ -124,6 +129,8 @@ function ElectionView({
   const latest = results.snapshots.length
     ? results.snapshots[results.snapshots.length - 1].payload
     : null
+  // History: the count is complete or official, or its window has closed.
+  const archived = closed || isArchived(election, latest, mountedAt)
   // Only a hand-written analysis gives an election the analysis tab.
   const analysis = hasAnalysis(election.slug)
   const head = tabOf(hash)
@@ -195,6 +202,7 @@ function ElectionView({
           election={election}
           latest={latest}
           live={results.live}
+          archived={archived}
           shareHash={shareHash}
         />
         {resultsOnly ? null : (
@@ -210,7 +218,7 @@ function ElectionView({
                 value="results"
                 className="flex-1 gap-2 sm:flex-none sm:px-5"
               >
-                {results.live && latest ? (
+                {results.live && latest && !archived ? (
                   <i
                     className="bg-brand inline-block size-1.5 animate-pulse rounded-full"
                     aria-hidden="true"
@@ -237,6 +245,7 @@ function ElectionView({
             snapshots={results.snapshots}
             earlyVote={earlyVote}
             live={results.live}
+            archived={archived}
             matchParty={matchParty}
             marks={marks}
           />

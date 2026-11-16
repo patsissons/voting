@@ -93,10 +93,12 @@ export function ChambersResults({
   election,
   snapshots,
   live,
+  archived = false,
 }: {
   election: ChambersElection
   snapshots: Snapshot[]
   live: boolean
+  archived?: boolean
 }) {
   const latest = latestFull(snapshots)
   const P = useMemo(() => partyLookup(election), [election])
@@ -123,6 +125,7 @@ export function ChambersResults({
       <StatusLine
         latest={latest}
         live={live}
+        archived={archived}
         done={done}
         doneText="Every race called"
         owner={`${source}'s`}

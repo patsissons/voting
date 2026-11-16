@@ -66,11 +66,13 @@ export function AtLargeResults({
   election,
   snapshots,
   live,
+  archived = false,
   matchParty,
 }: {
   election: AtLargeElection
   snapshots: Snapshot[]
   live: boolean
+  archived?: boolean
   matchParty: string | null
 }) {
   const latest = snapshots[snapshots.length - 1].payload
@@ -87,6 +89,7 @@ export function AtLargeResults({
       <StatusLine
         latest={latest}
         live={live}
+        archived={archived}
         done={done}
         doneText="Count complete"
         owner={

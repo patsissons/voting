@@ -27,6 +27,7 @@ export function ResultsView({
   snapshots,
   earlyVote = null,
   live,
+  archived = false,
   matchParty,
   marks,
 }: {
@@ -35,6 +36,8 @@ export function ResultsView({
   /** Turnout pulled before voting day: the waiting screen, then a folded section under the results. */
   earlyVote?: EarlyVote | null
   live: boolean
+  /** History: the status line drops Live and the clock. */
+  archived?: boolean
   matchParty: string | null
   marks: BallotMarks
 }) {
@@ -69,6 +72,7 @@ export function ResultsView({
           election={election}
           snapshots={snapshots}
           live={live}
+          archived={archived}
           marks={marks}
         />
       ) : election.ballot === 'district' ? (
@@ -76,6 +80,7 @@ export function ResultsView({
           election={election}
           snapshots={snapshots}
           live={live}
+          archived={archived}
           matchParty={matchParty}
         />
       ) : election.ballot === 'chambers' ? (
@@ -83,12 +88,14 @@ export function ResultsView({
           election={election}
           snapshots={snapshots}
           live={live}
+          archived={archived}
         />
       ) : (
         <AtLargeResults
           election={election}
           snapshots={snapshots}
           live={live}
+          archived={archived}
           matchParty={matchParty}
         />
       )}

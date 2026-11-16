@@ -107,11 +107,13 @@ export function DistrictResults({
   election,
   snapshots,
   live,
+  archived = false,
   matchParty,
 }: {
   election: DistrictElection
   snapshots: Snapshot[]
   live: boolean
+  archived?: boolean
   matchParty: string | null
 }) {
   const latest = snapshots[snapshots.length - 1].payload
@@ -142,6 +144,7 @@ export function DistrictResults({
       <StatusLine
         latest={latest}
         live={live}
+        archived={archived}
         done={!!doneText}
         doneText={doneText}
         owner={election.results.label ? `${election.results.label}'s` : 'the'}

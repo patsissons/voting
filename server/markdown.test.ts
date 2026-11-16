@@ -298,6 +298,25 @@ describe('electionMarkdown', () => {
   })
 })
 
+describe('the results link', () => {
+  it('says live until the count is complete or the window closes', () => {
+    const e = tinyChambers()
+    const close = Date.parse(e.pollsClose)
+    const link = `: ${origin}/${e.slug}#/results`
+    expect(electionMarkdown(e, null, origin, null, close + 3600000)).toContain(
+      `- Live results${link}`,
+    )
+    const after = close + 97 * 3600000 // fetchHours 96
+    expect(electionMarkdown(e, null, origin, null, after)).toContain(
+      `- Results${link}`,
+    )
+    const v = vancouver()
+    const early = Date.parse(v.pollsClose) + 3600000
+    const done = electionMarkdown(v, latest(v), origin, null, early)
+    expect(done).toContain(`- Results: ${origin}/${v.slug}#/results`)
+  })
+})
+
 describe('llmsText', () => {
   it('lists the elections with their status and the tools', () => {
     const e = vancouver()
