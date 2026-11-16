@@ -9,7 +9,7 @@
   "eyebrow": "Alberta provincial referendum · voting day Mon Oct 19, 2026",
   "pollsClose": "2026-10-19T20:00:00-06:00",
   "timeZone": "America/Edmonton",
-  "dates": { "advance": ["2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17"], "final": "2026-10-19", "hours": "9 am to 8 pm Mountain", "mailBy": "Vote-by-mail applications are closed; mailed ballots go to your returning office.", "url": "https://www.elections.ab.ca/current-election-information/where-do-i-vote/" },
+  "dates": { "advance": ["2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17"], "final": "2026-10-19", "finalResults": { "day": "2026-10-29", "expected": false }, "hours": "9 am to 8 pm Mountain", "mailBy": "Vote-by-mail applications are closed; mailed ballots go to your returning office.", "url": "https://www.elections.ab.ca/current-election-information/where-do-i-vote/" },
   "lede": "Ten questions on ten separate ballots: one on whether to start down the road to a separation referendum, five on immigration, social programs and voter ID, and four on changing the Constitution. Read each one as it is worded, see what polls say, mark your own ballot, and compare it with Alberta's count as it comes in.",
   "intro": "Every voter gets the same ten ballots, handed out in this order, and can answer any or none of them. None of the results is binding: each asks the government to act, and most would need a new law, Ottawa, or other provinces to go further. Your answers stay on this page.",
   "sources": [

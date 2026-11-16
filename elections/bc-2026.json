@@ -9,7 +9,7 @@
   "eyebrow": "BC provincial election · final voting day Sat Oct 24, 2026",
   "pollsClose": "2026-10-24T20:00:00-07:00",
   "timeZone": "America/Vancouver",
-  "dates": { "advance": ["2026-10-16", "2026-10-17", "2026-10-18", "2026-10-19", "2026-10-20", "2026-10-21"], "final": "2026-10-24", "hours": "8 am to 8 pm Pacific", "mailBy": "Vote-by-mail packages must reach Elections BC by 8 pm on Oct 24; you can also drop them at any voting place.", "url": "https://wheretovote.elections.bc.ca/" },
+  "dates": { "advance": ["2026-10-16", "2026-10-17", "2026-10-18", "2026-10-19", "2026-10-20", "2026-10-21"], "final": "2026-10-24", "finalResults": { "day": "2026-11-09", "expected": false }, "hours": "8 am to 8 pm Pacific", "mailBy": "Vote-by-mail packages must reach Elections BC by 8 pm on Oct 24; you can also drop them at any voting place.", "url": "https://wheretovote.elections.bc.ca/" },
   "lede": "Fifteen questions on where the five main parties actually differ this year, scored against their platforms and what their leaders have said. You get a ranked list, where you sit on the compass, and the matching candidates in your riding.",
   "intro": "You vote once, for one MLA in your riding, and the party with the most of the 93 seats forms government. Mark any question as mattering a lot to double its weight. Nothing you answer leaves this page.",
   "sources": [

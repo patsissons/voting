@@ -9,7 +9,7 @@
   "eyebrow": "Vancouver municipal election · final voting day Sat Oct 17, 2026",
   "pollsClose": "2026-10-17T20:00:00-07:00",
   "timeZone": "America/Vancouver",
-  "dates": { "advance": ["2026-10-03", "2026-10-07", "2026-10-10", "2026-10-13"], "final": "2026-10-17", "hours": "8 am to 8 pm", "mailBy": "Completed mail ballots must reach the Election Office by 8 pm on Oct 17.", "url": "https://vancouver.ca/election/2026/where-to-vote.aspx" },
+  "dates": { "advance": ["2026-10-03", "2026-10-07", "2026-10-10", "2026-10-13"], "final": "2026-10-17", "finalResults": { "day": "2026-10-21", "expected": false }, "hours": "8 am to 8 pm", "mailBy": "Completed mail ballots must reach the Election Office by 8 pm on Oct 17.", "url": "https://vancouver.ca/election/2026/where-to-vote.aspx" },
   "lede": "Thirteen questions on the issues that actually divide the parties this year. Each answer is scored against what the seven main parties have said in their platforms and votes. You get a ranked list, plus the ballot numbers for the matching mayor and council, Park Board and school slates.",
   "intro": "Council is elected city-wide, so every Vancouver voter sees the same ballot. Mark any question as mattering a lot to double its weight. Nothing you answer leaves this page.",
   "sources": [
