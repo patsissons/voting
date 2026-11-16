@@ -158,6 +158,28 @@ describe('ResultsView', () => {
     expect(screen.getByText(/Your ballot:/)).toHaveTextContent('Remain')
   })
 
+  it('reads the certified referendum count as complete', () => {
+    const ab = alberta()
+    const payload = normalize(fixture('voting-2026-eab-official.json'), ab)
+    payload.official = true
+    mount(ab, [
+      ...night(ab),
+      {
+        id: 'official',
+        source_ts: payload.asOf,
+        official: true,
+        polls_closed: payload.polls.closed,
+        polls_total: payload.polls.total,
+        payload,
+      },
+    ])
+    expect(screen.getAllByText('Official').length).toBeGreaterThan(0)
+    expect(
+      screen.getAllByText(/as many valid votes as Question 10/).length,
+    ).toBeGreaterThan(0)
+    expect(screen.queryByText(/counted so far/)).not.toBeInTheDocument()
+  })
+
   it('blends every riding on the BC map', async () => {
     mount(bc())
     const map = await screen.findByRole('img', {

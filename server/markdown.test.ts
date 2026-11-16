@@ -288,6 +288,32 @@ describe('electionMarkdown', () => {
     )
   })
 
+  it('writes the certified referendum count from the official pages', () => {
+    const e = alberta()
+    const payload = normalize(fixture('voting-2026-eab-official.json'), e)
+    payload.official = true
+    const md = electionMarkdown(
+      e,
+      {
+        id: 'r2',
+        source_ts: payload.asOf,
+        official: true,
+        polls_closed: payload.polls.closed,
+        polls_total: payload.polls.total,
+        payload,
+      },
+      origin,
+    )
+    expect(md).toContain('## Results (official, as of ')
+    expect(md).toContain(
+      'Remain 1,556,316 (74.9%) · Begin process 520,233 (25.1%); 5,536 of 5,536 polls reported (whole ballot).',
+    )
+    // Every vote is in: the gap to Question 10 is ballots that skipped a question.
+    expect(md).toContain('99.0% as many valid votes as Question 10')
+    expect(md).not.toContain('counted so far')
+    expect(md).toContain(`- Results: ${origin}/alberta-2026#/results`)
+  })
+
   it('says when there are no results', () => {
     expect(electionMarkdown(vancouver(), null, origin)).toContain(
       "No results yet. They appear after polls close on voting day, from [the City's results page](https://results.vancouver.ca/).",

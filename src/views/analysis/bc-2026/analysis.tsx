@@ -958,10 +958,10 @@ function NotesSection({ lost, short }: { lost: RidingView[]; short: Short }) {
     <Section id="notes" title="Notes and sources">
       <ul className="text-muted-foreground list-disc space-y-2 pl-5 text-sm leading-relaxed">
         <li>
-          2026: Elections BC&apos;s results by candidate, unofficial until the
-          final count. 2024: the final count by voting place from DataBC&apos;s
-          Provincial Voting Results, valid votes only; the riding boundaries are
-          the same.
+          2026: Elections BC&apos;s results by candidate, from the final count
+          once it is posted (unofficial before that). 2024: the final count by
+          voting place from DataBC&apos;s Provincial Voting Results, valid votes
+          only; the riding boundaries are the same.
         </li>
         <li>
           Swing is the change in the Conservative share minus the NDP share, in
