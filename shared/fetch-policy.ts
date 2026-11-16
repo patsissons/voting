@@ -51,6 +51,32 @@ export function windowEnd(config: Config): number {
 export const windowClosed = (config: Config, now: number): boolean =>
   now > windowEnd(config)
 
+export type FinalResults = { day: string; expected: boolean }
+
+/**
+ * When the results are final: the document's dates.finalResults, or else
+ * the fetch window's last day (on pollsClose's own offset), expected. Null
+ * without a pollsClose.
+ */
+export function finalResultsOf(
+  election: Config & {
+    dates?: { finalResults?: { day: string; expected?: boolean } }
+  },
+): FinalResults | null {
+  const given = election.dates && election.dates.finalResults
+  if (given) return { day: given.day, expected: !!given.expected }
+  const end = windowEnd(election)
+  if (!Number.isFinite(end)) return null
+  const zone = /([+-])(\d{2}):(\d{2})$/.exec(election.pollsClose || '')
+  const offset = zone
+    ? (zone[1] === '-' ? -1 : 1) * (+zone[2] * 60 + +zone[3]) * 60000
+    : 0
+  return {
+    day: new Date(end + offset).toISOString().slice(0, 10),
+    expected: true,
+  }
+}
+
 /** Why a fetch would not run now, or '' when it should. */
 export function shouldFetch(
   config: Config,

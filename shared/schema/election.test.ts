@@ -367,9 +367,13 @@ describe('election documents', () => {
         'voting_day',
         'published',
         'ballot',
+        'final_day',
+        'final_expected',
         'config',
       ])
       expect(row.voting_day).toBe(`${e.votingDay} 12:00:00.000Z`)
+      // The index's mirror of the final-results day; the document keeps its own.
+      expect(row.final_day).toMatch(/^\d{4}-\d{2}-\d{2} 12:00:00\.000Z$/)
       expect(row.config).not.toHaveProperty('slug')
       expect(
         fromRow({

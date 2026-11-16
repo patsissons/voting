@@ -1,5 +1,6 @@
 // Where an election is in its life, from the calendar and the count.
-import { windowClosed } from '../../shared/fetch-policy.ts'
+import { windowClosed, type FinalResults } from '../../shared/fetch-policy.ts'
+import { dayLong, dayShort } from '../../shared/format.ts'
 import type { Payload } from '../../shared/payload.ts'
 import type { Election } from '../../shared/schema/election.ts'
 import { complete } from '../../shared/stats/results.ts'
@@ -22,11 +23,30 @@ export function dateStatus(
   advance: string[],
   final: string,
   today: string,
+  finalResults: FinalResults | null = null,
 ): Status {
   const first = advance.length ? advance[0] : final
   if (today < first) return 'upcoming'
   if (today <= final) return 'voting'
+  // Final once a known (not just expected) finalization day has come.
+  if (finalResults && !finalResults.expected && finalResults.day <= today)
+    return 'final'
   return 'results'
+}
+
+/**
+ * The final-results line: "Results final Wednesday, October 21", "Final
+ * results expected Tuesday, November 17" (or "were expected" once past).
+ * `short` uses "Wed Oct 21" for the header pill.
+ */
+export function finalResultsText(
+  final: FinalResults,
+  today: string,
+  short = false,
+): string {
+  const when = short ? dayShort(final.day) : dayLong(final.day)
+  if (!final.expected) return `Results final ${when}`
+  return `Final results ${final.day < today ? 'were expected' : 'expected'} ${when}`
 }
 
 /**

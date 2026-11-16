@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/sheet'
 import { electionStatus } from '@/lib/election-status'
 import { todayIn } from '@/lib/time'
+import { finalResultsOf } from '../../shared/fetch-policy.ts'
 import { dayShort } from '../../shared/format.ts'
 import type { Payload } from '../../shared/payload.ts'
 import type { Election } from '../../shared/schema/election.ts'
@@ -43,6 +44,7 @@ export function ElectionHeader({
   const today = todayIn(election.timeZone)
   const d = election.dates
   const advance = d.advance.filter((day) => day < d.final)
+  const finalResults = finalResultsOf(election)
   const status = electionStatus(d.advance, d.final, today, latest, archived)
   const url = `${window.location.origin}/${election.slug}${shareHash}`
   return (
@@ -93,6 +95,16 @@ export function ElectionHeader({
           </span>
           <DayPill day={d.final} today={today} final />
         </div>
+        {finalResults ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-muted-foreground mr-1 text-xs font-medium tracking-wide uppercase">
+              {finalResults.expected
+                ? 'Final results expected'
+                : 'Results final'}
+            </span>
+            <DayPill day={finalResults.day} today={today} />
+          </div>
+        ) : null}
       </div>
       <Note>
         {d.hours ? `Voting places are open ${d.hours}. ` : ''}

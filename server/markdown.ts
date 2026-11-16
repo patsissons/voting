@@ -4,7 +4,7 @@
 // page. Pure: the hooks and the MCP summary tool call these with rows the
 // Db already filtered to published.
 import type { EarlyVote } from '../shared/early-vote.ts'
-import { windowClosed } from '../shared/fetch-policy.ts'
+import { finalResultsOf, windowClosed } from '../shared/fetch-policy.ts'
 import { dayShort, fmt, pct1, signed, wallClock } from '../shared/format.ts'
 import type { Payload, Snapshot } from '../shared/payload.ts'
 import type {
@@ -58,6 +58,13 @@ export function datesMarkdown(election: Election): string {
   lines.push(
     `- Final voting day: ${d.final}${d.hours ? ` (voting places open ${d.hours})` : ''}`,
   )
+  const final = finalResultsOf(election)
+  if (final)
+    lines.push(
+      final.expected
+        ? `- Final results expected: ${final.day}`
+        : `- Results final: ${final.day}`,
+    )
   if (d.mailBy) lines.push(`- ${d.mailBy}`)
   if (d.url) lines.push(`- [Where to vote](${d.url})`)
   if (election.resources.length)

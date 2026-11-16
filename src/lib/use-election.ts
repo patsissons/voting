@@ -75,6 +75,9 @@ export type IndexRow = {
   description: string
   voting_day: string
   ballot: Election['ballot']
+  /** finalResultsOf(doc), mirrored on the row: '' when there is none. */
+  final_day?: string
+  final_expected?: boolean
 }
 
 /** The published elections for the index, newest voting day first, without their config. */
@@ -89,7 +92,8 @@ export function useElectionList(): {
     pb.collection('elections')
       .getFullList<IndexRow>({
         sort: '-voting_day',
-        fields: 'id,slug,title,description,voting_day,ballot',
+        fields:
+          'id,slug,title,description,voting_day,ballot,final_day,final_expected',
         requestKey: null,
       })
       .then((list) => {

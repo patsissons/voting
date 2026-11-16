@@ -4,9 +4,15 @@ import {
   albertaPages,
   bc,
   tinyChambers,
+  us,
   vancouver,
 } from '../scripts/fixtures/load.ts'
-import { THROTTLE_MS, checkSource, shouldFetch } from './fetch-policy.ts'
+import {
+  THROTTLE_MS,
+  checkSource,
+  finalResultsOf,
+  shouldFetch,
+} from './fetch-policy.ts'
 
 const bcDoc = bc()
 const election = vancouver()
@@ -121,5 +127,35 @@ describe('checkSource', () => {
     expect(checkSource(ab, 'https://officialresults.elections.ab.ca/')).toMatch(
       /must be on https:\/\/results\.elections\.ab\.ca/,
     )
+  })
+})
+
+describe('finalResultsOf', () => {
+  it('takes the day the document gives', () => {
+    expect(finalResultsOf(bc())).toEqual({ day: '2026-11-09', expected: false })
+    expect(finalResultsOf(vancouver())).toEqual({
+      day: '2026-10-21',
+      expected: false,
+    })
+  })
+
+  it('expects the fetch window’s last day otherwise, on pollsClose’s offset', () => {
+    // 18:00 -05:00 Nov 3 + 336 h = 23:00 UTC Nov 17, 6 pm Eastern.
+    expect(finalResultsOf(us())).toEqual({ day: '2026-11-17', expected: true })
+    const late = {
+      pollsClose: '2026-10-24T20:00:00-07:00',
+      results: { fetchHours: 6 },
+    }
+    // 8 pm PDT + 6 h is 2 am the next day there; + 3 h is still the same evening.
+    expect(finalResultsOf(late)).toEqual({ day: '2026-10-25', expected: true })
+    const evening = {
+      pollsClose: '2026-10-24T20:00:00-07:00',
+      results: { fetchHours: 3 },
+    }
+    expect(finalResultsOf(evening)).toEqual({
+      day: '2026-10-24',
+      expected: true,
+    })
+    expect(finalResultsOf({ pollsClose: '' })).toBeNull()
   })
 })

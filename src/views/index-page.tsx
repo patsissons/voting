@@ -5,7 +5,7 @@ import { StatusBadge } from '@/components/bits'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { dateStatus } from '@/lib/election-status'
+import { dateStatus, finalResultsText } from '@/lib/election-status'
 import { todayIn } from '@/lib/time'
 import { useElectionList } from '@/lib/use-election'
 import { dayLong } from '../../shared/format.ts'
@@ -51,6 +51,12 @@ export function IndexPage() {
             <ul className="grid gap-4 sm:grid-cols-2">
               {rows.map((r) => {
                 const day = r.voting_day.slice(0, 10)
+                const final = r.final_day
+                  ? {
+                      day: r.final_day.slice(0, 10),
+                      expected: !!r.final_expected,
+                    }
+                  : null
                 return (
                   <li key={r.id}>
                     <a
@@ -59,7 +65,9 @@ export function IndexPage() {
                     >
                       <Card className="group-hover:border-foreground/30 group-focus-visible:ring-ring h-full gap-3 p-5 transition-colors group-focus-visible:ring-2">
                         <div className="flex items-center justify-between gap-2">
-                          <StatusBadge status={dateStatus([], day, today)} />
+                          <StatusBadge
+                            status={dateStatus([], day, today, final)}
+                          />
                           <Badge variant="outline">
                             {BALLOT_LABEL[r.ballot] || r.ballot}
                           </Badge>
@@ -67,9 +75,14 @@ export function IndexPage() {
                         <h3 className="text-xl font-semibold tracking-tight">
                           {r.title}
                         </h3>
-                        <p className="text-muted-foreground text-sm">
-                          {dayLong(day)}
-                        </p>
+                        <div className="text-muted-foreground space-y-0.5 text-sm">
+                          <p>{dayLong(day)}</p>
+                          {final ? (
+                            <p className="nums">
+                              {finalResultsText(final, today)}
+                            </p>
+                          ) : null}
+                        </div>
                         <p className="text-sm leading-relaxed">
                           {r.description}
                         </p>

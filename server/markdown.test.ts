@@ -314,6 +314,15 @@ describe('electionMarkdown', () => {
     expect(md).toContain(`- Results: ${origin}/alberta-2026#/results`)
   })
 
+  it('says when the results became final, or are expected to', () => {
+    expect(electionMarkdown(vancouver(), null, origin)).toContain(
+      '- Results final: 2026-10-21',
+    )
+    expect(electionMarkdown(us(), null, origin)).toContain(
+      '- Final results expected: 2026-11-17',
+    )
+  })
+
   it('says when there are no results', () => {
     expect(electionMarkdown(vancouver(), null, origin)).toContain(
       "No results yet. They appear after polls close on voting day, from [the City's results page](https://results.vancouver.ca/).",

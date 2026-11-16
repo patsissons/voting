@@ -53,6 +53,15 @@ export type EarlyVoteFormat = (typeof EARLY_VOTE_FORMATS)[number]
 const dates = z.strictObject({
   advance: z.array(day).default([]),
   final: day,
+  /**
+   * When the results became (or are expected to become) final: the official
+   * declaration, the certified count or the final count. Without it the
+   * fetch window's last day is the expected one (finalResultsOf in
+   * shared/fetch-policy.ts).
+   */
+  finalResults: z
+    .strictObject({ day, expected: z.boolean().default(false) })
+    .optional(),
   hours: z.string().optional(),
   mailBy: z.string().optional(),
   url: url.optional(),

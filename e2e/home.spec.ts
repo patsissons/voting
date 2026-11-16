@@ -23,6 +23,13 @@ test('the index lists the elections and the theme toggle persists', async ({
     page.getByRole('heading', { name: 'US Midterms 2026' }),
   ).toBeVisible()
   await expect(page.getByText('Live results', { exact: true })).toBeVisible()
+  // Each card says when its results became final, or are expected to.
+  await expect(
+    page.getByText('Results final Wednesday, October 21'),
+  ).toBeVisible()
+  await expect(
+    page.getByText(/Final results (were )?expected Tuesday, November 17/),
+  ).toBeVisible()
   await expect(
     page.getByRole('link', { name: /BC Votes 2026/ }),
   ).toHaveAttribute('href', '/bc-2026')
@@ -51,4 +58,10 @@ test('an unknown slug shows the not-found page', async ({ page }) => {
   await expect(
     page.getByRole('link', { name: 'See all elections' }),
   ).toHaveAttribute('href', '/')
+})
+
+test('the election header carries the final-results day', async ({ page }) => {
+  await page.goto('/vancouver-2026')
+  await expect(page.getByText('Results final', { exact: true })).toBeVisible()
+  await expect(page.getByText('Wed Oct 21', { exact: true })).toBeVisible()
 })

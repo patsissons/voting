@@ -36,7 +36,11 @@ What each ballot mode needs:
 
 - **Common:** `description` (index card and link previews), `lede` and
   `intro` (above the compass), `dates` (advance days, final day, hours,
-  mail-by, where-to-vote URL), `sources` (where positions came from) and
+  mail-by, where-to-vote URL, and `finalResults`: `{ day, expected }`, when
+  the results became or are expected to become final; without it the index
+  card, header and markdown expect the fetch window's last day. Set it to the
+  scheduled final count with `expected: true`, then to the real day once
+  the authority declares), `sources` (where positions came from) and
   `resources` (voter information links), `results` (below).
 - **at-large:** `offices` (key, label, votes, a fact for the intro),
   `parties` with `color`/`colorDark`, `axis` (economic -1..1, social -1..1),

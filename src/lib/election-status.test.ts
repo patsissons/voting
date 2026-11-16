@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { alberta, bc, tinyChambers } from '../../scripts/fixtures/load.ts'
-import { archived, dateStatus, electionStatus } from './election-status'
+import {
+  archived,
+  dateStatus,
+  electionStatus,
+  finalResultsText,
+} from './election-status'
 
 describe('election status', () => {
   const advance = ['2026-10-16', '2026-10-21']
@@ -99,5 +104,37 @@ describe('archived', () => {
         early,
       ),
     ).toBe(false)
+  })
+})
+
+describe('final results', () => {
+  const advance = ['2026-10-16']
+  it('turns a past election final once its known day has come', () => {
+    const known = { day: '2026-11-09', expected: false }
+    expect(dateStatus(advance, '2026-10-24', '2026-11-08', known)).toBe(
+      'results',
+    )
+    expect(dateStatus(advance, '2026-10-24', '2026-11-09', known)).toBe('final')
+    const guess = { day: '2026-11-17', expected: true }
+    expect(dateStatus([], '2026-11-03', '2026-11-20', guess)).toBe('results')
+  })
+
+  it('words the day as known, expected or past expected', () => {
+    expect(
+      finalResultsText({ day: '2026-10-21', expected: false }, '2026-11-15'),
+    ).toBe('Results final Wednesday, October 21')
+    expect(
+      finalResultsText({ day: '2026-11-17', expected: true }, '2026-11-15'),
+    ).toBe('Final results expected Tuesday, November 17')
+    expect(
+      finalResultsText({ day: '2026-11-17', expected: true }, '2026-11-20'),
+    ).toBe('Final results were expected Tuesday, November 17')
+    expect(
+      finalResultsText(
+        { day: '2026-11-17', expected: true },
+        '2026-11-15',
+        true,
+      ),
+    ).toBe('Final results expected Tue Nov 17')
   })
 })
