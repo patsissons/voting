@@ -38,6 +38,7 @@ const feed2022 = fixture('voting-2022-arearesults.json')
 const feed2025 = fixture('voting-2025-arearesults.json')
 const enr2024 = fixture('voting-2024-enr-candidate.html')
 const enr2026 = fixture('voting-2026-enr-candidate.html')
+const enrFinal = fixture('voting-2026-enr-final.html')
 const eab2021 = fixture('voting-2021-eab-referendum.html')
 const abDash = fixture('voting-2026-eab-dash-empty.json')
 const bcDoc = bc()
@@ -246,6 +247,43 @@ describe('elections bc page', () => {
       ['Virender Dass', 'OneBC'],
     ])
     expect(abm.choices.find((c) => c.name === 'Pam Alexis')!.party).toBe('ndp')
+  })
+
+  it('keeps the box counts the final-count page drops', () => {
+    const alone = normalize(enrFinal, bcDoc)
+    expect(alone.asOf).toBe('2026-11-09 14:37:00')
+    expect(alone.status).toEqual({ initial: 'Complete', final: 'Complete' })
+    expect(alone.contests.length).toBe(93)
+    expect(alone.ballots).toBe(1944989)
+    expect(alone.polls).toEqual({ closed: 0, total: 0 })
+    expect(
+      alone.contests.every((c) => !c.boxes!.advance && !c.boxes!.final),
+    ).toBe(true)
+
+    const initial = normalize(enr2026, bcDoc)
+    initial.polls = { closed: 7268, total: 7268 }
+    for (const c of initial.contests) {
+      c.boxes = {
+        advance: [c.boxes!.advance![1], c.boxes!.advance![1]],
+        final: [c.boxes!.final![1], c.boxes!.final![1]],
+        ood: '',
+      }
+    }
+    const r = normalize(enrFinal, bcDoc, initial)
+    expect(r.polls).toEqual({ closed: 7268, total: 7268 })
+    expect(r.ballots).toBe(1944989)
+    expect(r.contests.find((c) => c.id === 'ABM')!.boxes).toEqual({
+      advance: [5, 5],
+      final: [75, 75],
+      ood: '',
+    })
+    expect(r.contests.every((c) => c.boxes!.final)).toBe(true)
+
+    // A page with its own box counts keeps them.
+    expect(normalize(enr2026, bcDoc, initial).polls).toEqual({
+      closed: 0,
+      total: 7268,
+    })
   })
 
   it('parses "As of" stamps in the forms the page might use', () => {

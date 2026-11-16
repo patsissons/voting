@@ -26,7 +26,7 @@ export function normalize(
 ): Payload {
   const format = (election.results && election.results.format) || 'vancouver'
   if (election.ballot === 'district' && format === 'ebc-enr')
-    return normalizeEnr(raw, election)
+    return normalizeEnr(raw, election, previous)
   if (election.ballot === 'at-large' && format === 'vancouver')
     return normalizeVancouver(raw, election)
   if (election.ballot === 'referendum' && format === 'eab-ref')

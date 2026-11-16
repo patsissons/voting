@@ -10,6 +10,7 @@ import {
   bc,
   civicCounted,
   civicSample,
+  fixture,
   tinyChambers,
   vancouver,
 } from '../scripts/fixtures/load.ts'
@@ -59,6 +60,28 @@ describe('storeSnapshot', () => {
       409,
       'project_mismatch',
     ])
+  })
+
+  it("keeps the newest row's box counts on the BC final-count page", () => {
+    const db = memoryDb()
+    db.addElection(bc())
+    const pages = fixtureFeeds(bc()) as string[]
+    expect(storeSnapshot(db, 'bc-2026', pages[pages.length - 1]).status).toBe(
+      201,
+    )
+    const night = payloadOf(db.results[0])!
+    expect(night.polls.total).toBeGreaterThan(0)
+    const out = storeSnapshot(
+      db,
+      'bc-2026',
+      fixture('voting-2026-enr-final.html'),
+      { official: true },
+    )
+    expect(out.status).toBe(201)
+    const final = payloadOf(db.results[1])!
+    expect(final.official).toBe(true)
+    expect(final.polls).toEqual(night.polls)
+    expect(final.contests.every((c) => c.boxes!.final)).toBe(true)
   })
 
   it('refuses a row whose config is not an election', () => {

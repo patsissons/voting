@@ -16,11 +16,12 @@ const latest: Payload = {
   contests: [],
 }
 
-const mount = (live: boolean, done: boolean) =>
+const mount = (live: boolean, done: boolean, archived = false) =>
   render(
     <StatusLine
       latest={latest}
       live={live}
+      archived={archived}
       done={done}
       doneText="Every question fully reported"
       owner="the"
@@ -45,5 +46,14 @@ describe('StatusLine', () => {
   it('never says live without the stream', () => {
     mount(false, false)
     expect(screen.queryByText('Live')).not.toBeInTheDocument()
+  })
+
+  it('stops the clock once the election is archived', () => {
+    mount(true, false, true)
+    expect(screen.queryByText('Live')).not.toBeInTheDocument()
+    expect(screen.queryByRole('timer')).not.toBeInTheDocument()
+    expect(
+      screen.getByText(/No longer updating · last update/),
+    ).toBeInTheDocument()
   })
 })

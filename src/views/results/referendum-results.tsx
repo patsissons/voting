@@ -80,11 +80,13 @@ export function ReferendumResults({
   election,
   snapshots,
   live,
+  archived = false,
   marks,
 }: {
   election: ReferendumElection
   snapshots: Snapshot[]
   live: boolean
+  archived?: boolean
   marks: BallotMarks
 }) {
   const latest = snapshots[snapshots.length - 1].payload
@@ -112,6 +114,7 @@ export function ReferendumResults({
       <StatusLine
         latest={latest}
         live={live}
+        archived={archived}
         done={done}
         doneText={
           latest.official ? 'Official count' : 'Every question fully reported'

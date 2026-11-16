@@ -22,8 +22,14 @@ const byStamp = (a: Snapshot, b: Snapshot) =>
  * catches up: on every reconnect, when the tab comes back into view or the
  * network returns, and once a minute while visible. Rows the stream should
  * have delivered mean the stream is dead, so the subscription is reopened.
+ * With `stream` false (an archived election: nothing more is coming) the
+ * rows are read once, with no subscription and no catching up, and `live`
+ * stays false.
  */
-export function useResults(electionId: string | null): ResultsState {
+export function useResults(
+  electionId: string | null,
+  { stream = true }: { stream?: boolean } = {},
+): ResultsState {
   // Keyed by election, so a change reads as empty without a reset effect.
   const [state, setState] = useState<{
     id: string | null
@@ -108,9 +114,11 @@ export function useResults(electionId: string | null): ResultsState {
       if (document.visibilityState === 'visible') catchUp('visible')
     }
     const onOnline = () => catchUp('online')
-    const poll = setInterval(() => {
-      if (document.visibilityState === 'visible') catchUp('poll')
-    }, 60000)
+    const poll = stream
+      ? setInterval(() => {
+          if (document.visibilityState === 'visible') catchUp('poll')
+        }, 60000)
+      : undefined
     let connects = 0
     let unsubscribeConnect: (() => void) | null = null
 
@@ -124,6 +132,7 @@ export function useResults(electionId: string | null): ResultsState {
         if (cancelled) return
         merge(initial)
         publish()
+        if (!stream) return
         await subscribe()
         if (cancelled) return
         live = true
@@ -147,7 +156,7 @@ export function useResults(electionId: string | null): ResultsState {
       if (unsubscribe) unsubscribe()
       if (unsubscribeConnect) unsubscribeConnect()
     }
-  }, [electionId])
+  }, [electionId, stream])
 
   return state.id === electionId ? state.value : EMPTY
 }

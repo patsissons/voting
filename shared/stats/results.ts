@@ -204,7 +204,7 @@ export function momentum(
   top = 4,
   series: Series = mayorSeries,
 ): Momentum | null {
-  const rows = snapshots.filter((r) => r.payload && series(r.payload))
+  const rows = snapshots.filter((r) => onTheClock(r) && series(r.payload))
   if (rows.length < 2) return null
   const latest = rows[rows.length - 1].payload
   const cutoff = wallMs(latest.asOf) - minutes * 60000
@@ -646,11 +646,19 @@ function clockSeries(
     }))
 }
 
+/**
+ * The count as it ran: an official snapshot lands days or weeks after the
+ * night, so the clock charts and the momentum leave it out (it would stretch
+ * the axis and read as one burst of votes).
+ */
+export const onTheClock = (r: PayloadRow): boolean =>
+  !!r.payload && !r.payload.official
+
 /** Snapshots with a stamp and a counted province-wide vote, oldest first. */
 const clockRows = (snapshots: PayloadRow[]) =>
   snapshots.filter(
     (r) =>
-      r.payload &&
+      onTheClock(r) &&
       r.payload.summary &&
       Number.isFinite(wallMs(r.payload.asOf)) &&
       sumOf(partyVotes(r.payload)) > 0,
