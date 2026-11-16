@@ -9,6 +9,8 @@ const rows = [
     description: 'Fifteen questions.',
     voting_day: '2026-10-24 12:00:00.000Z',
     ballot: 'district',
+    final_day: '2026-11-09 12:00:00.000Z',
+    final_expected: false,
   },
   {
     id: 'c',
@@ -17,6 +19,8 @@ const rows = [
     description: 'Live results.',
     voting_day: '2026-11-03 12:00:00.000Z',
     ballot: 'chambers',
+    final_day: '2099-11-17 12:00:00.000Z',
+    final_expected: true,
   },
   {
     id: 'b',
@@ -25,6 +29,7 @@ const rows = [
     description: 'Thirteen questions.',
     voting_day: '2026-10-17 12:00:00.000Z',
     ballot: 'at-large',
+    final_day: '',
   },
 ]
 const getFullList = vi.fn()
@@ -49,6 +54,15 @@ describe('IndexPage', () => {
     expect(screen.getByText('Riding by riding')).toBeInTheDocument()
     expect(screen.getByText('Live results')).toBeInTheDocument()
     expect(screen.getByText('Saturday, October 24')).toBeInTheDocument()
+    // The day results became final, or are expected to; none without one.
+    expect(
+      screen.getByText('Results final Monday, November 9'),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/^Final results expected /)).toBeInTheDocument()
+    expect(screen.getAllByText(/Results final|Final results/)).toHaveLength(2)
+    // A known final day that has passed turns the card's badge Final.
+    const bc = screen.getByRole('link', { name: /BC Votes 2026/ })
+    expect(bc).toHaveTextContent('Final')
   })
 
   it('says when nothing could be loaded', async () => {
