@@ -52,7 +52,7 @@ export const bcAny = (): DistrictElection => {
 /** Alberta as the per-question pages it was expected to publish (eab-ref); the night used the dashboard feed. */
 export const albertaPages = (): ReferendumElection => {
   const e = alberta()
-  const { questionIds: _q, divisions: _d, ...rest } = e.results as Extract<ReferendumElection['results'], { format: 'eab-dash' }>
+  const { questionIds: _q, divisions: _d, officialPages: _o, ...rest } = e.results as Extract<ReferendumElection['results'], { format: 'eab-dash' }>
   return { ...e, results: { ...rest, format: 'eab-ref', sourcePrefix: 'https://officialresults.elections.ab.ca/' } }
 }
 

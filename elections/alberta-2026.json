@@ -242,12 +242,29 @@
       "08": "Calgary-Edgemont",
       "09": "Calgary-Elbow"
     },
+    "officialPages": {
+      "source": "https://officialresults.elections.ab.ca/",
+      "page": "orEDResultsReferendum2026.cfm?EventId={event}",
+      "pages": [
+        { "n": 1, "event": "202601" },
+        { "n": 2, "event": "202602" },
+        { "n": 3, "event": "202603" },
+        { "n": 4, "event": "202604" },
+        { "n": 5, "event": "202605" },
+        { "n": 6, "event": "202606" },
+        { "n": 7, "event": "202607" },
+        { "n": 8, "event": "202608" },
+        { "n": 9, "event": "202609" },
+        { "n": 10, "event": "202610" }
+      ]
+    },
     "official": "https://results.elections.ab.ca/8400",
     "label": "Elections Alberta",
     "unit": "polls",
     "unofficialNote": "Unofficial: ballots are counted by hand, Question 10 first, and the unofficial count may take up to 48 hours. The official results follow later.",
     "alternatives": [
       { "label": "Elections Alberta results", "url": "https://results.elections.ab.ca/8400" },
+      { "label": "Elections Alberta official results", "url": "https://officialresults.elections.ab.ca/orEDResultsReferendum2026.cfm?EventId=202610" },
       { "label": "Wikipedia, 2026 Alberta referendums", "url": "https://en.wikipedia.org/wiki/2026_Alberta_referendums" }
     ],
     "serverFetch": true,

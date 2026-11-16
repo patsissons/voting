@@ -7,14 +7,14 @@ import { FeedError } from '../payload.ts'
 import type { Election } from '../schema/election.ts'
 import { normalizeCivicapi } from './civicapi.ts'
 import { normalizeEabDash } from './eab-dash.ts'
-import { normalizeEabRef } from './eab-ref.ts'
+import { isPagesDoc, normalizeEabRef } from './eab-ref.ts'
 import { normalizeEnr } from './enr.ts'
 import { normalizeVancouver } from './vancouver.ts'
 
 export { FeedError }
 export { contestId, normalizeCivicapi } from './civicapi.ts'
 export { dashSource, normalizeEabDash } from './eab-dash.ts'
-export { normalizeEabRef, parseLocations } from './eab-ref.ts'
+export { isPagesDoc, normalizeEabRef, parseLocations } from './eab-ref.ts'
 export { normalizeEnr, parseAsOf } from './enr.ts'
 export { normalizeVancouver } from './vancouver.ts'
 export { parseChoiceName, titleCase, wallStamp } from './common.ts'
@@ -31,8 +31,17 @@ export function normalize(
     return normalizeVancouver(raw, election)
   if (election.ballot === 'referendum' && format === 'eab-ref')
     return normalizeEabRef(raw, election)
-  if (election.ballot === 'referendum' && format === 'eab-dash')
+  if (election.ballot === 'referendum' && format === 'eab-dash') {
+    // The certified count goes up as per-question pages (results.officialPages),
+    // which the relay's --official bundles as an eab-ref document.
+    if (
+      election.results.format === 'eab-dash' &&
+      election.results.officialPages &&
+      isPagesDoc(raw)
+    )
+      return normalizeEabRef(raw, election)
     return normalizeEabDash(raw, election)
+  }
   if (election.ballot === 'chambers' && format === 'civicapi')
     return normalizeCivicapi(raw, election, previous)
   throw new FeedError(

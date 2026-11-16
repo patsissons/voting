@@ -70,6 +70,33 @@ describe('election documents', () => {
     }
   })
 
+  it('cross-check an eab-dash election’s official pages', () => {
+    const ab = alberta()
+    expect(electionProblems(ab)).toEqual([])
+    const patched = (pages: { n: number; event: string }[], page?: string) =>
+      ElectionSchema.safeParse({
+        ...ab,
+        results: {
+          ...ab.results,
+          officialPages: {
+            source: 'https://officialresults.elections.ab.ca/',
+            page: page || 'x.cfm?EventId={event}',
+            pages,
+          },
+        },
+      })
+    expect(patched([], 'x.cfm').success).toBe(false)
+    const short = patched([
+      { n: 1, event: '202601' },
+      { n: 99, event: 'x' },
+    ])
+    expect(short.success).toBe(true)
+    expect(electionProblems(short.data!)).toEqual([
+      'results.officialPages.pages: one page per question',
+      'results.officialPages.pages: no question 99',
+    ])
+  })
+
   it('accept a results-only chambers document and cross-check it', () => {
     const tiny = tinyChambers()
     expect(tiny.ballot).toBe('chambers')

@@ -159,12 +159,16 @@ const enrResults = z.strictObject({
   ...resultsBase,
 })
 
+/** One Elections Alberta question page: the question and the event id its URL names. */
+const refPage = z.strictObject({
+  n: z.number().int(),
+  event: z.string().min(1),
+})
+
 const eabRefResults = z.strictObject({
   format: z.literal('eab-ref'),
   source: url.nullable(),
-  pages: z
-    .array(z.strictObject({ n: z.number().int(), event: z.string().min(1) }))
-    .optional(),
+  pages: z.array(refPage).optional(),
   page: z.string().optional(),
   ...resultsBase,
 })
@@ -174,6 +178,18 @@ const eabDashResults = z.strictObject({
   source: url.nullable(),
   questionIds: z.record(z.string(), z.number().int()).optional(),
   divisions: z.record(z.string(), z.string()).optional(),
+  /**
+   * Where the certified count goes up once the dashboard is done: one page
+   * per question (`source` + `page` with {event} replaced), read as eab-ref.
+   * `pnpm relay --official --once` fetches and posts them.
+   */
+  officialPages: z
+    .strictObject({
+      source: url,
+      page: z.string().includes('{event}'),
+      pages: z.array(refPage),
+    })
+    .optional(),
   ...resultsBase,
 })
 
@@ -528,6 +544,13 @@ export function electionProblems(e: Election): string[] {
       for (const page of r.pages)
         if (!numbers.includes(page.n))
           problems.push(`results.pages: no question ${page.n}`)
+    }
+    if (r.format === 'eab-dash' && r.officialPages) {
+      if (r.officialPages.pages.length !== e.questions.length)
+        problems.push('results.officialPages.pages: one page per question')
+      for (const page of r.officialPages.pages)
+        if (!numbers.includes(page.n))
+          problems.push(`results.officialPages.pages: no question ${page.n}`)
     }
     if (r.format === 'eab-dash' && r.questionIds) {
       const keys = Object.keys(r.questionIds)
