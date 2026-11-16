@@ -84,7 +84,19 @@ After making changes from a prompt and BEFORE committing:
   counted, expected vote in and races called, with the last hour's pace)
   run on the clock (`ClockSection`), never on the feed's expected vote in,
   which the feed revises and can restate downwards. Charts are `components/charts/` (one tooltip context,
-  `useMeasure` for width).
+  `useMeasure` for width). Clock charts and momentum leave out official
+  rows (`onTheClock` in `shared/stats/results.ts`): a certified count lands
+  days after the night and would stretch the axis.
+- **Archived elections**: an election is archived once its count is
+  complete or official, or its window (`pollsClose` + `fetchHours`,
+  `windowClosed` in `shared/fetch-policy.ts`, the rule the fetch uses) has
+  closed (`archived` in `src/lib/election-status.ts`). Nothing marks it by
+  hand. The page then drops the live cues: no Results tab pulse, no Live
+  pill or flip clock (the status line reads "No longer updating" when the
+  count never completed), Results rather than Counting on the badge, no
+  "live" in the share title or the markdown link. Past the window,
+  `useResults` reads the snapshots once, with no realtime stream or minute
+  poll.
 - **Results maps**: `pnpm geo` (`scripts/geo/build.ts`, mapshaper) turns the
   official boundary files into `src/geo/<set>.json` (generated and
   committed; never edit by hand; sources cached in the ignored
@@ -217,6 +229,9 @@ After making changes from a prompt and BEFORE committing:
    fetch keeps failing, `pnpm relay --election <slug> --source <url>` pushes
    from a laptop instead.
 4. Official count: `pnpm relay --election <slug> --source <url> --official --once`.
+   Elections BC's final-count page drops the per-riding ballot box rows, so
+   an `ebc-enr` ingest always reads the newest stored row and carries its
+   box counts (`--dump <file>` first to check the page parses).
    `us-2026` (civicAPI, three race documents per fetch) has no official
    step: the winners are civicAPI's calls, and a race with one candidate
    counts as won without one. Its source is the base URL,
