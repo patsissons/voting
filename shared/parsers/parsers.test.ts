@@ -22,6 +22,7 @@ import type { Election } from '../schema/election.ts'
 import {
   contestId,
   dashSource,
+  isPagesDoc,
   markOfficial,
   normalize,
   parseAsOf,
@@ -40,6 +41,7 @@ const enr2024 = fixture('voting-2024-enr-candidate.html')
 const enr2026 = fixture('voting-2026-enr-candidate.html')
 const enrFinal = fixture('voting-2026-enr-final.html')
 const eab2021 = fixture('voting-2021-eab-referendum.html')
+const eabOfficial = fixture('voting-2026-eab-official.json')
 const abDash = fixture('voting-2026-eab-dash-empty.json')
 const bcDoc = bc()
 const bcDocAny = bcAny()
@@ -373,6 +375,47 @@ describe('elections bc page', () => {
 })
 
 describe('elections alberta pages (eab-ref)', () => {
+  it('reads the 2026 official pages: code and name under one header, voting places, electors', () => {
+    const r = normalize(eabOfficial, abPages)
+    expect(r.format).toBe('eab-ref')
+    expect(r.polls).toEqual({ closed: 5536, total: 5536 })
+    expect(r.eligible).toBe(3286778)
+    expect(r.turnout).toBeCloseTo(0.674, 9)
+    const q10 = r.contests.find((c) => c.id === 'q10')!
+    expect(q10.choices.map((c) => c.votes)).toEqual([1556316, 520233])
+    expect(q10.eds).toHaveLength(87)
+    expect(q10.eds![0]).toEqual({
+      code: '01',
+      name: 'Calgary-Acadia',
+      votes: [19558, 4563],
+      rejected: 0,
+      polls: [57, 57],
+    })
+    expect(r.contests.every((c) => c.posted && c.eds!.length === 87)).toBe(true)
+    const q1 = r.contests.find((c) => c.id === 'q1')!
+    expect(q1.choices.map((c) => c.votes)).toEqual([1127729, 927783])
+  })
+
+  it('takes the official pages on a dashboard election that names them', () => {
+    expect(isPagesDoc(eabOfficial)).toBe(true)
+    expect(isPagesDoc(abDash)).toBe(false)
+    expect(isPagesDoc('<html>')).toBe(false)
+    const r = normalize(eabOfficial, ab)
+    expect(r.format).toBe('eab-ref')
+    // The live feed's division names, not the page's capitals.
+    const names = ab.results.format === 'eab-dash' ? ab.results.divisions! : {}
+    const q10 = r.contests.find((c) => c.id === 'q10')!
+    expect(q10.eds!.every((d) => d.name === (names[d.code] || d.name))).toBe(
+      true,
+    )
+    // Without officialPages the dashboard parser still owns the body.
+    const plain = {
+      ...ab,
+      results: { ...ab.results, officialPages: undefined },
+    } as typeof ab
+    expect(code(() => normalize(eabOfficial, plain))).toBe('bad_feed')
+  })
+
   it('parses the real 2021 page by its headers', () => {
     const r = normalize(abDoc([{ n: 1, html: eab2021 }]), abPages)
     const q1 = r.contests.find((c) => c.id === 'q1')!

@@ -14,6 +14,9 @@
 //              posted as one JSON document { fetchedAt, pages }.
 //   eab-dash   the JSON behind Elections Alberta's results dashboard, posted
 //              as is; a retired feed version is followed to the current one.
+//              With --official, the certified count's per-question pages
+//              (results.officialPages) instead, posted as an eab-ref document:
+//              VOTING_INGEST_TOKEN=... pnpm relay --election alberta-2026 --official --once
 //   civicapi   civicAPI's race documents, one per chamber (results.races),
 //              fetched together and posted as { fetchedAt, races }.
 //
@@ -50,6 +53,13 @@ const slug = args.flag('election') || 'vancouver-2026'
 const election = loadElection(slug)
 const format = election.results.format
 let source = args.flag('source') || election.results.source || ''
+// A dashboard election's certified count: its official per-question pages,
+// fetched and posted as an eab-ref document (results.officialPages).
+const officialPages =
+  args.has('official') && election.results.format === 'eab-dash'
+    ? election.results.officialPages
+    : undefined
+if (officialPages) source = officialPages.source
 const matchKey = format === 'ebc-enr' ? 'eventMatch' : 'projectMatch'
 const matchSource =
   args.flag('match') ||
@@ -157,11 +167,17 @@ let reopen = async () => {}
 const bust = (url: string) =>
   `${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`
 
-if (format === 'eab-ref') {
-  const pages =
-    election.results.format === 'eab-ref' ? election.results.pages || [] : []
-  const template =
-    election.results.format === 'eab-ref' ? election.results.page || '' : ''
+if (format === 'eab-ref' || officialPages) {
+  const pages = officialPages
+    ? officialPages.pages
+    : election.results.format === 'eab-ref'
+      ? election.results.pages || []
+      : []
+  const template = officialPages
+    ? officialPages.page
+    : election.results.format === 'eab-ref'
+      ? election.results.page || ''
+      : ''
   fetchFeed = async () => {
     const doc: { fetchedAt: string; pages: { n: number; html: string }[] } = {
       fetchedAt: new Date().toISOString(),
@@ -380,7 +396,7 @@ process.on('SIGTERM', () => shutdown(0))
 
 await reopen()
 log(
-  `relay ${slug} (${format}): ${source} -> ${dumpPath || target} every ${intervalMs / 1000}s (match /${matchSource}/)`,
+  `relay ${slug} (${officialPages ? 'eab-ref official pages' : format}): ${source} -> ${dumpPath || target} every ${intervalMs / 1000}s (match /${matchSource}/)`,
 )
 
 let lastPosted = ''

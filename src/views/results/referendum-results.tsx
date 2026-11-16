@@ -34,6 +34,7 @@ import {
   signed,
 } from '../../../shared/format.ts'
 import type { BallotMarks } from '../../../shared/permalink.ts'
+import { complete } from '../../../shared/stats/results.ts'
 import type { Snapshot } from '../../../shared/payload.ts'
 import type {
   ReferendumElection,
@@ -235,7 +236,10 @@ function QuestionCard({
   const lead = tally(contestOf(latest, Q[0]))
   if (ballotWide(election) && i > 0 && t.started && lead.total)
     lines.push(
-      `${pct1(Math.min(100, (t.total / lead.total) * 100))} of Question ${Q[0].n}'s votes counted so far`,
+      // Once every vote is in, the gap is ballots that skipped the question.
+      complete(latest)
+        ? `${pct1(Math.min(100, (t.total / lead.total) * 100))} as many valid votes as Question ${Q[0].n}`
+        : `${pct1(Math.min(100, (t.total / lead.total) * 100))} of Question ${Q[0].n}'s votes counted so far`,
     )
   if (contest && contest.rejected)
     lines.push(`${fmt(contest.rejected)} rejected`)

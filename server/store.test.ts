@@ -84,6 +84,23 @@ describe('storeSnapshot', () => {
     expect(final.contests.every((c) => c.boxes!.final)).toBe(true)
   })
 
+  it('stores Alberta’s official pages as the certified count', () => {
+    const db = memoryDb()
+    db.addElection(alberta())
+    const pages = fixture('voting-2026-eab-official.json')
+    const out = storeSnapshot(db, 'alberta-2026', pages, { official: true })
+    expect(out.status).toBe(201)
+    const payload = payloadOf(db.results[0])!
+    expect(payload.official).toBe(true)
+    expect(payload.format).toBe('eab-ref')
+    expect(db.results[0].get('format')).toBe('eab-ref')
+    expect(payload.polls).toEqual({ closed: 5536, total: 5536 })
+    expect(
+      payload.contests.find((c) => c.id === 'q10')!.choices[0].winner,
+    ).toBe(true)
+    expect(db.hasOfficialResult(db.elections[0].id)).toBe(true)
+  })
+
   it('refuses a row whose config is not an election', () => {
     const db = memoryDb()
     db.addElection(vancouver(), { config: { nonsense: true } })

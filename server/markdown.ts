@@ -396,7 +396,9 @@ export function referendumResultsMarkdown(
         ? `; ${fmt(c.polls.closed)} of ${fmt(c.polls.total)} ${c.polls.unit || unit} reported${wide ? ' (whole ballot)' : ''}`
         : ''
     if (wide && head !== c && headSum)
-      where += `; ${pct1(Math.min(100, (100 * sum) / headSum))} of Question ${first.n}'s votes counted so far`
+      where += complete(r)
+        ? `; ${pct1(Math.min(100, (100 * sum) / headSum))} as many valid votes as Question ${first.n}`
+        : `; ${pct1(Math.min(100, (100 * sum) / headSum))} of Question ${first.n}'s votes counted so far`
     lines.push(
       `${q.options.map((o, k) => `${o.t} ${fmt(votes[k])} (${pct1((100 * votes[k]) / sum)})`).join(' · ')}${c.rejected ? `; ${fmt(c.rejected)} rejected` : ''}${where}.${winner ? ` Majority: ${winner.name}.` : ''}`,
       '',

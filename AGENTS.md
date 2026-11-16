@@ -232,6 +232,10 @@ After making changes from a prompt and BEFORE committing:
    Elections BC's final-count page drops the per-riding ballot box rows, so
    an `ebc-enr` ingest always reads the newest stored row and carries its
    box counts (`--dump <file>` first to check the page parses).
+   Elections Alberta posts its certified count as per-question pages, not on
+   the dashboard: `alberta-2026` names them in `results.officialPages`, and
+   `pnpm relay --election alberta-2026 --official --once` (no `--source`)
+   posts them as an `eab-ref` document the ingest reads with that parser.
    `us-2026` (civicAPI, three race documents per fetch) has no official
    step: the winners are civicAPI's calls, and a race with one candidate
    counts as won without one. Its source is the base URL,

@@ -127,13 +127,22 @@ the `Payload` shape in `shared/payload.ts`, a format in the schema's
 `scripts/fixtures/fixture.ts`, and tests. The views, markdown and MCP tools
 read the payload, not the feed.
 
+An `eab-dash` election can also name where the certified count goes up,
+as `results.officialPages` (`source`, a `page` template with `{event}`, and
+one `{ n, event }` per question): Elections Alberta posts it as
+per-question pages, not on the dashboard. `pnpm relay --election <slug>
+--official --once` fetches them and posts them as an `eab-ref` document,
+which the ingest reads with the `eab-ref` parser (the division names stay
+the dashboard's `divisions`).
+
 `serverFetch: true` lets the hooks pull the source themselves inside
 `fetchHours` after `pollsClose` (every minute, throttled to
 `throttleSeconds`), once `results_source` is set on the row. Size
 `fetchHours` for the whole count, with room to spare: a hand count can run
 days past the authority's estimate (Alberta's 2026 referendum said 48 hours
 and was still reporting polls five days on), and once the window closes the
-page freezes on its last snapshot, still saying "Counting". Extending it
+page freezes on its last snapshot and archives (Results, no live cues)
+whether or not the count finished. Extending it
 later is a document change; the next fetch catches up to the feed's current
 state, not the steps in between. For a
 `civicapi` election the source is the base URL

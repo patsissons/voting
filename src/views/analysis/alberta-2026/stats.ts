@@ -17,7 +17,10 @@ import {
   wallMs,
   type RegionKey,
 } from '../../../../shared/stats/referendum.ts'
-import type { PayloadRow } from '../../../../shared/stats/results.ts'
+import {
+  onTheClock,
+  type PayloadRow,
+} from '../../../../shared/stats/results.ts'
 
 /** Question 10, the separation question: its divisions are read as the Begin process share (option 2). */
 export const SEPARATION = 10
@@ -229,7 +232,7 @@ export function shareOverTime(
 ): ShareSeries | null {
   const rows = snapshots.filter(
     (r) =>
-      r.payload &&
+      onTheClock(r) &&
       Number.isFinite(wallMs(r.payload.asOf)) &&
       questionsReporting(r.payload, election),
   )

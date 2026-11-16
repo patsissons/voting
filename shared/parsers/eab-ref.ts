@@ -12,7 +12,13 @@
 // { fetchedAt, pages: [{ n, html }] }; a single bare page (a --dump) parses
 // too. The pages carry no update stamp, so asOf is the fetch time on the
 // election's wall clock and "sig" fingerprints the counts: the store skips a
-// fetch whose counts have not moved. Each question becomes one kind
+// fetch whose counts have not moved. The 2026 official results
+// (officialresults.elections.ab.ca/orEDResultsReferendum2026.cfm?EventId=2026NN,
+// scripts/fixtures/voting-2026-eab-official.json) head the code and name
+// columns with one two-column "ELECTORAL DIVISION NAME", count each
+// division's voting places in "Voting Place / Voting Area" (every one counted:
+// the page is the certified count) and add "Number of Electors" and "Voter
+// Turnout (%)"; it has no rejected column. Each question becomes one kind
 // "question" contest (id "q<n>"), its choices in ballot order, with its own
 // locations reported and per-division rows in "eds" (only the newest stored
 // row keeps them).
@@ -96,15 +102,15 @@ const firstNumber = (cell: LooseCell | null): number =>
     ? num((/-?\d[\d,]*(?:\.\d+)?/.exec(cell.parts[0] || cell.text) || [''])[0])
     : 0
 
-/** Header text -> role, for one question's two options. */
+/** Header cells -> one role per column, for one question's two options. */
 function columnRoles(
-  headers: string[],
+  cells: LooseCell[],
   question: ReferendumQuestion,
 ): string[] {
   const patterns = question.options.map(
     (o, k) => new RegExp(o.match || (k === 0 ? '^yes' : '^no\\b'), 'i'),
   )
-  return headers.map((h) => {
+  const roleOf = (h: string) => {
     const t = h.toLowerCase()
     for (let k = 0; k < patterns.length; k++)
       if (patterns[k].test(t)) return `opt${k}`
@@ -112,11 +118,22 @@ function columnRoles(
     if (/ed name|electoral division|jurisdiction|^division/.test(t))
       return 'name'
     if (/voting\s*locations?|voting places|polls/.test(t)) return 'locations'
+    // 2026: the voting places in each division, every one of them counted.
+    if (/voting\s*place/.test(t)) return 'places'
     if (/turnout/.test(t)) return 'turnout'
     if (/rejected|declined|spoiled/.test(t)) return 'rejected'
     if (/electors who voted|ballots cast|total ballots/.test(t)) return 'voted'
+    if (/number of electors|registered/.test(t)) return 'electors'
     return ''
-  })
+  }
+  const roles: string[] = []
+  for (const cell of cells) {
+    const role = roleOf(cell.text)
+    // 2026: one "ELECTORAL DIVISION NAME" header over the code and the name.
+    if (role === 'name' && cell.span === 2) roles.push('code', 'name')
+    else for (let i = 0; i < cell.span; i++) roles.push(i === 0 ? role : '')
+  }
+  return roles
 }
 
 type PageRow = {
@@ -126,6 +143,8 @@ type PageRow = {
   rejected: number
   voted: number
   locations: [number, number | null] | null
+  electors: number
+  turnout: number | null
 }
 type PageRead = { total: PageRow; eds: PageRow[] }
 
@@ -142,10 +161,7 @@ function readReferendumPage(
   const rows = looseRows(table[1])
   const head = rows.find((r) => r.header)
   if (!head) return null
-  const roles = columnRoles(
-    byColumn(head.cells).map((c) => (c ? c.text : '')),
-    question,
-  )
+  const roles = columnRoles(head.cells, question)
   const col = (role: string) => roles.indexOf(role)
   if (col('opt0') < 0 || col('opt1') < 0) return null
   const read = (cells: LooseCell[]): PageRow => {
@@ -159,8 +175,11 @@ function readReferendumPage(
       if (role === 'rejected') rejected += firstNumber(at[i])
     })
     const where = cell('locations')
+    const places = cell('places')
     const code = cell('code')
     const name = cell('name')
+    const turnout = cell('turnout')
+    const counted = places ? firstNumber(places) : 0
     return {
       code: code ? code.text : '',
       name: name
@@ -172,7 +191,13 @@ function readReferendumPage(
       votes: [firstNumber(cell('opt0')), firstNumber(cell('opt1'))],
       rejected,
       voted: firstNumber(cell('voted')),
-      locations: where ? parseLocations(where.parts[0] || where.text) : null,
+      locations: where
+        ? parseLocations(where.parts[0] || where.text)
+        : places
+          ? [counted, counted]
+          : null,
+      electors: firstNumber(cell('electors')),
+      turnout: turnout && turnout.text ? firstNumber(turnout) / 100 : null,
     }
   }
   let total: PageRow | null = null
@@ -196,6 +221,8 @@ function readReferendumPage(
       rejected: 0,
       voted: 0,
       locations: null,
+      electors: 0,
+      turnout: null,
     }
     for (const d of eds) {
       total.votes[0] += d.votes[0]
@@ -210,6 +237,20 @@ function readReferendumPage(
 export type RefDoc = {
   fetchedAt?: string | number
   pages: { n: number | null; html: string }[]
+}
+
+/** A { pages } document (the relay's bundle of question pages), as text or parsed. */
+export function isPagesDoc(raw: unknown): boolean {
+  if (raw && typeof raw === 'object')
+    return Array.isArray((raw as RefDoc).pages)
+  if (typeof raw !== 'string') return false
+  const text = bodyText(raw)
+  if (!text || text[0] !== '{' || !/"pages"\s*:/.test(text)) return false
+  try {
+    return Array.isArray((JSON.parse(text) as RefDoc).pages)
+  } catch {
+    return false
+  }
 }
 
 export function normalizeEabRef(
@@ -237,6 +278,10 @@ export function normalizeEabRef(
     throw new FeedError('bad_feed', 'the body has no pages')
 
   const questions = election.questions || []
+  // An election that also names its divisions (an eab-dash one reading its
+  // official pages) keeps the names the live feed used.
+  const divisions =
+    (election.results as { divisions?: Record<string, string> }).divisions || {}
   const parsed = new Map<number, PageRead>()
   for (const page of doc.pages) {
     const candidates =
@@ -300,7 +345,7 @@ export function normalizeEabRef(
         read
           ? read.eds.map((d) => ({
               code: d.code,
-              name: d.name,
+              name: divisions[d.code] || d.name,
               votes: d.votes,
               rejected: d.rejected,
               polls: d.locations,
@@ -311,6 +356,7 @@ export function normalizeEabRef(
   }
 
   const head = contests[0]
+  const headRead = parsed.get(questions.length ? questions[0].n : -1)
   const sig = fingerprint(
     JSON.stringify(
       contests.map((c) => [
@@ -332,8 +378,8 @@ export function normalizeEabRef(
     format: 'eab-ref',
     official: false,
     ballots: head.ballots,
-    eligible: 0,
-    turnout: null,
+    eligible: headRead ? headRead.total.electors : 0,
+    turnout: headRead ? headRead.total.turnout : null,
     polls: { closed: head.polls!.closed, total: head.polls!.total },
     tabulators: { closed: 0, total: 0 },
     groups: [],
