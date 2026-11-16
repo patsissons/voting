@@ -12,7 +12,9 @@
 // column and the out-of-district row, marks box counts "(Not Verified)", and
 // adds "Total Valid Votes", "Rejected Ballots*" and "Total Considered Votes"
 // rows in the candidate shape. Each riding becomes one kind "district"
-// contest; "polls" counts ballot boxes.
+// contest; "polls" counts ballot boxes. The final-count page
+// (scripts/fixtures/voting-2026-enr-final.html) drops the box rows, so the
+// previous snapshot's box counts carry over.
 // Candidates are attributed by the page's affiliation column through the
 // election's affiliations map, and matched by name to districts[].candidates
 // for the sitting flag.
@@ -73,6 +75,35 @@ export function parseAsOf(html: string): string {
     hour = (hour % 12) + (pm ? 12 : 0)
   }
   return `${m[3]}-${pad2(month)}-${pad2(Number(m[2]))} ${pad2(hour)}:${m[5]}:${m[6] || '00'}`
+}
+
+/**
+ * The previous snapshot's box counts, copied onto ridings that have none,
+ * when the page reports no boxes at all (the final-count page). Null when
+ * the page has its own counts or there is nothing to carry.
+ */
+function carryBoxes(
+  contests: Contest[],
+  total: number,
+  previous: Payload | null | undefined,
+): { closed: number; total: number } | null {
+  if (total || !previous || !previous.polls || !previous.polls.total)
+    return null
+  if (contests.some((c) => c.boxes && (c.boxes.advance || c.boxes.final)))
+    return null
+  const before = new Map<string, Boxes>()
+  for (const c of previous.contests || [])
+    if (c.kind === 'district' && c.boxes) before.set(c.id, c.boxes)
+  for (const c of contests) {
+    const b = before.get(c.id)
+    if (!b) continue
+    c.boxes = {
+      advance: b.advance ? [b.advance[0], b.advance[1]] : null,
+      final: b.final ? [b.final[0], b.final[1]] : null,
+      ood: (c.boxes && c.boxes.ood) || b.ood,
+    }
+  }
+  return { closed: previous.polls.closed, total: previous.polls.total }
 }
 
 /** "5 of 5 reported" / "16 of 16" -> [5, 5]; "Complete" -> null */
@@ -138,6 +169,7 @@ function candidateMatch(
 export function normalizeEnr(
   raw: unknown,
   election: DistrictElection,
+  previous?: Payload | null,
 ): Payload {
   const html = String(raw || '')
     .replace(/^\uFEFF/, '')
@@ -264,6 +296,14 @@ export function normalizeEnr(
   })
   if (!contests.length)
     throw new FeedError('bad_feed', 'the results table has no candidate rows')
+
+  // The final-count page drops every riding's ballot box rows: the boxes did
+  // not change after the initial count, so keep the previous snapshot's.
+  const carried = carryBoxes(contests, total, previous)
+  if (carried) {
+    closed = carried.closed
+    total = carried.total
+  }
 
   // Province-wide seat and vote totals per compass party, from the ridings.
   const tally = new Map<

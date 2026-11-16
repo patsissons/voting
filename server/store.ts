@@ -77,7 +77,7 @@ export function storeSnapshot(
     official?: boolean
     log?: Logger
     now?: number
-    /** Fill a missing civicapi chamber from the newest stored row. */
+    /** Fill a missing civicapi chamber from the newest stored row (ebc-enr always reads it). */
     carry?: boolean
   } = {},
 ): Reply {
@@ -88,7 +88,12 @@ export function storeSnapshot(
   if ('error' in loaded) return loaded.error
   const config = loaded.config
 
-  const latest = opts.carry ? db.latestResult(election.id) : null
+  // civicapi fills a failed chamber only when asked; an Elections BC page
+  // always gets the newest row, for the box counts the final-count page drops.
+  const latest =
+    opts.carry || config.results.format === 'ebc-enr'
+      ? db.latestResult(election.id)
+      : null
   let payload: Payload
   try {
     payload = normalize(raw, config, latest ? payloadOf(latest) : null)

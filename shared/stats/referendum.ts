@@ -7,7 +7,7 @@ import type {
   ReferendumElection,
   ReferendumQuestion,
 } from '../schema/election.ts'
-import { wallMs } from './results.ts'
+import { onTheClock, wallMs } from './results.ts'
 import type { PayloadRow } from './results.ts'
 
 export { wallMs }
@@ -223,7 +223,7 @@ export function pollsSeries(
 ): { rows: PayloadRow[]; xs: number[]; values: number[] } | null {
   const rows = snapshots.filter(
     (r) =>
-      r.payload &&
+      onTheClock(r) &&
       r.payload.polls &&
       r.payload.polls.total &&
       Number.isFinite(wallMs(r.payload.asOf)),
@@ -245,7 +245,7 @@ export function votesSeries(
 ): { rows: PayloadRow[]; xs: number[]; series: QuestionSeries[] } | null {
   const rows = snapshots.filter(
     (r) =>
-      r.payload &&
+      onTheClock(r) &&
       Number.isFinite(wallMs(r.payload.asOf)) &&
       questionsReporting(r.payload, election),
   )
@@ -281,7 +281,7 @@ export function momentum(
   minutes = 60,
 ): { since: string; rows: RefMomentumRow[] } | null {
   const rows = snapshots.filter(
-    (r) => r.payload && Number.isFinite(wallMs(r.payload.asOf)),
+    (r) => onTheClock(r) && Number.isFinite(wallMs(r.payload.asOf)),
   )
   if (rows.length < 2) return null
   const latest = rows[rows.length - 1].payload

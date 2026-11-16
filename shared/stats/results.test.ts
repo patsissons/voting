@@ -30,6 +30,7 @@ import {
   shareClock,
   wallMs,
 } from './results.ts'
+import { pollsSeries } from './referendum.ts'
 
 const election = vancouver()
 const any = vancouverAny()
@@ -253,6 +254,24 @@ describe('riding stats', () => {
       ((votes(end, k) - votes(first, k)) / (end.ballots - first.ballots)) * 100,
       9,
     )
+  })
+
+  it('keeps an official snapshot off the clock', () => {
+    const end = bcNight[bcNight.length - 1]
+    const official = {
+      ...end,
+      payload: { ...end.payload, asOf: '2026-11-09 14:37:00', official: true },
+    }
+    const withOfficial = [...bcNight, official]
+    expect(shareClock(withOfficial, bcDoc)!.xs).toEqual(
+      shareClock(bcNight, bcDoc)!.xs,
+    )
+    expect(momentumClock(withOfficial, bcDoc, 15)!.xs).toEqual(
+      momentumClock(bcNight, bcDoc, 15)!.xs,
+    )
+    expect(pollsSeries(withOfficial)!.xs).toEqual(pollsSeries(bcNight)!.xs)
+    // The timeline against boxes reported keeps it.
+    expect(seatsTimeline(withOfficial, bcDoc)!.rows).toContain(official)
   })
 
   it('compares each riding leader with the 2024 winning party', () => {
