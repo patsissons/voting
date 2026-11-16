@@ -55,7 +55,12 @@ After making changes from a prompt and BEFORE committing:
   `--write` canonicalizes the compact layout (`scripts/lib/json.ts`; the
   directory is in `.prettierignore`). The row columns (slug, title,
   description, voting_day, published, ballot) split off in
-  `shared/election-row.ts`; everything else is the `config` column.
+  `shared/election-row.ts`; everything else is the `config` column. The row
+  also mirrors `finalResultsOf(doc)` (`shared/fetch-policy.ts`:
+  `dates.finalResults`, else the fetch window's last day, expected) as
+  `final_day`/`final_expected`, so the index cards can say when results
+  are final without loading any config; a known day that has passed turns
+  the card's badge Final.
   `pnpm elections:push` upserts by slug; CI runs it against production after
   the deploy when a merge to main changes `elections/`, so merging a document
   change makes it live. New elections: `docs/new-vote.md`.
