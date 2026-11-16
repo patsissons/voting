@@ -90,6 +90,15 @@ describe('alberta analysis stats', () => {
     expect(series.xs.length).toBeGreaterThan(1)
     expect(series.series.map((s) => s.q.n)).toEqual([6, 7, 8, 9])
     expect(shareOverTime(stored.slice(0, 1), e, [6])).toBeNull()
+    // A certified count weeks later stays off the clock.
+    const end = stored[stored.length - 1]
+    const official = {
+      ...end,
+      payload: { ...end.payload, asOf: '2026-11-15 21:00:00', official: true },
+    }
+    expect(shareOverTime([...stored, official], e, [6])!.xs).toEqual(
+      shareOverTime(stored, e, [6])!.xs,
+    )
     const fake: ShareSeries = {
       rows: ['20:00', '20:10', '20:20', '20:30'].map((t) => ({
         payload: { asOf: `2026-10-19 ${t}:00` } as Payload,
