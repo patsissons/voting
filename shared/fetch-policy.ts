@@ -36,6 +36,21 @@ export type SkipReason =
   | 'window_closed'
   | 'throttled'
 
+/** When the count's window ends (pollsClose + fetchHours, in ms), or NaN without a pollsClose. */
+export function windowEnd(config: Config): number {
+  const opens = Date.parse((config && config.pollsClose) || '')
+  const results = (config && config.results) || {}
+  const hours = Number(results.fetchHours) || DEFAULT_FETCH_HOURS
+  return opens + hours * 3600000
+}
+
+/**
+ * The count's window has closed: nothing is fetched any more, so the page
+ * stops reading as live. False without a pollsClose (no window to close).
+ */
+export const windowClosed = (config: Config, now: number): boolean =>
+  now > windowEnd(config)
+
 /** Why a fetch would not run now, or '' when it should. */
 export function shouldFetch(
   config: Config,
@@ -48,9 +63,8 @@ export function shouldFetch(
   if (state.official) return 'official'
   const opens = Date.parse(config.pollsClose || '')
   if (!Number.isFinite(opens)) return 'no_polls_close'
-  const hours = Number(results.fetchHours) || DEFAULT_FETCH_HOURS
   if (now < opens) return 'before_polls_close'
-  if (now > opens + hours * 3600000) return 'window_closed'
+  if (windowClosed(config, now)) return 'window_closed'
   if (state.checked && now - state.checked < throttleMs(results))
     return 'throttled'
   return ''
