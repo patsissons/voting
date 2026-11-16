@@ -2,6 +2,7 @@
 // columns the index page lists and the collection rules filter on are real
 // fields; everything else is the `config` JSON column. fromRow() puts the
 // document back together for the app, the hooks and the MCP tools.
+import { finalResultsOf } from './fetch-policy.ts'
 import type { Ballot, Election } from './schema/election.ts'
 
 /** The document fields that are row columns (in column order). */
@@ -23,6 +24,12 @@ export type ElectionRow = {
   voting_day: string
   published: boolean
   ballot: Ballot
+  /**
+   * A mirror of finalResultsOf(doc) for the index, which lists rows without
+   * their config: the day results became (or are expected to become) final.
+   */
+  final_day?: string
+  final_expected?: boolean
   config: Record<string, unknown>
   results_source?: string
   results_checked?: string
@@ -44,7 +51,19 @@ export function toRow(doc: Election): Omit<ElectionRow, 'id'> {
     voting_day: `${votingDay} 12:00:00.000Z`,
     published,
     ballot,
+    ...finalColumns(doc),
     config,
+  }
+}
+
+/** The final-results columns for a document (empty strings when it has none). */
+function finalColumns(
+  doc: Election,
+): Pick<ElectionRow, 'final_day' | 'final_expected'> {
+  const final = finalResultsOf(doc)
+  return {
+    final_day: final ? `${final.day} 12:00:00.000Z` : '',
+    final_expected: final ? final.expected : false,
   }
 }
 
