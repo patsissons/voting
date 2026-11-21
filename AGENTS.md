@@ -84,8 +84,10 @@ After making changes from a prompt and BEFORE committing:
   tabs and the compass/ballot state the results view needs; the compass
   (`views/compass/`), the referendum ballot (`views/ballot/`) and the four
   results views (`views/results/`) sit on the shared stats. A `chambers`
-  election (results only, e.g. `us-2026`) shows no tabs and always carries
-  `#/results`; its seat timelines and its closing "The count" group (votes
+  election (results only, e.g. `us-2026`) has no compass: it shows no tabs
+  and always carries `#/results`, unless it has an analysis, when it shows
+  Results and Analysis and carries the hash of the one on screen; its seat
+  timelines and its closing "The count" group (votes
   counted, expected vote in and races called, with the last hour's pace)
   run on the clock (`ClockSection`), never on the feed's expected vote in,
   which the feed revises and can restate downwards. Charts are `components/charts/` (one tooltip context,
@@ -138,9 +140,15 @@ After making changes from a prompt and BEFORE committing:
   module: `bc-2026/prior.ts` is 2024 by riding (DataBC's voting-place file,
   split into advance and voting-day ballots and the late ones of the final
   count; its header says how it was built, and a test checks it against
-  `districts[].last`). A chambers election has no tabs,
-  so giving one an analysis means revisiting `resultsOnly` in
-  `election-page.tsx`.
+  `districts[].last`). `us-2026/prior.ts` is 2024 by state (president) and
+  by House district, from the Clerk of the House's official statistics; the
+  ten states that redrew their maps for 2026 have no district rows, so a
+  district swing exists only where the map and both big parties carried
+  over, and a Senate or governor's race is set against the state's
+  presidential vote. A chambers election keeps its contests only on the
+  newest snapshot (`latestFull` in `us-2026/stats.ts`), so its over-time
+  pieces read the per-chamber tallies. Its margins are Democratic minus
+  Republican and exist only where those two are a race's top two.
 - **Theme**: `src/lib/theme.ts` + `src/components/theme-toggle.tsx`; the
   visitor's choice is `localStorage` `voting:theme`, otherwise the system
   setting. `public/theme-init.js` applies it before first paint and mirrors the

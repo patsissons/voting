@@ -18,6 +18,7 @@ export type AnalysisProps = {
 const analyses: Record<string, ComponentType<AnalysisProps>> = {
   'alberta-2026': lazy(() => import('./alberta-2026/analysis')),
   'bc-2026': lazy(() => import('./bc-2026/analysis')),
+  'us-2026': lazy(() => import('./us-2026/analysis')),
 }
 
 /** Whether an analysis was written for the election. */

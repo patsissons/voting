@@ -62,6 +62,7 @@ describe('alberta analysis', () => {
   it('is registered for the elections that have one', () => {
     expect(hasAnalysis('alberta-2026')).toBe(true)
     expect(hasAnalysis('bc-2026')).toBe(true)
+    expect(hasAnalysis('us-2026')).toBe(true)
     expect(hasAnalysis('vancouver-2026')).toBe(false)
     expect(hasAnalysis('toString')).toBe(false)
     const { container } = render(
