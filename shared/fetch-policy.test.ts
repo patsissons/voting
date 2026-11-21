@@ -141,7 +141,10 @@ describe('finalResultsOf', () => {
 
   it('expects the fetch window’s last day otherwise, on pollsClose’s offset', () => {
     // 18:00 -05:00 Nov 3 + 336 h = 23:00 UTC Nov 17, 6 pm Eastern.
-    expect(finalResultsOf(us())).toEqual({ day: '2026-11-17', expected: true })
+    const noDay = us()
+    delete noDay.dates.finalResults
+    expect(finalResultsOf(noDay)).toEqual({ day: '2026-11-17', expected: true })
+    expect(finalResultsOf(us())).toEqual({ day: '2026-12-12', expected: true })
     const late = {
       pollsClose: '2026-10-24T20:00:00-07:00',
       results: { fetchHours: 6 },

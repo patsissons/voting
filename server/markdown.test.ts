@@ -319,7 +319,7 @@ describe('electionMarkdown', () => {
       '- Results final: 2026-10-21',
     )
     expect(electionMarkdown(us(), null, origin)).toContain(
-      '- Final results expected: 2026-11-17',
+      '- Final results expected: 2026-12-12',
     )
   })
 
