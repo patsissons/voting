@@ -145,14 +145,15 @@ test('the referendum map follows the question picked', async ({ page }) => {
   await expect(map.locator('path[data-ring="36"]')).toHaveCount(2)
 })
 
-test('the results-only election has no tabs and shows every chamber', async ({
+test('the results-only election has no compass tab and shows every chamber', async ({
   page,
 }) => {
   await page.goto('/us-2026')
   await expect(
     page.getByRole('heading', { name: 'House of Representatives', level: 2 }),
   ).toBeVisible()
-  expect(await page.getByRole('tab').count()).toBe(0)
+  // Results and its hand-written analysis, never a compass.
+  await expect(page.getByRole('tab')).toHaveText(['Results', 'Analysis'])
   expect(await page.evaluate(() => window.location.hash)).toBe('#/results')
   for (const name of ['Your state', 'Senate', 'Governors']) {
     await expect(

@@ -71,3 +71,34 @@ test('the BC analysis compares every riding with 2024', async ({ page }) => {
     .fill('surrey')
   await expect(table.locator('tbody tr')).toHaveCount(10)
 })
+
+test('the US analysis sets every race against 2024 and its rating', async ({
+  page,
+}) => {
+  await page.goto('/us-2026#/analysis')
+  await expect(page.getByRole('tab', { name: 'Analysis' })).toHaveAttribute(
+    'data-state',
+    'active',
+  )
+  await expect(
+    page.getByRole('heading', { name: 'The swing from 2024', level: 2 }),
+  ).toBeVisible()
+  // The 236 districts with a 2024 race to compare, then the 71 Senate and
+  // governor's races against the presidential vote.
+  await expect(page.locator('#swing .viz-scatter-dot')).toHaveCount(307)
+  await expect(page.locator('#ratings .viz-scatter-dot')).toHaveCount(435)
+  const table = page.locator('#races table')
+  await table.scrollIntoViewIfNeeded()
+  await page
+    .getByRole('searchbox', { name: 'Find a race, state or winner' })
+    .fill('texas')
+  await expect(table.locator('tbody tr')).toHaveCount(40)
+  // A results-only election keeps the hash of the tab it shows.
+  await page.getByRole('tab', { name: 'Results' }).click()
+  await expect(page).toHaveURL(/#\/results$/)
+  await expect(
+    page.getByRole('heading', { name: 'House of Representatives', level: 2 }),
+  ).toBeVisible()
+  await page.getByRole('tab', { name: 'Analysis' }).click()
+  await expect(page).toHaveURL(/#\/analysis$/)
+})

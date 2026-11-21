@@ -136,19 +136,22 @@ function ElectionView({
   const head = tabOf(hash)
   const named = head === 'analysis' && !analysis ? '' : head
   const tab = resultsOnly
-    ? 'results'
+    ? named === 'analysis'
+      ? 'analysis'
+      : 'results'
     : named || (results.snapshots.length ? 'results' : 'compass')
 
   useEffect(() => {
     document.title = `${election.title} · Voting`
   }, [election.title])
 
-  // A results-only page always carries the results hash, so a copied link
-  // and a reload land in the same place.
+  // A results-only page always carries the hash of the tab it shows (the
+  // results, or its analysis when it has one), so a copied link and a reload
+  // land in the same place.
   useEffect(() => {
-    if (resultsOnly && tabOf(window.location.hash) !== 'results')
-      window.history.replaceState(null, '', '#/results')
-  }, [resultsOnly])
+    if (resultsOnly && tabOf(window.location.hash) !== tab)
+      window.history.replaceState(null, '', `#/${tab}`)
+  }, [resultsOnly, tab])
 
   // An import link pasted into an open page: every card read its storage on
   // mount, so reload to let them read the imported state.
@@ -205,15 +208,17 @@ function ElectionView({
           archived={archived}
           shareHash={shareHash}
         />
-        {resultsOnly ? null : (
+        {resultsOnly && !analysis ? null : (
           <Tabs value={tab} onValueChange={switchTab}>
             <TabsList className="w-full sm:w-auto">
-              <TabsTrigger
-                value="compass"
-                className="flex-1 sm:flex-none sm:px-5"
-              >
-                {referendum ? 'Your ballot' : 'Compass'}
-              </TabsTrigger>
+              {resultsOnly ? null : (
+                <TabsTrigger
+                  value="compass"
+                  className="flex-1 sm:flex-none sm:px-5"
+                >
+                  {referendum ? 'Your ballot' : 'Compass'}
+                </TabsTrigger>
+              )}
               <TabsTrigger
                 value="results"
                 className="flex-1 gap-2 sm:flex-none sm:px-5"
