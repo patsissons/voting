@@ -160,6 +160,18 @@ curl -X POST -H "Authorization: Bearer $VOTING_INGEST_TOKEN" \
   "https://voting.lgtm.page/_voting/source/<slug>?url=<results page>"
 ```
 
+A race the feed sends to a runoff (it marks the candidates who `advanced`)
+shows as waiting on its runoff: nobody leads it, the seat is undecided and
+the closest races leave it out. `results.runoffs` gives the day, by contest
+id (`"la-05": { "day": "2026-12-12", "race": null }`; elsewhere
+`<state>-sen`, `<state>-gov`). civicAPI publishes a runoff as a race of its
+own; once it does, set `race` to its id (search
+`https://civicapi.org/api/v2/race/search?query=<State> US House <n> Runoff`)
+and the fetch and the relay add its document, whose count replaces the
+first round's in that contest (the chamber's vote totals stay the first
+round's). The fetch window has usually closed by the runoff, so post the
+night with `pnpm relay --election <slug> --once`, repeated as it counts.
+
 `sourcePrefix` and `eventMatch` restrict what that URL may be. Without a
 server fetch, run `pnpm relay --election <slug> --source <url>` on the
 night; it posts each new snapshot to `/_voting/ingest/<slug>`.

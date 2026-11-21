@@ -16,6 +16,11 @@ import {
 import { fmt, pct1 } from '../../../shared/format.ts'
 import type { Choice, Contest } from '../../../shared/payload.ts'
 import type { PartyElection } from '../../../shared/schema/election.ts'
+import {
+  runoffPair,
+  runoffPending,
+  runoffWhen,
+} from '../../../shared/stats/chambers.ts'
 import { keyOf, partyOrder } from '../../../shared/stats/results.ts'
 
 export type RaceContext = {
@@ -244,6 +249,8 @@ export function RaceRow({
   const lead = contest.choices[0]
   const second = contest.choices[1]
   const gap = lead && second ? lead.pct - second.pct : 0
+  // Waiting on a runoff: nobody leads, so the row names who meets and when.
+  const pending = runoffPending(contest)
   const note =
     meta != null
       ? meta
@@ -262,14 +269,27 @@ export function RaceRow({
           style={
             {
               '--party':
-                lead && lead.votes > 0
+                lead && lead.votes > 0 && !pending
                   ? partyColor(lead.party)
                   : 'var(--party-other)',
             } as React.CSSProperties
           }
         >
-          <Swatch party={lead && lead.votes > 0 ? lead.party : null} />
-          {lead && lead.votes > 0 ? (
+          <Swatch
+            party={lead && lead.votes > 0 && !pending ? lead.party : null}
+          />
+          {pending ? (
+            <>
+              <span className="truncate">
+                {runoffPair(contest)
+                  .map((c) => c.name)
+                  .join(' vs ')}
+              </span>
+              <small className="text-muted-foreground">
+                {runoffWhen(contest)}
+              </small>
+            </>
+          ) : lead && lead.votes > 0 ? (
             <>
               <span className="truncate">{lead.name}</span>
               <small className="text-muted-foreground">
@@ -278,6 +298,7 @@ export function RaceRow({
                 {lead.winner && ctx.election.ballot === 'chambers'
                   ? ' · called'
                   : ''}
+                {contest.runoff ? ` · ${runoffWhen(contest)}` : ''}
               </small>
             </>
           ) : (

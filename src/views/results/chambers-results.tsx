@@ -54,6 +54,9 @@ import {
   paceOf,
   ratingOf,
   reportingClock,
+  runoffPair,
+  runoffPending,
+  runoffWhen,
   votesClock,
   type Balance,
   type BalanceRow,
@@ -610,9 +613,21 @@ function raceTip(
               value: w.name,
             },
           ]
-        : lead
-          ? [{ label: 'Leading', value: lead.name }]
-          : []),
+        : runoffPending(c)
+          ? [
+              {
+                label: `Goes to a ${runoffWhen(c)}`,
+                value: runoffPair(c)
+                  .map((x) => x.name)
+                  .join(' vs '),
+              },
+            ]
+          : lead
+            ? [{ label: 'Leading', value: lead.name }]
+            : []),
+      ...(c.runoff && !runoffPending(c)
+        ? [{ label: 'Count', value: `the ${runoffWhen(c)}` }]
+        : []),
       counted
         ? { label: 'Expected vote in', value: pct1(c.reporting || 0) }
         : { label: 'Votes', value: 'none counted yet' },

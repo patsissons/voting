@@ -206,11 +206,22 @@ const eabDashResults = z.strictObject({
  * civicAPI's aggregate race documents, one per chamber: `source` is the base
  * URL (https://civicapi.org/api/v2/race/) and `races` maps each chamber key
  * to the race id the fetch appends to it.
+ *
+ * `runoffs` names the races that go to a later runoff, by contest id ("la-05",
+ * "ga-sen"): the runoff's `day` and, once civicAPI publishes it as a race of
+ * its own, that race's id. Until then the contest shows the runoff pending;
+ * with the id the fetch adds the runoff's document and its count replaces
+ * the first round's in that contest.
  */
+const runoff = z.strictObject({
+  day,
+  race: z.number().int().positive().nullable().default(null),
+})
 const civicapiResults = z.strictObject({
   format: z.literal('civicapi'),
   source: url.nullable(),
   races: z.record(z.string().min(1), z.number().int().positive()),
+  runoffs: z.record(z.string().min(1), runoff).optional(),
   ...resultsBase,
 })
 
@@ -579,6 +590,18 @@ export function electionProblems(e: Election): string[] {
     const raceKeys = Object.keys(e.results.races).sort()
     if (raceKeys.join() !== [...chamberKeys].sort().join())
       problems.push('results.races: a race id per chamber')
+    // A runoff names a contest: a House division as it is, elsewhere
+    // "<state>-<first three letters of the chamber key>" (contestId).
+    const contestIds = new Set(
+      e.chambers.flatMap((c) =>
+        Object.keys(c.divisions).map((code) =>
+          c.key === 'house' ? code : `${code}-${c.key.slice(0, 3)}`,
+        ),
+      ),
+    )
+    for (const id of Object.keys(e.results.runoffs || {}))
+      if (!contestIds.has(id))
+        problems.push(`results.runoffs: "${id}" is no contest of this election`)
     for (const key of Object.values(e.affiliations))
       if (!keys.has(key)) problems.push(`affiliations: unknown party "${key}"`)
     for (const p of e.parties) {

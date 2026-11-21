@@ -667,6 +667,40 @@ describe('ResultsView', () => {
     expect(groups().map((g) => g.state)).toEqual(['Georgia'])
   })
 
+  it('names who meets in a runoff instead of a leader', () => {
+    const nights = night(us())
+    const last = nights[nights.length - 1]
+    const payload = {
+      ...last.payload,
+      contests: last.payload.contests.map((c) =>
+        c.id === 'la-05'
+          ? {
+              ...c,
+              runoff: { day: '2026-12-12', round: 1 as const },
+              choices: c.choices.map((x, i) => ({
+                ...x,
+                winner: false,
+                advanced: i < 2,
+              })),
+            }
+          : c,
+      ),
+    }
+    const la = payload.contests.find((c) => c.id === 'la-05')!
+    mount(us(), [{ ...last, payload }])
+    const races = document.getElementById('house-races')!
+    fireEvent.change(within(races).getByRole('searchbox'), {
+      target: { value: 'louisiana 5' },
+    })
+    const row = [...races.querySelectorAll('summary')].find((s) =>
+      s.textContent!.startsWith('Louisiana 5'),
+    )!
+    expect(row).toHaveTextContent(
+      `${la.choices[0].name} vs ${la.choices[1].name}runoff Sat Dec 12`,
+    )
+    expect(row).not.toHaveTextContent('called')
+  })
+
   it('clears the chosen state', () => {
     localStorage.setItem('voting:us-2026:district', 'ak')
     mount(us())

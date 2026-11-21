@@ -883,6 +883,147 @@ describe('civicapi race documents', () => {
   })
 })
 
+describe('civicapi runoffs', () => {
+  // NY-10 stands in for a Louisiana jungle race: three candidates, nobody
+  // called, the top two advanced to a runoff on Dec 12.
+  const sample = fixture('voting-2026-civicapi-sample.json')
+  type Region = {
+    percent_reporting: number
+    candidates: Record<string, unknown>[]
+  }
+  const night = () => {
+    const doc = JSON.parse(sample) as {
+      fetchedAt: string
+      races: Record<string, { region_results: Record<string, Region> }>
+      runoffs?: Record<string, unknown>
+    }
+    const ny = doc.races.house.region_results['ny-10']
+    ny.percent_reporting = 98
+    ny.candidates[0].votes = 41000 // Lander (dem)
+    ny.candidates[0].advanced = true
+    ny.candidates[1].votes = 40000 // Moore (gop)
+    ny.candidates[1].advanced = true
+    ny.candidates.push({
+      name: 'Third Candidate',
+      party: 'Republican',
+      votes: 30000,
+      percent: 27,
+      winner: false,
+      advanced: false,
+    })
+    return doc
+  }
+  const tiny = tinyChambers()
+  const planned = (race: number | null): typeof tiny => ({
+    ...tiny,
+    results: {
+      ...tiny.results,
+      runoffs: { 'ny-10': { day: '2026-12-12', race } },
+    },
+  })
+  const runoffDoc = {
+    election_name: 'New York US House 10 Runoff',
+    percent_reporting: 100,
+    last_updated: '2026-12-13T04:30:00.000Z',
+    test_data: false,
+    candidates: [
+      {
+        name: 'Jennifer Moore',
+        party: 'Republican',
+        votes: 52000,
+        percent: 51.5,
+        winner: true,
+      },
+      {
+        name: 'Brad Lander',
+        party: 'Democratic',
+        votes: 49000,
+        percent: 48.5,
+        winner: false,
+      },
+    ],
+  }
+
+  it('leaves a race the feed advanced to a runoff undecided, led by nobody', () => {
+    const r = normalize(night(), tiny)
+    const ny = r.contests.find((c) => c.id === 'ny-10')!
+    // No runoffs entry: the feed's advanced flags alone, with no day.
+    expect(ny.runoff).toEqual({ day: '', round: 1 })
+    expect(ny.choices.map((c) => [c.name, !!c.advanced])).toEqual([
+      ['Brad Lander', true],
+      ['Jennifer Moore', true],
+      ['Third Candidate', false],
+    ])
+    const house = r.chambers!.house.parties
+    // Lander tops the first round but leads nothing; the votes still count.
+    expect(house.find((p) => p.key === 'dem')).toMatchObject({
+      leading: 1,
+      votes: 41000,
+    })
+    expect(house.find((p) => p.key === 'gop')).toMatchObject({
+      leading: 0,
+      votes: 70000,
+    })
+    expect(
+      normalize(night(), planned(null)).contests.find((c) => c.id === 'ny-10')!
+        .runoff,
+    ).toEqual({
+      day: '2026-12-12',
+      round: 1,
+    })
+  })
+
+  it("swaps in the runoff's own count once its race is named, and calls it", () => {
+    const doc = night()
+    doc.runoffs = { 'ny-10': runoffDoc }
+    const r = normalize(doc, planned(4242))
+    const ny = r.contests.find((c) => c.id === 'ny-10')!
+    expect(ny.runoff).toEqual({ day: '2026-12-12', round: 2 })
+    expect(ny.choices.map((c) => [c.name, c.party, c.winner])).toEqual([
+      ['Jennifer Moore', 'gop', true],
+      ['Brad Lander', 'dem', false],
+    ])
+    expect(ny.ballots).toBe(101000)
+    expect(ny.reporting).toBe(100)
+    const gop = r.chambers!.house.parties.find((p) => p.key === 'gop')!
+    // Called and led by the runoff's winner, with the first round's votes.
+    expect(gop).toMatchObject({ called: 1, leading: 1, votes: 70000 })
+    expect(r.chambers!.house.called).toBe(2) // with Pocan, unopposed
+    // The runoff's update moves the stamp: 04:30 UTC is 11:30 pm Eastern.
+    expect(r.asOf).toBe('2026-12-12 23:30:00')
+  })
+
+  it("keeps the previous runoff count when the runoff's fetch fails", () => {
+    const doc = night()
+    doc.runoffs = { 'ny-10': runoffDoc }
+    const before = normalize(doc, planned(4242))
+    const failed = night()
+    const r = normalize(failed, planned(4242), before)
+    const ny = r.contests.find((c) => c.id === 'ny-10')!
+    expect(ny.runoff).toEqual({ day: '2026-12-12', round: 2 })
+    expect(ny.choices[0]).toMatchObject({
+      name: 'Jennifer Moore',
+      winner: true,
+    })
+    // Without one it waits on the runoff again.
+    expect(
+      normalize(night(), planned(4242)).contests.find((c) => c.id === 'ny-10')!
+        .runoff,
+    ).toEqual({
+      day: '2026-12-12',
+      round: 1,
+    })
+  })
+
+  it('leaves a race called in the first round alone', () => {
+    const doc = night()
+    const ny = doc.races.house.region_results['ny-10']
+    ny.candidates[0].winner = true
+    const r = normalize(doc, planned(null))
+    expect(r.contests.find((c) => c.id === 'ny-10')!.runoff).toBeUndefined()
+  })
+})
+
 describe('parity with cubby.fyi', () => {
   const gold = golden()
   const summary = (p: Payload) => ({

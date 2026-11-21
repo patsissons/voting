@@ -249,7 +249,10 @@ After making changes from a prompt and BEFORE committing:
    23:00 UTC Nov 17, for the slow House counts), so the webhook
    `GET /_voting/fetch?slug=us-2026` should cover at least 23:00 UTC Nov 3
    to 06:00 UTC Nov 4 (Alaska closes) every minute, then hourly for the
-   rest of the window.
+   rest of the window. Louisiana 5 and 6 went to runoffs on Dec 12
+   (`results.runoffs`, a pending runoff leads nobody); once civicAPI
+   publishes them, set each `race` id and relay the night with
+   `pnpm relay --election us-2026 --once` (the window closed Nov 17).
 5. This instance is the system of record for every election; cubby.fyi
    ingests nothing. Alberta moved here on 2026-10-20 (cubby's source
    cleared, then a last sync) and BC night runs only here. The one-off

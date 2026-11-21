@@ -201,24 +201,46 @@ if (format === 'eab-ref' || officialPages) {
       : { status: 0, text: 'every page failed' }
   }
 } else if (format === 'civicapi') {
-  const races =
-    election.results.format === 'civicapi' ? election.results.races : {}
+  const results =
+    election.results.format === 'civicapi' ? election.results : null
+  const races = results ? results.races : {}
+  // A runoff published as a race of its own (results.runoffs[id].race).
+  const runoffRaces = Object.entries((results && results.runoffs) || {})
+    .filter(([, plan]) => plan.race)
+    .map(([id, plan]) => [id, plan.race] as [string, number])
   fetchFeed = async () => {
-    const doc: { fetchedAt: string; races: Record<string, unknown> } = {
+    const doc: {
+      fetchedAt: string
+      races: Record<string, unknown>
+      runoffs: Record<string, unknown>
+    } = {
       fetchedAt: new Date().toISOString(),
       races: {},
+      runoffs: {},
     }
-    for (const [key, id] of Object.entries(races)) {
+    // The first failure answers for the whole fetch: its status and which race.
+    const get = async (label: string, id: number) => {
       try {
         const res = await fetch(bust(`${source}${id}`), {
           cache: 'no-store',
           headers: { accept: 'application/json,*/*' },
         })
-        if (!res.ok) return { status: res.status, text: `${key} ${res.status}` }
-        doc.races[key] = await res.json()
+        if (!res.ok)
+          return { status: res.status, text: `${label} ${res.status}` }
+        return { status: 200, text: '', json: (await res.json()) as unknown }
       } catch (err) {
-        return { status: 0, text: `${key} ${(err as Error).message || err}` }
+        return { status: 0, text: `${label} ${(err as Error).message || err}` }
       }
+    }
+    for (const [key, id] of Object.entries(races)) {
+      const got = await get(key, id)
+      if (got.status !== 200) return got
+      doc.races[key] = got.json
+    }
+    for (const [id, race] of runoffRaces) {
+      const got = await get(`${id} runoff`, race)
+      if (got.status !== 200) return got
+      doc.runoffs[id] = got.json
     }
     return { status: 200, text: JSON.stringify(doc) }
   }

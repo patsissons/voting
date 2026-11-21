@@ -28,7 +28,18 @@ export type Choice = {
   partyName: string
   incumbent: boolean
   winner: boolean
+  /** civicapi: the feed says this candidate advances to a runoff. */
+  advanced?: boolean
 }
+
+/**
+ * A chamber contest decided by a later runoff (civicapi). `day` is the
+ * runoff's (YYYY-MM-DD, or '' when the document names none). Round 1: the
+ * first round's count, nobody leads and the seat is undecided until the
+ * runoff. Round 2: the choices are the runoff's own count, led and called as
+ * usual.
+ */
+export type Runoff = { day: string; round: 1 | 2 }
 
 /** Ballot boxes in an Elections BC riding: [reported, total] per kind. */
 export type Boxes = {
@@ -64,6 +75,8 @@ export type Contest = {
   boxes?: Boxes
   /** A chamber contest: the feed's percent of the expected vote reported (0-100). */
   reporting?: number
+  /** A chamber contest that goes to a runoff (civicapi). */
+  runoff?: Runoff
   /** Referendum questions (eab-ref, eab-dash); rejected also on a 2026 ebc-enr riding. */
   n?: number
   rejected?: number

@@ -17,6 +17,15 @@
 // is won whether or not civicAPI calls it; markOfficial leaves these kinds
 // alone.
 //
+// A race that goes to a runoff (the feed marks the candidates who advance,
+// or results.runoffs names it) is undecided until then: its contest carries
+// runoff { day, round: 1 }, nobody leads it and it is not called. civicAPI
+// publishes a runoff as a race of its own; once results.runoffs names that
+// race, the wrapper carries its document under runoffs[<contest id>] and its
+// top-level candidates replace the contest's choices (round 2), led and
+// called as usual. The chamber's party votes stay the first round's, so the
+// chamber totals keep measuring one election day.
+//
 // civicAPI answers some requests with a 502, so the fetch may come back
 // without a chamber's document. Given the previous payload, a missing
 // chamber keeps that payload's contests and tally (its last good count) and
@@ -28,6 +37,7 @@ import type {
   Contest,
   PartyTally,
   Payload,
+  Runoff,
 } from '../payload.ts'
 import type { Chamber, ChambersElection } from '../schema/election.ts'
 import { FeedError, fingerprint, num, parseJson, wallStamp } from './common.ts'
@@ -38,6 +48,7 @@ type FeedCandidate = {
   votes?: unknown
   percent?: unknown
   winner?: unknown
+  advanced?: unknown
   incumbent?: unknown
 }
 type FeedRegion = {
@@ -53,7 +64,17 @@ type RaceDoc = {
   test_data?: unknown
   region_results?: Record<string, FeedRegion>
 }
-type Wrapper = { fetchedAt?: unknown; races?: Record<string, unknown> }
+type RunoffDoc = {
+  percent_reporting?: unknown
+  last_updated?: unknown
+  test_data?: unknown
+  candidates?: FeedCandidate[]
+}
+type Wrapper = {
+  fetchedAt?: unknown
+  races?: Record<string, unknown>
+  runoffs?: Record<string, unknown>
+}
 
 /** The contest id for a division: the House key itself, a chamber suffix elsewhere. */
 export function contestId(chamber: Chamber, code: string): string {
@@ -92,6 +113,73 @@ function keptChamber(
   return tally && contests.length ? { contests, tally } : null
 }
 
+/** The feed's candidates as choices, most votes first. */
+function choicesOf(
+  candidates: FeedCandidate[] | undefined,
+  affiliations: Record<string, string>,
+): Choice[] {
+  const choices: Choice[] = []
+  for (const c of candidates || []) {
+    const label = String(c.party || '').trim()
+    const choice: Choice = {
+      ballot: null,
+      name: String(c.name || '').trim(),
+      votes: num(c.votes),
+      pct: num(c.percent),
+      party: affiliations[label] || null,
+      partyName: label,
+      incumbent: c.incumbent === true,
+      winner: c.winner === true,
+    }
+    if (c.advanced === true) choice.advanced = true
+    choices.push(choice)
+  }
+  return choices.sort(
+    (a, b) => b.votes - a.votes || a.name.localeCompare(b.name),
+  )
+}
+
+/**
+ * A contest's runoff count: its document in the wrapper, else (a fetch that
+ * failed) the previous payload's round 2 for it; null while there is none.
+ */
+function runoffCount(
+  wrapper: Wrapper,
+  id: string,
+  affiliations: Record<string, string>,
+  previous: Payload | null | undefined,
+): { choices: Choice[]; reporting: number; updated: number } | null {
+  const raw = wrapper.runoffs ? wrapper.runoffs[id] : undefined
+  if (raw != null) {
+    const doc = parseJson(raw, `the ${id} runoff`) as RunoffDoc
+    if (
+      doc &&
+      typeof doc === 'object' &&
+      doc.test_data !== true &&
+      Array.isArray(doc.candidates) &&
+      doc.candidates.length
+    )
+      return {
+        choices: choicesOf(doc.candidates, affiliations),
+        reporting: num(doc.percent_reporting),
+        updated: Date.parse(String(doc.last_updated || '')),
+      }
+  }
+  const before =
+    previous && previous.format === 'civicapi'
+      ? (previous.contests || []).find(
+          (c) => c.id === id && c.runoff && c.runoff.round === 2,
+        )
+      : undefined
+  return before
+    ? {
+        choices: before.choices,
+        reporting: before.reporting || 0,
+        updated: NaN,
+      }
+    : null
+}
+
 /** A wall stamp ("2026-11-03 19:00:00") a second later. */
 const secondAfter = (stamp: string) =>
   new Date(Date.parse(`${stamp.replace(' ', 'T')}Z`) + 1000)
@@ -109,6 +197,7 @@ export function normalizeCivicapi(
     throw new FeedError('bad_feed', 'the body has no races')
   const affiliations: Record<string, string> = election.affiliations || {}
   const partyKeys = election.parties.map((p) => p.key)
+  const runoffs = election.results.runoffs || {}
 
   const contests: Contest[] = []
   const chambers: Record<string, ChamberTally> = {}
@@ -156,54 +245,66 @@ export function normalizeCivicapi(
     let chamberCalled = 0
     for (const code of codes) {
       const region = regions[code] || {}
-      const choices: Choice[] = []
-      for (const c of region.candidates || []) {
-        const label = String(c.party || '').trim()
-        choices.push({
-          ballot: null,
-          name: String(c.name || '').trim(),
-          votes: num(c.votes),
-          pct: num(c.percent),
-          party: affiliations[label] || null,
-          partyName: label,
-          incumbent: c.incumbent === true,
-          winner: c.winner === true,
-        })
-      }
-      choices.sort((a, b) => b.votes - a.votes || a.name.localeCompare(b.name))
+      const id = contestId(chamber, code)
+      const first = choicesOf(region.candidates, affiliations)
       // Unopposed: the seat is theirs, and some states never count the votes.
-      const acclaimed = choices.length === 1
-      if (acclaimed) choices[0].winner = true
-      const ballots = choices.reduce((n, c) => n + c.votes, 0)
-      chamberVotes += ballots
-      for (const c of choices) bucket(c.party || 'other').votes += c.votes
+      const acclaimed = first.length === 1
+      if (acclaimed) first[0].winner = true
+      // The chamber's votes are the first round's, runoff or not.
+      for (const c of first) {
+        bucket(c.party || 'other').votes += c.votes
+        chamberVotes += c.votes
+      }
+      let choices = first
+      let reporting = num(region.percent_reporting)
+      let runoff: Runoff | undefined
+      const plan = runoffs[id]
+      if (
+        !first.some((c) => c.winner) &&
+        (plan || first.some((c) => c.advanced))
+      ) {
+        const count = runoffCount(wrapper, id, affiliations, previous)
+        runoff = { day: plan ? plan.day : '', round: count ? 2 : 1 }
+        if (count) {
+          choices = count.choices
+          reporting = count.reporting
+          if (Number.isFinite(count.updated))
+            latest = Math.max(latest, count.updated)
+        }
+      }
       // A called race is led by its winner, counted or not: balanceOf takes
-      // the undecided seats as those nobody leads.
+      // the undecided seats as those nobody leads, a pending runoff among them.
       const winner = choices.filter((c) => c.winner)[0]
       const top = choices[0]
       const lead =
         winner ||
-        (top && top.votes > 0 && !(choices[1] && choices[1].votes === top.votes)
-          ? top
-          : null)
+        (runoff && runoff.round === 1
+          ? null
+          : top &&
+              top.votes > 0 &&
+              !(choices[1] && choices[1].votes === top.votes)
+            ? top
+            : null)
       if (lead) bucket(lead.party || 'other').leading++
       if (winner) {
         bucket(winner.party || 'other').called!++
         chamberCalled++
       }
-      contests.push({
-        id: contestId(chamber, code),
+      const contest: Contest = {
+        id,
         name: String(region.name || chamber.divisions[code]),
         label: chamber.divisions[code],
         kind: chamber.key,
         region: code.split('-')[0],
         voteFor: 1,
-        ballots,
+        ballots: choices.reduce((n, c) => n + c.votes, 0),
         acclaimed,
         sort: contests.length,
-        reporting: num(region.percent_reporting),
+        reporting,
         choices,
-      })
+      }
+      if (runoff) contest.runoff = runoff
+      contests.push(contest)
     }
     const parties: PartyTally[] = []
     tally.forEach((t) =>

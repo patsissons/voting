@@ -341,8 +341,12 @@ export function councilCentre(
 export const ridingsOf = (payload: Payload): Contest[] =>
   payload.contests.filter((c) => c.kind === 'district')
 
-/** A riding's leader: the top choice once it has votes and nobody ties it. */
+/**
+ * A riding's leader: the top choice once it has votes and nobody ties it.
+ * A race waiting on its runoff (civicapi, runoff round 1) has none.
+ */
 export function leaderOf(contest: Contest): Choice | null {
+  if (contest.runoff && contest.runoff.round === 1) return null
   const lead = contest.choices[0]
   if (!lead || !lead.votes) return null
   const second = contest.choices[1]

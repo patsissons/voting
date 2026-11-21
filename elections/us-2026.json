@@ -1666,6 +1666,7 @@
     "format": "civicapi",
     "source": "https://civicapi.org/api/v2/race/",
     "races": { "house": 87524, "senate": 87528, "governor": 87535 },
+    "runoffs": { "la-05": { "day": "2026-12-12", "race": null }, "la-06": { "day": "2026-12-12", "race": null } },
     "official": "https://civicapi.org/results",
     "label": "civicAPI",
     "unit": "races called",
