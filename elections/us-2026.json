@@ -9,7 +9,7 @@
   "eyebrow": "US midterm elections · election day Tue Nov 3, 2026",
   "pollsClose": "2026-11-03T18:00:00-05:00",
   "timeZone": "America/New_York",
-  "dates": { "advance": [], "final": "2026-11-03", "hours": "state by state; the first polls close at 6 pm Eastern in parts of Indiana and Kentucky and the last at 1 am Eastern in Alaska", "url": "https://www.vote.gov/" },
+  "dates": { "advance": [], "final": "2026-11-03", "finalResults": { "day": "2026-12-12", "expected": true }, "hours": "state by state; the first polls close at 6 pm Eastern in parts of Indiana and Kentucky and the last at 1 am Eastern in Alaska", "url": "https://www.vote.gov/" },
   "lede": "Every House, Senate and governor's race as the counts come in: the balance of each chamber, the races in your state, maps, the closest contests and how the night moved.",
   "intro": "All 435 House seats are up, 35 of the 100 Senate seats (the 33 regular seats plus the Ohio and Florida specials) and 36 governorships. A House majority is 218 seats and a Senate majority 51; a 50–50 Senate is run by the Vice President's tie-breaking vote. Seats not up this year count toward each party's total. There is no compass for this election: this page only follows the results.",
   "sources": [

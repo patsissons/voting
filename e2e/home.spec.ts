@@ -28,7 +28,7 @@ test('the index lists the elections and the theme toggle persists', async ({
     page.getByText('Results final Wednesday, October 21'),
   ).toBeVisible()
   await expect(
-    page.getByText(/Final results (were )?expected Tuesday, November 17/),
+    page.getByText(/Final results (were )?expected Saturday, December 12/),
   ).toBeVisible()
   await expect(
     page.getByRole('link', { name: /BC Votes 2026/ }),
