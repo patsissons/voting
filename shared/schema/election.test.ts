@@ -127,6 +127,19 @@ describe('election documents', () => {
     expect(
       problems((e) => ({
         ...e,
+        results: {
+          ...e.results,
+          runoffs: {
+            'ny-10': { day: '2026-12-12' },
+            'ga-sen': { day: '2026-12-01', race: 7 },
+            'la-05': { day: '2026-12-12' },
+          },
+        },
+      })),
+    ).toEqual(['results.runoffs: "la-05" is no contest of this election'])
+    expect(
+      problems((e) => ({
+        ...e,
         chambers: [
           { ...e.chambers[0], divisions: { 'ak-al': 'Alaska at-large' } },
           ...e.chambers.slice(1),

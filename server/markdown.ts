@@ -19,6 +19,9 @@ import { ballotWide, contestOf } from '../shared/stats/referendum.ts'
 import {
   balanceOf,
   calledOf,
+  runoffPair,
+  runoffPending,
+  runoffWhen,
   contestsOf,
   goingIn,
   type GoingIn,
@@ -553,8 +556,17 @@ export function chambersResultsMarkdown(
             `${x.name}${x.party || x.partyName ? ` (${short(x.party) || x.partyName})` : ''} ${pct1(x.pct)}`,
         )
         .join(', ')
+      // A pending runoff says who meets and when; a runoff's own count is
+      // labelled as the runoff.
+      const pending = runoffPending(c)
+      const runoff = pending
+        ? `; goes to a ${runoffWhen(c)} between ${runoffPair(c)
+            .map((x) => x.name)
+            .join(' and ')}`
+        : ''
+      const kind = `${chamber ? chamber.short : c.kind}${c.runoff && !pending ? `, ${runoffWhen(c)}` : ''}`
       lines.push(
-        `- ${c.label} (${chamber ? chamber.short : c.kind}): ${top || 'no count yet'}; ${pct1(c.reporting || 0)} of the expected vote in${called ? `; called for ${called.name}` : ''}.`,
+        `- ${c.label} (${kind}): ${top || 'no count yet'}; ${pct1(c.reporting || 0)} of the expected vote in${runoff}${called ? `; called for ${called.name}` : ''}.`,
       )
     }
     lines.push('')

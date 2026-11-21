@@ -3,6 +3,7 @@
 // seats over the night, and the count itself (votes, the expected vote in and
 // races called) against the clock. The page, the markdown page and the MCP
 // tools share them. Nothing here touches the DOM or Intl.
+import { dayShort } from '../format.ts'
 import type { Choice, Contest, Payload } from '../payload.ts'
 import type { Chamber, ChambersElection } from '../schema/election.ts'
 import { wallMs } from './results.ts'
@@ -19,6 +20,22 @@ export const inState = (payload: Payload, state: string): Contest[] =>
 /** The choice the feed has called, or null. */
 export const calledOf = (contest: Contest): Choice | null =>
   contest.choices.filter((c) => c.winner)[0] || null
+
+/** A race still waiting on its runoff: the first round is in, the runoff's count is not. */
+export const runoffPending = (contest: Contest): boolean =>
+  !!contest.runoff && contest.runoff.round === 1 && !calledOf(contest)
+
+/** "runoff Sat Dec 12" ("runoff" without a day) for a race that goes to one, else ''. */
+export const runoffWhen = (contest: Contest): string =>
+  contest.runoff
+    ? `runoff${contest.runoff.day ? ` ${dayShort(contest.runoff.day)}` : ''}`
+    : ''
+
+/** Who meets in a race's runoff: those the feed advanced, else the top two of the first round. */
+export function runoffPair(contest: Contest): Choice[] {
+  const advanced = contest.choices.filter((c) => c.advanced)
+  return advanced.length >= 2 ? advanced : contest.choices.slice(0, 2)
+}
 
 export type BalanceRow = {
   key: string
@@ -243,7 +260,11 @@ export function goingIn(
 export function closestIn(contests: Contest[], n = 8): CloseRiding[] {
   return contests
     .filter(
-      (c) => c.choices.length > 1 && c.choices[0].votes > 0 && !calledOf(c),
+      (c) =>
+        c.choices.length > 1 &&
+        c.choices[0].votes > 0 &&
+        !calledOf(c) &&
+        !runoffPending(c),
     )
     .map((c) => ({
       id: c.id,

@@ -21,9 +21,12 @@ import {
   paceOf,
   ratingOf,
   reportingClock,
+  runoffPair,
+  runoffPending,
+  runoffWhen,
   votesClock,
 } from './chambers.ts'
-import { voteShares, wallMs } from './results.ts'
+import { leaderOf, voteShares, wallMs } from './results.ts'
 import type { Payload } from '../payload.ts'
 
 const tiny = tinyChambers()
@@ -269,6 +272,25 @@ describe('chamber stats', () => {
     })
     expect(closestIn(counted.contests, 1).length).toBe(1)
     expect(closestIn(empty.contests)).toEqual([])
+  })
+
+  it('leaves a race waiting on its runoff out of the leaders and the closest', () => {
+    const doc = civicCounted()
+    for (const c of doc.races.house.region_results['ca-12'].candidates)
+      (c as Record<string, unknown>).advanced = true
+    const r = normalize(doc, tiny)
+    const ca = r.contests.find((c) => c.id === 'ca-12')!
+    expect(runoffPending(ca)).toBe(true)
+    expect(leaderOf(ca)).toBeNull()
+    expect(runoffPair(ca)).toEqual(ca.choices.slice(0, 2))
+    expect(runoffWhen(ca)).toBe('runoff')
+    expect(runoffWhen({ ...ca, runoff: { day: '2026-12-12', round: 1 } })).toBe(
+      'runoff Sat Dec 12',
+    )
+    expect(runoffWhen(r.contests[0])).toBe('')
+    expect(closestIn(r.contests).map((c) => c.id)).toEqual(['ak-sen', 'ca-gov'])
+    // Its runoff's count is led as usual.
+    expect(runoffPending({ ...ca, runoff: { day: '', round: 2 } })).toBe(false)
   })
 
   it('draws seats led per chamber over the night', () => {

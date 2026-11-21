@@ -212,6 +212,54 @@ describe('electionMarkdown', () => {
     )
   })
 
+  it('says when a race goes to a runoff, and when the runoff is the count', () => {
+    const e = tinyChambers()
+    const planned = {
+      ...e,
+      results: {
+        ...e.results,
+        runoffs: { 'ca-12': { day: '2026-12-12', race: null } },
+      },
+    }
+    const doc = civicCounted()
+    for (const c of doc.races.house.region_results['ca-12'].candidates)
+      (c as Record<string, unknown>).advanced = true
+    const payload = normalize(doc, planned)
+    const row = {
+      id: 'r1',
+      source_ts: payload.asOf,
+      official: false,
+      polls_closed: payload.polls.closed,
+      polls_total: payload.polls.total,
+      payload,
+    }
+    const [a, b] = payload.contests.find((c) => c.id === 'ca-12')!.choices
+    expect(electionMarkdown(planned, row, origin)).toMatch(
+      new RegExp(
+        `- California 12 \\(House\\): [^\\n]*of the expected vote in; goes to a runoff Sat Dec 12 between ${a.name} and ${b.name}\\.`,
+      ),
+    )
+    const counted = {
+      ...payload,
+      contests: payload.contests.map((c) =>
+        c.id === 'ca-12'
+          ? {
+              ...c,
+              runoff: { day: '2026-12-12', round: 2 as const },
+              choices: c.choices.map((x, i) => ({ ...x, winner: i === 0 })),
+            }
+          : c,
+      ),
+    }
+    expect(
+      electionMarkdown(planned, { ...row, payload: counted }, origin),
+    ).toMatch(
+      new RegExp(
+        `- California 12 \\(House, runoff Sat Dec 12\\): [^\\n]*of the expected vote in; called for ${a.name}\\.`,
+      ),
+    )
+  })
+
   it('adds the advance vote by riding to a district election, before and after the results', () => {
     const e = bc()
     const ev = bcEarlyVote()

@@ -263,13 +263,27 @@ export function fetchTick(
             failed.push(`${key} ${(err as Error).message || err}`)
           }
         }
+        // A runoff civicAPI publishes as a race of its own (results.runoffs
+        // names its id); one that fails keeps its last count like a chamber.
+        const runoffs: Record<string, unknown> = {}
+        for (const [id, plan] of Object.entries(results.runoffs || {})) {
+          if (!plan.race) continue
+          const url = `${state.source}${plan.race}`
+          try {
+            const res = http.get(bust(url, now), 20)
+            if (res.status === 200) runoffs[id] = JSON.parse(res.text)
+            else failed.push(`${id} runoff ${res.status}`)
+          } catch (err) {
+            failed.push(`${id} runoff ${(err as Error).message || err}`)
+          }
+        }
         if (!Object.keys(races).length) {
           error = `race fetch failed: ${failed.join(', ')}`
         } else {
           const stored = storeSnapshot(
             db,
             slug,
-            { fetchedAt: new Date(now).toISOString(), races },
+            { fetchedAt: new Date(now).toISOString(), races, runoffs },
             { now, log, carry: failed.length > 0 },
           )
           row = { ...row, status: stored.status, ...stored.body }
